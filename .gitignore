@@ -1,0 +1,16 @@
+.obsidian/workspace.json
+.obsidian/appearance.json
+.obsidian/app.json
+
+.obsidian/plugins/obsidian-git/data.json
+.obsidian/plugins/obsidian-git/logs/
+.obsidian/plugins/obsidian-git/tmp/
+
+.DS_Store
+Thumbs.db
+
+*.bak
+*.tmp
+
+*.pdf
+*.html
