@@ -1,48 +1,47 @@
 
 # Models for Programming Paradigms: Course Syllabus & TOC
 
-### [[01. Foundations & Preliminaries]]
-* **Key Concepts:** Syntax vs Semantics vs Pragmatics.
-* **Methods:** Operational Semantics (SOS: Big-Step and Small-Step), Denotational, Axiomatic.
-* **Properties:** Termination, Determinacy, Compositionality.
+- [[#01. Foundations & Preliminaries]]  
+  - **Key Concepts:** Syntax vs Semantics vs Pragmatics  
+  - **Methods:** Operational Semantics (SOS: Big-Step and Small-Step), Denotational, Axiomatic  
+  - **Properties:** Termination, Determinacy, Compositionality  
 
-### [[02. Math & logic]]
-* **Induction:** Mathematical, Structural, Well-Founded, and Rule Induction.
-* **Domain Theory:** Partial Orders (PO), CPO, Monotone and Continuous Functions.
-* **Fixpoint:** Kleene's Theorem ($\text{fix}(f) = \bigsqcup f^n(\perp)$) and the Immediate Consequence Operator (ICO).
+- [[#02. Math & Logic]]  
+  - **Induction:** Mathematical, Structural, Well-Founded, and Rule Induction  
+  - **Domain Theory:** Partial Orders (PO), CPO, Monotone and Continuous Functions  
+  - **Fixpoint:** Kleene's Theorem ($\text{fix}(f) = \bigsqcup f^n(\perp)$) and the Immediate Consequence Operator (ICO)  
 
-### [[03. Imp Semantics]]
-* **IMP Language:** Syntax and States ($\Sigma$).
-* **Operational Semantics:** Inference rules for `Aexp`, `Bexp`, `Com`.
-* **Denotational Semantics:** Functions $\mathcal{C}\sem{c}$, handling *Lifting*, and `while` denotation.
-* **Equivalence:** Consistency Theorem between OS and DS.
+- [[#03. IMP Semantics]]  
+  - **IMP Language:** Syntax and States ($\Sigma$)  
+  - **Operational Semantics:** Inference rules for `Aexp`, `Bexp`, `Com`  
+  - **Denotational Semantics:** Functions $\mathcal{C}\sem{c}$, handling *Lifting*, and `while` denotation  
+  - **Equivalence:** Consistency Theorem between OS and DS  
 
-### [[04. HOFL]]
-* **Higher-Order Functional Language:** Syntax, Types, and Inference Rules.
-* **Evaluation:** Canonical Forms, Lazy (Call-by-Name) vs Eager (Call-by-Value).
-* **Semantic Domains:** Continuous function spaces, semantics of $\lambda$-abstractions and recursion.
-* **Haskell:** Conceptual mapping (lists, lazy evaluation).
+- [[#04. HOFL]]  
+  - **Higher-Order Functional Language:** Syntax, Types, and Inference Rules  
+  - **Evaluation:** Canonical Forms, Lazy (Call-by-Name) vs Eager (Call-by-Value)  
+  - **Semantic Domains:** Continuous function spaces, semantics of $\lambda$-abstractions and recursion  
+  - **Haskell:** Conceptual mapping (lists, lazy evaluation)  
 
-### [[05. Concurrency]]
-* **Paradigms:** Message Passing (Erlang) vs Shared Memory/Channels (Go).
-* **CCS:** Syntax, LTS, and transition rules ($\tau$).
-* **Bisimulation:** Definition of Strong Bisimulation, Attacker/Defender game.
-* **Logic:** HML (Hennessy-Milner Logic) and Characterization Theorem.
+- [[#05. Concurrency]]  
+  - **Paradigms:** Message Passing (Erlang) vs Shared Memory/Channels (Go)  
+  - **CCS:** Syntax, LTS, and transition rules ($\tau$)  
+  - **Bisimulation:** Definition of Strong Bisimulation, Attacker/Defender game  
+  - **Logic:** HML (Hennessy-Milner Logic) and Characterization Theorem  
 
-### [[06. Real languages]]
-* **Haskell:** Functional patterns (Guards, Data types), Type Classes, Lazy Evaluation implementation.
-* **Erlang:** Actor Model, Asynchronous Message Passing, `receive` with timeout.
-* **Go:** Goroutines, Buffered vs Unbuffered Channels, `select` non-determinism.
+- [[#06. Real Languages]]  
+  - **Haskell:** Functional patterns (Guards, Data types), Type Classes, Lazy Evaluation implementation  
+  - **Erlang:** Actor Model, Asynchronous Message Passing, `receive` with timeout  
+  - **Go:** Goroutines, Buffered vs Unbuffered Channels, `select` non-determinism  
 
-### [[07. Advanced Concurrency]]
-* **Weak Bisimulation:** Abstraction from internal actions ($\tau$), Weak Transition ($\stackrel{\alpha}{\Longrightarrow}$), Observational Congruence.
-* **Temporal Logics:** Linear Time (LTL) vs Branching Time (CTL).
-* **Mu-Calculus:** Syntax and Fixpoints for Safety ($\nu$) and Liveness ($\mu$) properties.
-
+- [[#07. Advanced Concurrency]]  
+  - **Weak Bisimulation:** Abstraction from internal actions ($\tau$), Weak Transition ($\stackrel{\alpha}{\Longrightarrow}$), Observational Congruence  
+  - **Temporal Logics:** Linear Time (LTL) vs Branching Time (CTL)  
+  - **Mu-Calculus:** Syntax and Fixpoints for Safety ($\nu$) and Liveness ($\mu$) properties
 
 ---
 
-# Models for Programming Paradigms: Foundations and Preliminaries
+# Foundations & Preliminaries
 
 This module establishes the rigorous mathematical framework necessary to define, analyze, and compare the semantics of programming languages.
 
@@ -174,7 +173,7 @@ pal xs = (xs == reverse xs)
 
 ---
 
-# Logical and Mathematical Tools
+# Math & Logic
 
 This chapter formalizes the necessary tools to handle recursion, prove properties of infinite systems, and constructively define semantics.
 $$
@@ -352,7 +351,7 @@ $$f_S\left(\bigcup_{i \in \mathbb{N}} X_i\right) = \bigcup_{i \in \mathbb{N}} f_
 
 ---
 
-# Semantics of Imperative Languages (IMP)
+# IMP Semantics
 
 This chapter defines the semantics of the **IMP** language, a minimal imperative language with static memory.
 
@@ -613,7 +612,7 @@ The other cases (`skip`, `assign`, `if`, `while-false`) are trivial or analogous
 
 ---
 
-# Higher-Order Functional Languages (HOFL)
+# HOFL
 
 HOFL (*Higher-Order Functional Language*) introduces functions as "first-class citizens". The complexity shifts from state management (which is absent) to the handling of complex types, recursion, and infinite domains.
 
@@ -747,7 +746,7 @@ In an **Eager** (Call-by-Value) language, the argument must be evaluated before 
 
 ---
 
-# Introduction to Concurrent Systems
+# Concurrency
 
 This chapter moves from sequential models to concurrent ones. The focus is no longer on "computing a function", but on **interaction**, **non-determinism**, and **communication**.
 
@@ -917,7 +916,7 @@ If two processes are not bisimilar, there always exists an HML formula that dist
 
 ---
 
-# Real Languages and Paradigms
+# Real Languages
 
 This chapter bridges theoretical models (HOFL, CCS) with real-world programming languages, analyzing how abstract concepts translate into concrete implementations.
 $$
@@ -1154,7 +1153,7 @@ func main() {
 
 ---
 
-# Advanced Concurrency: Weak Bisimulation & Temporal Logics
+# Advanced Concurrency
 
 This chapter extends the CCS theory to handle abstraction (ignoring internal $\tau$ actions) and introduces temporal logics for the formal verification of properties.
 

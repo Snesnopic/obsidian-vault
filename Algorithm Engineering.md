@@ -2,69 +2,82 @@
 # Algorithm Engineering: Course Syllabus & TOC
 
 ## Part I: The Memory Hierarchy & Sorting
-* **[[01. IO Model and Basics]]**
-    * RAM vs. Two-Level Model ($M, B, N$).
-    * I/O Analysis: Scanning, Binary Search vs. B-Trees.
-    * Virtual Memory Probabilistic Analysis.
-* **[[02. External Sorting and Permuting]]**
-    * Sorting vs. Permuting Bottlenecks.
-    * MergeSort: Binary vs. Multi-way ($N/B \log_{M/B} N/M$).
-    * Run Generation: Snow Plow ($2M$).
-    * Disk Striping ($D$ disks).
-* **[[03. Quicksort and Selection]]**
-    * In-Memory: 3-way, Dual Pivot, Bounded.
-    * Selection: Randomized Linear Time.
-    * External: Multi-way Quicksort & Oversampling.
+- [[#01. IO Model and Basics]]  
+  - RAM vs. Two-Level Model ($M, B, N$)  
+  - I/O Analysis: Scanning, Binary Search vs. B-Trees  
+  - Virtual Memory Probabilistic Analysis  
 
-## Part II: Streaming & Sets
-* **[[04. Random Sampling and Streams]]**
-    * Disk Sampling (Known $N$).
-    * Reservoir Sampling (Unknown $N$, inductive proof).
-* **[[05. Intersection Algorithms]]**
-    * Merge-based vs. Binary Search-based.
-    * Galloping (Doubling) Search.
-    * Interpolation Search ($O(\log \log N)$).
+- [[#02. External Sorting and Permuting]]  
+  - Sorting vs. Permuting Bottlenecks  
+  - MergeSort: Binary vs. Multi-way ($N/B \log_{M/B} N/M$)  
+  - Run Generation: Snow Plow ($2M$)  
+  - Disk Striping ($D$ disks)  
 
-## Part III: Advanced Data Structures
-* **[[06. Randomized Dictionaries]]**
-    * Skip Lists: Levels, Coin flips, I/O issues.
-    * Treaps: Rotations, Split/Merge, 3-sided Range Query.
-    * Random BST Average Depth Proof.
-* **[[07. String sorting and Tries]]**
-    * String Sorting Lower Bound ($d + n \log n$).
-    * Multi-key Quicksort.
-    * Radix Sorts (LSD/MSD).
-    * Tries: TST, Patricia, Front Coding.
-
-## Part IV: Indexing & Hashing
-* **[[08. Full Text Indexing]]**
-    * Suffix Arrays & Binary Search.
-    * LCP Array: Kasai's Algorithm ($O(N)$).
-    * Suffix Trees from SA+LCP.
-* **[[09. Hashing Protocols]]**
-    * Universal Hashing.
-    * Power of Two Choices.
-    * Cuckoo Hashing: Graph theory & $O(1)$ lookup.
-* **[[10. Filters and Perfect Hashing]]**
-    * Minimal Ordered Perfect Hashing (MOPHF).
-    * Bloom Filters: False positive derivation.
-    * Spectral Bloom Filters.
-
-## Part V: Compression
-* **[[11. Data compression]]**
-    * Entropy ($H_0$) & Kraft's Inequality.
-    * Huffman Coding (Canonical reconstruction).
-    * Arithmetic Coding.
+- [[#03. Quicksort and Selection]]  
+  - In-Memory: 3-way, Dual Pivot, Bounded  
+  - Selection: Randomized Linear Time  
+  - External: Multi-way Quicksort & Oversampling  
 
 ---
 
+## Part II: Streaming & Sets
+- [[#04. Random Sampling and Streams]]  
+  - Disk Sampling (Known $N$)  
+  - Reservoir Sampling (Unknown $N$, inductive proof)  
+
+- [[#05. Intersection Algorithms]]  
+  - Merge-based vs. Binary Search-based  
+  - Galloping (Doubling) Search  
+  - Interpolation Search ($O(\log \log N)$)  
+
+---
+
+## Part III: Advanced Data Structures
+- [[#06. Randomized Dictionaries]]  
+  - Skip Lists: Levels, Coin flips, I/O issues  
+  - Treaps: Rotations, Split/Merge, 3-sided Range Query  
+  - Random BST Average Depth Proof  
+
+- [[#07. String sorting and Tries]]  
+  - String Sorting Lower Bound ($d + n \log n$)  
+  - Multi-key Quicksort  
+  - Radix Sorts (LSD/MSD)  
+  - Tries: TST, Patricia, Front Coding  
+
+---
+
+## Part IV: Indexing & Hashing
+- [[#08. Full Text Indexing]]  
+  - Suffix Arrays & Binary Search  
+  - LCP Array: Kasai's Algorithm ($O(N)$)  
+  - Suffix Trees from SA+LCP  
+
+- [[#09. Hashing Protocols]]  
+  - Universal Hashing  
+  - Power of Two Choices  
+  - Cuckoo Hashing: Graph theory & $O(1)$ lookup  
+
+- [[#10. Filters and Perfect Hashing]]  
+  - Minimal Ordered Perfect Hashing (MOPHF)  
+  - Bloom Filters: False positive derivation  
+  - Spectral Bloom Filters  
+
+---
+
+## Part V: Compression
+- [[#11. Data compression]]  
+  - Entropy ($H_0$) & Kraft's Inequality  
+  - Huffman Coding (Canonical reconstruction)  
+  - Arithmetic Coding
+
+---
+
+# IO Model and Basics
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
-# 01. Models of Computation & The I/O Bottleneck
-
 ## 1. The Need for a New Model
 
 ### The Von Neumann RAM Model
@@ -220,14 +233,12 @@ This mathematical derivation confirms that minimizing $p(\epsilon)$—by designi
 
 ---
 
+# External Sorting and Permuting
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
-
-# 02. External Sorting and Permuting
-
 ## 1. Sorting vs. Permuting in the I/O Model
 
 In the standard RAM model, sorting takes $O(N \log N)$ while permuting (reordering data according to a given permutation $\pi$) takes linear time $O(N)$. In the **External Memory Model**, this intuition changes drastically.
@@ -380,14 +391,12 @@ $$
 
 ---
 
+# Quicksort and Selection
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
-
-# 03. Quicksort and Selection
-
 ## 1. In-Memory Quicksort Variants
 
 While standard Quicksort is $O(N \log N)$ on average, optimizations are crucial for handling pathological cases (duplicates) and modern hardware (cache efficiency).
@@ -513,13 +522,12 @@ This matches the sorting lower bound.
 
 ---
 
+# Random Sampling and Streams
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
-# 04. Random Sampling and Streams
-
 Sampling is fundamental when datasets are too massive to process entirely. We analyze two scenarios: one where the dataset size $N$ is known and stored on disk, and one where data arrives as a **Stream** of unknown length.
 
 ---
@@ -619,14 +627,12 @@ After step $t$, every item has probability $s/t$ of being in the reservoir.
 
 ---
 
+# Intersection Algorithms
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
-
-# 05. Intersection Algorithms
-
 The "Intersection Problem" is a canonical operation in Search Engines (handling "AND" queries between inverted lists).
 **Problem:** Given two sorted lists $L_1$ (length $n$) and $L_2$ (length $m$), with $n \le m$, return $L_1 \cap L_2$.
 
@@ -711,14 +717,12 @@ Interpolation Search is terrible for external memory.
 
 ---
 
+# Randomized Dictionaries
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
-
-# 06. Randomized Dictionaries: Skip Lists & Treaps
-
 In this chapter, we explore dictionary data structures that rely on **randomization** to achieve balance, rather than complex deterministic rebalancing rules (like AVL or Red-Black trees).
 
 ---
@@ -864,14 +868,12 @@ $$
 
 ---
 
+# String sorting and Tries
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
-
-# 07. String Sorting and Tries
-
 Sorting strings differs fundamentally from sorting atomic keys (like integers) because strings have variable lengths, and comparisons depend on prefixes.
 
 ---
@@ -954,14 +956,12 @@ Used for storing sorted dictionaries on disk (e.g., inside B-Tree leaves).
 
 ---
 
+# Full Text Indexing
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
-
-# 08. Full Text Indexing: Suffix Arrays & LCP
-
 Full Text Indexing solves the problem of finding a pattern $P$ in a text $T$ efficiently.
 While Suffix Trees are powerful, they are space-heavy. **Suffix Arrays (SA)** combined with the **LCP Array** offer a space-efficient alternative that supports similar operations.
 
@@ -1067,14 +1067,12 @@ A Suffix Tree can be viewed as the **Cartesian Tree** of the LCP array.
 
 ---
 
+# Hashing Protocols
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
-
-# 09. Hashing Protocols
-
 This chapter covers advanced hashing techniques that provide probabilistic guarantees on performance, moving beyond simple heuristics.
 
 ---
@@ -1156,14 +1154,12 @@ We can model the state as a graph:
 
 ---
 
+# Filters and Perfect Hashing
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
-
-# 10. Filters and Perfect Hashing
-
 This chapter focuses on space-efficient structures for set membership and static dictionary problems.
 
 ---
@@ -1248,14 +1244,12 @@ Replace the bit array $B$ with an array of **counters** $C$.
 
 ---
 
-
-header-includes:
+# Data Compression
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
-# 11. Data Compression
 
 We focus on **lossless** statistical compression. The goal is to represent a message $S$ of length $n$ using the minimum number of bits possible, bounded by the entropy of the source.
 

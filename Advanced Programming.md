@@ -1,32 +1,34 @@
 
 # Advanced Programming: Course Syllabus & TOC
 
-- [[#Language Processing]] 
+- [[#Language Processing]]  
   - **Topics:** Lexical Analysis (Scanning), Formal Grammars (CFG), Parsing Algorithms (Recursive Descent, Shift-Reduce), Syntax vs. Semantics vs. Pragmatics  
   - **Key Implementations:** `Token` struct, `next_token()` state machine, Parse Trees, "Dangling Else" resolution  
 
-- [Memory Semantics](#memory-semantics)  
+- [[#Memory Semantics]]  
   - **Topics:** Naming and Binding, Scoping Disciplines (Static vs. Dynamic), Deep vs. Shallow Binding  
   - **Key Implementations:** Activation Records (Stack Frames), Static Chains vs. Displays, Lexical Closures, Heap Management (Ref Counting, Mark-and-Sweep)  
 
-- [Rust Systems Programming](#rust-systems-programming)  
+- [[#Rust Systems Programming]]  
   - **Topics:** Ownership & Borrowing Rules, RAII, Lifetimes, Data Race Prevention  
   - **Key Implementations:** `Box<T>` (Zero-Cost), `Rc<T>` vs `Arc<T>` (Reference Counting), Interior Mutability (`RefCell<T>` vs `Mutex<T>`), `unsafe` mechanics  
 
-- [Advanced Paradigms](#advanced-paradigms)  
+- [[#Advanced Paradigms]]  
   - **Topics:** Functional Programming (Lambdas, Streams), Monads (`flatMap`), Metaprogramming (Reflection, Annotations vs. Decorators), Dynamic Object Models  
   - **Key Implementations:** Java Streams (Lazy Evaluation), `Optional<T>` Monad logic, Python `__dict__` lookup, Proxy/Wrapper patterns  
 
-- [Runtime Environments](#runtime-environments)  
+- [[#Runtime Environments]]  
   - **Topics:** Managed Runtimes (JVM/CLR), JIT Compilation (Stubs & Back-patching), Garbage Collection Generations, Concurrency  
   - **Key Implementations:** Method Tables, Write Barriers, CPython Global Interpreter Lock (GIL), Marshalling/Unmarshalling (PInvoke, XML)  
 
-- [Professional Practice](#professional-practice)  
+- [[#Professional Practice]]  
   - **Topics:** Large-scale Code Navigation (CLR), AI-Assisted Development (Prompt Engineering, Verification), Research Methodology  
   - **Key Implementations:** Passive Callbacks, Reflection Tracing, "Hidden Feature" Discovery Protocols
 
---- 
+---
+
 # Language Processing
+
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
@@ -732,7 +734,7 @@ Inside `unsafe`, you can:
 
 unsafe does NOT disable the Borrow Checker.
 
-It only permits the specific operations above. The borrow checker still runs on all references within the block. The goal of unsafe is to build Safe Abstractions (like Vec<T> or Rc<T>) that encapsulate unsafe low-level operations behind a strictly safe API, verified formally (e.g., RustBelt project).
+It only permits the specific operations above. The borrow checker still runs on all references within the block. The goal of unsafe is to build Safe Abstractions (like `Vec<T>` or `Rc<T>`) that encapsulate unsafe low-level operations behind a strictly safe API, verified formally (e.g., RustBelt project).
 
 
 ---
