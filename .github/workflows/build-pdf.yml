@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Pandoc & LaTeX
-        run: sudo apt-get install -y pandoc texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
+        run: sudo apt-get install -y pandoc texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-science
 
       - name: Generate Master Files
         run: |
@@ -21,8 +21,6 @@ jobs:
 
       - name: Build Root PDFs
         run: |
-          # 1. Create a temporary YAML header with global LaTeX definitions
-          # This ensures \trans, \sem, etc. are defined before the document starts.
           cat <<EOF > metadata.yaml
           ---
           geometry: margin=1in

@@ -591,6 +591,8 @@ Similar to Quicksort, but we only recurse on **one** side.
 
     $$ \\ \hat{T}(N) = O(N)$$
 
+    $$$$
+
 * **I/O Complexity:** Since partitioning is a scan, $\text{Cost} = O(N/B)$ I/Os.
 
 ---
