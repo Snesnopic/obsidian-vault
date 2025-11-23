@@ -1,30 +1,42 @@
-name: Build PDFs
+name: Build and Publish Notes
 
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
+
+# Permissions for GitHub Pages deployment
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Install Pandoc & LaTeX
-        run: sudo apt-get install -y pandoc texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-science
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-science python3
 
+      # 2. GENERATE MASTER FILES
       - name: Generate Master Files
         run: |
           chmod +x generate-master.sh
           ./generate-master.sh
 
-      - name: Build Root PDFs
+      # 3. PREPARE ASSETS (Metadata & Link Fixer Script)
+      - name: Prepare Build Assets
         run: |
-          # 1. Create metadata.yaml with GLOBAL DEFINITIONS
+          # A. Create LaTeX Header
           cat <<'EOF' > metadata.yaml
           ---
           geometry: margin=1in
+          colorlinks: true
           header-includes:
             - |
               \usepackage{amsmath}
@@ -39,7 +51,34 @@ jobs:
           ---
           EOF
 
-          # 2. Loop through root markdown files safely
+          # B. Create Python Script to fix Obsidian Links
+          # Converts [[#My Header]] -> [My Header](#my-header) for PDF compatibility
+          cat <<'EOF' > fix_links.py
+          import re
+          import sys
+
+          def slugify(text):
+              # Mimic Pandoc's header ID generation
+              text = text.lower()
+              text = re.sub(r'[^a-z0-9\s-]', '', text)
+              text = re.sub(r'\s+', '-', text)
+              return text
+
+          def replace_link(match):
+              content = match.group(1)
+              slug = slugify(content)
+              return f"[{content}](#{slug})"
+
+          data = sys.stdin.read()
+          # Regex for [[#Header Text]]
+          data = re.sub(r'\[\[#([^\]]+)\]\]', replace_link, data)
+          sys.stdout.write(data)
+          EOF
+
+      # 4. COMPILE PDFs
+      - name: Build Root PDFs
+        run: |
+          mkdir -p output_pdfs
           shopt -s nullglob
           
           for file in *.md; do
@@ -48,20 +87,26 @@ jobs:
             echo "Processing $file..."
             base="${file%.md}"
             
-            # 3. SANITIZE BODY CONTENT
+            # PIPELINE:
+            # 1. Remove conflicting command definitions
+            # 2. Fix Links using Python
             sed -E '/\\(re)?newcommand\s*\{\\(mathbb|nat|trans|wtrans|sem|den|floor)/d' "$file" | \
-            sed 's/\\newcommand/\\providecommand/g' > "clean_body.md"
+            sed 's/\\newcommand/\\providecommand/g' | \
+            python3 fix_links.py > "clean_body.md"
             
-            # 4. Compile
-            pandoc "metadata.yaml" "clean_body.md" -o "${base}.pdf" --pdf-engine=pdflatex
+            # Compile
+            pandoc "metadata.yaml" "clean_body.md" -o "output_pdfs/${base}.pdf" --pdf-engine=pdflatex
             
             rm "clean_body.md"
           done
           
-          rm metadata.yaml
+          rm metadata.yaml fix_links.py
 
-      - name: Upload PDFs
-        uses: actions/upload-artifact@v4
+      # 5. PUBLISH TO GITHUB PAGES
+      # Creates a 'gh-pages' branch with the PDFs inside
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          name: compiled-pdfs
-          path: "*.pdf"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output_pdfs
+          enable_jekyll: true # Essential for allowing raw file access
