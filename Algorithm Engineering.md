@@ -2,18 +2,18 @@
 # Algorithm Engineering: Course Syllabus & TOC
 
 ## Part I: The Memory Hierarchy & Sorting
-- [[#01. IO Model and Basics]]  
+- [[#IO Model and Basics]]  
   - RAM vs. Two-Level Model ($M, B, N$)  
   - I/O Analysis: Scanning, Binary Search vs. B-Trees  
   - Virtual Memory Probabilistic Analysis  
 
-- [[#02. External Sorting and Permuting]]  
+- [[#External Sorting and Permuting]]  
   - Sorting vs. Permuting Bottlenecks  
   - MergeSort: Binary vs. Multi-way ($N/B \log_{M/B} N/M$)  
   - Run Generation: Snow Plow ($2M$)  
   - Disk Striping ($D$ disks)  
 
-- [[#03. Quicksort and Selection]]  
+- [[#Quicksort and Selection]]  
   - In-Memory: 3-way, Dual Pivot, Bounded  
   - Selection: Randomized Linear Time  
   - External: Multi-way Quicksort & Oversampling  
@@ -21,11 +21,11 @@
 ---
 
 ## Part II: Streaming & Sets
-- [[#04. Random Sampling and Streams]]  
+- [[#Random Sampling and Streams]]  
   - Disk Sampling (Known $N$)  
   - Reservoir Sampling (Unknown $N$, inductive proof)  
 
-- [[#05. Intersection Algorithms]]  
+- [[#Intersection Algorithms]]  
   - Merge-based vs. Binary Search-based  
   - Galloping (Doubling) Search  
   - Interpolation Search ($O(\log \log N)$)  
@@ -33,12 +33,12 @@
 ---
 
 ## Part III: Advanced Data Structures
-- [[#06. Randomized Dictionaries]]  
+- [[#Randomized Dictionaries]]  
   - Skip Lists: Levels, Coin flips, I/O issues  
   - Treaps: Rotations, Split/Merge, 3-sided Range Query  
   - Random BST Average Depth Proof  
 
-- [[#07. String sorting and Tries]]  
+- [[#String Sorting and Tries]]  
   - String Sorting Lower Bound ($d + n \log n$)  
   - Multi-key Quicksort  
   - Radix Sorts (LSD/MSD)  
@@ -47,17 +47,17 @@
 ---
 
 ## Part IV: Indexing & Hashing
-- [[#08. Full Text Indexing]]  
+- [[#Full Text Indexing]]  
   - Suffix Arrays & Binary Search  
   - LCP Array: Kasai's Algorithm ($O(N)$)  
   - Suffix Trees from SA+LCP  
 
-- [[#09. Hashing Protocols]]  
+- [[#Hashing Protocols]]  
   - Universal Hashing  
   - Power of Two Choices  
   - Cuckoo Hashing: Graph theory & $O(1)$ lookup  
 
-- [[#10. Filters and Perfect Hashing]]  
+- [[#Filters and Perfect Hashing]]  
   - Minimal Ordered Perfect Hashing (MOPHF)  
   - Bloom Filters: False positive derivation  
   - Spectral Bloom Filters  
@@ -65,12 +65,13 @@
 ---
 
 ## Part V: Compression
-- [[#11. Data compression]]  
+- [[#Data compression]]  
   - Entropy ($H_0$) & Kraft's Inequality  
   - Huffman Coding (Canonical reconstruction)  
   - Arithmetic Coding
 
----
+
+<div style="page-break-after: always;"></div>
 
 # IO Model and Basics
 $$
@@ -149,6 +150,11 @@ Consider the problem of summing an array $A$ of $N$ integers stored contiguously
 > **Note on Spatial Locality:**
 > The term $N/B$ highlights the power of **spatial locality**. By grouping data physically close to each other, a single I/O retrieves $B$ useful items, effectively dividing the cost by $B$. This is the theoretical lower bound for any algorithm that must read the entire input.
 
+**Generalized Scanning:** 
+The $A(s,b)$ Family We can generalize scanning to account for different access strides. 
+* Let $b$ be a **logical block size** (smaller than physical block $B$). 
+* Let $s$ be a **step size** (jump). 
+* Algorithm $A(s,b)$: Scan logical blocks $A_j$ jumping by step $s$. $$ j = (i \cdot s) \mod (N/b) $$
 ---
 
 ### 3.2 Searching: Binary Search vs. B-Trees
@@ -231,7 +237,7 @@ If we have a standard algorithm (like random access in a Hash Table or Binary Se
 
 This mathematical derivation confirms that minimizing $p(\epsilon)$—by designing algorithms that respect locality ($B$)—is crucial for performance, far more than optimizing CPU instructions.
 
----
+<div style="page-break-after: always;"></div>
 
 # External Sorting and Permuting
 $$
@@ -262,8 +268,17 @@ Permuting is considered an **I/O bottleneck**.
     4.  **Worst Case:** Every access is a cache miss. Total Cost = $O(N)$ I/Os.
 * **Lack of Spatial Locality:** Unlike scanning ($N/B$), we lose the block advantage because the target locations are scattered randomly across the disk.
 
-> **Equivalence:**
-> Unless $N$ is extremely small (where $N < \text{Sort}(N)$), the most efficient way to permute data on disk is actually to **sort** the data based on the target indices. Thus, in external memory, $\text{Permuting} \approx \text{Sorting}$.
+#### Permuting via Sorting: The Algorithm
+We can reduce the permuting problem to sorting to achieve the lower I/O cost. Given vector $S$ (data) and $P$ (target positions), where $S[i]$ should move to position $P[i]$:
+
+1.  **Scan** $S$ and write pairs $\langle \text{item}, \text{old\_pos} \rangle$.
+2.  **Scan** $P$ and write pairs $\langle \text{new\_pos}, \text{old\_pos} \rangle$.
+3.  **Sort** the $P$ pairs by their second component ($\text{old\_pos}$).
+4.  **Scan** the sorted $P$ and $S$ together (merge). Since they are both ordered by $\text{old\_pos}$, we can link $\langle \text{item} \rangle$ with $\langle \text{new\_pos} \rangle$. Create pairs $\langle \text{item}, \text{new\_pos} \rangle$.
+5.  **Sort** these new pairs by their second component ($\text{new\_pos}$).
+6.  **Scan** and extract just the items.
+
+**Total Cost:** 4 Scans + 2 Sorts $\approx O(\text{Sort}(N))$.
 
 ---
 
@@ -365,6 +380,13 @@ $$
 \text{Cost}_{Striped} = O\left( \frac{N}{D \cdot B} \log_{M/(D \cdot B)} \frac{N}{M} \right) \text{ I/Os}
 $$
 
+### 4.3 Comparison vs Theoretical Lower Bound
+The theoretical lower bound for sorting with $D$ disks is slightly better than what Disk Striping achieves.
+$$
+\text{Ratio} = \frac{\text{Disk Striping}}{\text{Lower Bound}} \approx \frac{\log (M/B)}{\log (M/B) - \log D}
+$$
+* **Interpretation:** Disk Striping is asymptotically slower, but as $M \to \infty$, the ratio approaches 1. It is efficient enough for practical purposes.
+
 ---
 
 ## 5. Lower Bounds
@@ -389,7 +411,7 @@ $$
     * *Verdict:* **NOT Optimal.** Disk Striping reduces the fan-out of the merge because the logical block $B'$ consumes more memory slots.
     * *Note:* To achieve optimality for $D>1$, complex algorithms like **GreedSort** are required (not covered in standard implementation).
 
----
+<div style="page-break-after: always;"></div>
 
 # Quicksort and Selection
 $$
@@ -427,100 +449,150 @@ The default algorithm in Java 7+ and Python. It uses **two pivots** ($p, q$ with
 Standard Quicksort is recursive. In the worst case (unbalanced partitions), the recursion depth can reach $O(N)$, causing a **Stack Overflow**.
 
 **The Solution:**
-To guarantee $O(\log N)$ stack space:
-1.  Partition the array.
-2.  Identify the **smaller** and the **larger** sub-problems.
-3.  Recurse **only on the smaller** sub-problem.
-4.  Process the larger sub-problem iteratively (using a `while` loop) within the same function call (**Tail Recursion Elimination**).
+To guarantee $O(\log N)$ stack space, we rely on **Tail Recursion Elimination** on the larger sub-problem.
 
-Since the smaller part is at most half the size, the recursion depth cannot exceed $\log_2 N$.
+**Pseudocode:**
+
+```cpp
+BoundedQS(S, i, j) {
+    while (j - i > n0) { // Small subarrays use Insertion Sort
+        // 1. Pivot Selection & Partitioning
+        p = partition(S, i, j); 
+        
+        // 2. Identify smaller half
+        if (p <= (i + j) / 2) { 
+            // Left side is smaller: Recurse Left
+            BoundedQS(S, i, p - 1);
+            i = p + 1; // Iterate on Right
+        } else {
+            // Right side is smaller: Recurse Right
+            BoundedQS(S, p + 1, j);
+            j = p - 1; // Iterate on Left
+        }
+    }
+    InsertionSort(S, i, j);
+}
+````
+
+Since the smaller part is at most half the size, the recursion depth cannot exceed $\log_2 N$.
 
 ---
 
 ## 2. The Selection Problem
 
-**Problem:** Find the $k$-th smallest element in an unsorted sequence $S$.
+**Problem:** Find the $k$-th smallest element in an unsorted sequence $S$.
 
 ### 2.1 Complexity Landscape
-* **Sorting:** Sort $S$ and pick index $k$. Time: $O(N \log N)$.
-* **Min-Heap:** Build heap ($N$), extract $k$ times ($k \log N$). Time: $O(N + k \log N)$ or $O(N \log k)$ with a bounded heap.
-* **QuickSelect:** Randomized partitioning. Time: $O(N)$ expected.
+
+- **Sorting:** Sort $S$ and pick index $k$. Time: $O(N \log N)$.
+    
+- **QuickSelect:** Randomized partitioning. Time: $O(N)$ expected.
+    
+
+Heap-based Selection ($O(N \log k)$) 1
+
+Useful when $k$ is small relative to $N$.
+
+1. Maintain a **Max-Heap** of size $k$.
+    
+2. Fill it with the first $k$ elements.
+    
+3. Scan the rest of the array ($N-k$ items).
+    
+4. If a new item $x < \text{Heap.Max()}$, remove Max and insert $x$.
+    
+5. **Result:** The Max of the heap is the $k$-th smallest item.
+    
 
 ### 2.2 Randomized Selection (QuickSelect)
-Similar to Quicksort, but we only recurse on **one** side.
+
+Similar to Quicksort, but we only recurse on **one** side.
 
 **Algorithm:**
-1.  Pick a random pivot.
-2.  Partition $S$ into $S_<, S_=, S_>$.
-3.  If $k \le |S_<|$, recurse on $S_<$.
-4.  Else if $k \le |S_<| + |S_=|$, return Pivot.
-5.  Else, recurse on $S_>$ seeking rank $k - (|S_<| + |S_= |)$.
+
+1. Pick a random pivot.
+    
+2. Partition $S$ into $S_<, S_=, S_>$.
+    
+3. If $k \le |S_<|$, recurse on $S_<$.
+    
+4. Else if $k \le |S_<| + |S_=|$, return Pivot.
+    
+5. Else, recurse on $S_>$ seeking rank $k - (|S_<| + |S_= |)$.
+    
 
 **Proof of Linear Expected Time:**
-* A "Good Selection" occurs if the pivot lands in the middle third of the sorted sequence (ranks $[N/3, 2N/3]$).
-* This guarantees neither $|S_<|$ nor $|S_>|$ exceeds $2N/3$.
-* Probability of Good Selection = $1/3$.
-* Recurrence for expected time $\hat{T}(N)$:
-    $$
-    \hat{T}(N) \le O(N) + \hat{T}\left(\frac{2N}{3}\right)
-    $$
-    By the Master Theorem, this sums to a geometric series dominated by the first term:
-    $$
-    \hat{T}(N) = O(N)
-    $$
-* **I/O Complexity:** Since partitioning is a scan, $\text{Cost} = O(N/B)$ I/Os.
+
+- A "Good Selection" occurs if the pivot lands in the middle third of the sorted sequence (ranks $[N/3, 2N/3]$).
+    
+- This guarantees neither $|S_<|$ nor $|S_>|$ exceeds $2N/3$.
+    
+- Probability of Good Selection = $1/3$.
+    
+- Recurrence for expected time $\hat{T}(N)$:
+    
+    $$ \\ \hat{T}(N) \le O(N) + \hat{T}\left(\frac{2N}{3}\right)$$
+    
+    $$$$By the Master Theorem, this sums to a geometric series dominated by the first term:
+    
+    $$ \\ \hat{T}(N) = O(N)$$
+    
+    $$$$
+    
+- **I/O Complexity:** Since partitioning is a scan, $\text{Cost} = O(N/B)$ I/Os.
+    
 
 ---
 
 ## 3. Multi-way Quicksort (External Memory)
 
-While Multi-way MergeSort is a **bottom-up** (merge) approach, Multi-way Quicksort is a **top-down** (distribution) approach.
+While Multi-way MergeSort is a **bottom-up** (merge) approach, Multi-way Quicksort is a **top-down** (distribution) approach.
 
 ### 3.1 Algorithm Design
-1.  **Distribution:** Select $k-1$ pivots to divide the input range into $k$ buckets (partitions).
-2.  **Scanning:** Read the input sequence. For every element, determine which bucket it belongs to and write it to the corresponding buffer.
-    * **Constraints:** We need $k$ output buffers (size $B$) in memory. Thus, $k \approx M/B$.
-3.  **Recursion:** Recursively sort each bucket. If a bucket fits in memory ($< M$), load it and sort it internally.
+
+1. **Distribution:** Select $k-1$ pivots to divide the input range into $k$ buckets (partitions).
+    
+2. **Scanning:** Read the input sequence. For every element, determine which bucket it belongs to and write it to the corresponding buffer.
+    
+    - **Constraints:** We need $k$ output buffers (size $B$) in memory. Thus, $k \approx M/B$.
+        
+3. **Recursion:** Recursively sort each bucket. If a bucket fits in memory ($< M$), load it and sort it internally.
+    
 
 ### 3.2 Pivot Selection via Oversampling
-The critical flaw of Quicksort is unbalanced partitions. In external memory, a bad partition wastes entire I/O passes. We need "perfect" pivots that split $N$ items into $k$ buckets of size $\approx N/k$.
+
+The critical flaw of Quicksort is unbalanced partitions. In external memory, a bad partition wastes entire I/O passes. We need "perfect" pivots that split $N$ items into $k$ buckets of size $\approx N/k$.
 
 **The Oversampling Technique:**
-1.  Draw a random sample of size $s$ from the dataset.
-2.  Sort the sample.
-3.  Pick elements at regular intervals ($s/k$) to be the $k-1$ pivots.
 
-**Theorem (Sample Size):**
+1. Draw a random sample of size $s$ from the dataset.
+    
+2. Sort the sample.
+    
+3. Pick elements at regular intervals ($s/k$) to be the $k-1$ pivots.
+    
+
+Theorem (Sample Size):
+
 To ensure that no bucket exceeds size $4N/k$ with probability $\ge 1/2$, we need an oversampling factor $a$ such that:
-$$
-a+1 = \frac{1}{2} \ln k
-$$
-Total sample size:
-$$
-s = (a+1)k - 1 \approx \frac{k}{2} \ln k
-$$
-*Note:* The sample size depends on $k$ (number of buckets) and $\ln k$.
 
-### 3.3 I/O Complexity Analysis
-* **Fan-out:** $k \approx M/B$.
-* **Cost per Level:** We read and write the whole dataset once: $2(N/B)$.
-* **Number of Levels:** The recursion depth is $\log_{k} (N/M)$.
+$$a+1 = \frac{1}{2} \ln k $$Total sample size: $$s = (a+1)k - 1 \approx \frac{k}{2} \ln k $$*Note:* The sample size depends on $k$ (number of buckets) and $\ln k$. ### 3.3 I/O Complexity Analysis * **Fan-out:** $k \approx M/B$. * **Cost per Level:** We read and write the whole dataset once: $2(N/B)$. * **Number of Levels:** The recursion depth is $\log_{k} (N/M)$. $$
 
-$$
-\text{Cost}_{Multi-Quick} = O\left( \frac{N}{B} \log_{M/B} \frac{N}{M} \right) \text{ I/Os}
-$$
+\text{Cost}{Multi-Quick} = O\left( \frac{N}{B} \log{M/B} \frac{N}{M} \right) \text{ I/Os}
 
-This matches the sorting lower bound.
+$$This matches the sorting lower bound.
 
 ### 3.4 Comparison: MergeSort vs Quicksort
-| Feature        | Multi-way MergeSort                                       | Multi-way Quicksort                                          |
-| :------------- | :-------------------------------------------------------- | :----------------------------------------------------------- |
-| **Paradigm**   | Merging (Bottom-Up)                                       | Distribution (Top-Down)                                      |
-| **I/O Access** | Sequential Read / Sequential Write                        | Sequential Read / **Random** Write (to $k$ buffers)          |
-| **Space**      | Easy to manage                                            | Harder (need robust pivots)                                  |
-| **Preference** | Generally preferred for stability and guaranteed balance. | Preferred if random writes are fast or for parallel systems. |
 
----
+|**Feature**|**Multi-way MergeSort**|**Multi-way Quicksort**|
+|---|---|---|
+|**Paradigm**|Merging (Bottom-Up)|Distribution (Top-Down)|
+|**I/O Access**|Sequential Read / Sequential Write|Sequential Read / **Random** Write (to $k$ buffers)|
+|**Space**|Easy to manage|Harder (need robust pivots)|
+|**Preference**|Generally preferred for stability and guaranteed balance.|Preferred if random writes are fast or for parallel systems.|
+
+
+<div style="page-break-after: always;"></div>
 
 # Random Sampling and Streams
 $$
@@ -544,8 +616,8 @@ Iterate through the file item by item (from $j=0$ to $N-1$). Let:
 * $s$: total items we want to select.
 
 For the current item $x$, we select it with probability:
-$$
-P(\text{select } x) = \frac{s - m}{N - t}
+$$P(\\text{select } x) = \\frac{s - m}{N - t}
+
 $$
 
 **Logic:**
@@ -559,6 +631,18 @@ This guarantees that every item has an equal probability $s/N$ of being selected
 **I/O Efficiency:**
 * **Pros:** It is a single sequential scan.
 * **Cons:** We must read the entire file (Cost = $N/B$). If $s \ll N$, this is inefficient. We would prefer an algorithm that skips blocks, but skipping requires random access, which is expensive on disk unless $s$ is very small.
+
+### 1.2 Algorithm B: Dictionary-based Sampling
+If we need to sample $m$ items where $m \ll N$, and we have random access:
+1.  Generate a random index $p \in [1, N]$.
+2.  Check if $p$ is in a dictionary $D$ (BST or Hash Table).
+3.  If not, insert $p$ into $D$ and pick item $S[p]$.
+4.  Repeat until $|D| = m$.
+
+**Complexity:**
+* Expect to try roughly $m$ times (collisions are rare if $m \ll N$).
+* Cost: $O(m \log m)$ insertions into Dictionary (BST).
+* I/O: $O(m)$ random accesses.
 
 ---
 
@@ -575,16 +659,16 @@ We maintain a "Reservoir" (buffer) $R$ of size $s$.
 **Algorithm:**
 1.  **Initialization:** Put the first $s$ items of the stream directly into $R$.
 2.  **Processing item $t$ (where $t > s$):**
-    * Generate a random number $h \in [1, t]$.
-    * If $h \le s$:
-        * **Swap:** Replace the item at index $R[h]$ with the new item $x_t$.
-    * Else ($h > s$):
-        * **Discard:** Ignore $x_t$.
+* Generate a random number $h \in [1, t]$.
+* If $h \le s$:
+* **Swap:** Replace the item at index $R[h]$ with the new item $x_t$.
+* Else ($h > s$):
+* **Discard:** Ignore $x_t$.
 
 **Probability Logic:**
 The probability of accepting the $t$-th item into the reservoir is:
-$$
-P(\text{keep } x_t) = \frac{s}{t}
+$$P(\\text{keep } x\_t) = \\frac{s}{t}
+
 $$
 
 ### 2.3 Proof of Uniformity
@@ -600,32 +684,35 @@ Assume that after $t-1$ items, every item $x_i$ (where $i < t$) is in $R$ with p
 Now consider the arrival of item $x_t$.
 
 1.  **For the new item $x_t$:**
-    By definition, it is selected with probability $\frac{s}{t}$. Correct.
+By definition, it is selected with probability $\frac{s}{t}$. Correct.
 
 2.  **For an old item $x_i$ ($i < t$) already in $R$:**
-    $x_i$ remains in $R$ if it is **not** replaced by $x_t$.
-    
-    $x_i$ is removed only if:
-    * $x_t$ is selected (Prob $= \frac{s}{t}$).
-    * **AND** the random index $h$ chosen for replacement is exactly the index of $x_i$ (Prob $= \frac{1}{s}$).
-    
-    So, Prob($x_i$ removed) $= \frac{s}{t} \times \frac{1}{s} = \frac{1}{t}$.
-    
-    Therefore, Prob($x_i$ survives) $= 1 - \frac{1}{t} = \frac{t-1}{t}$.
+$x_i$ remains in $R$ if it is **not** replaced by $x_t$.
 
-    **Total Probability:**
-    $$
-    P(x_i \in R \text{ at } t) = P(x_i \in R \text{ at } t-1) \times P(x_i \text{ survives})
-    $$
-    Substitute the inductive hypothesis:
-    $$
-    P(x_i \in R \text{ at } t) = \frac{s}{t-1} \times \frac{t-1}{t} = \frac{s}{t}
-    $$
+$x_i$ is removed only if:
+* $x_t$ is selected (Prob $= \frac{s}{t}$).
+* **AND** the random index $h$ chosen for replacement is exactly the index of $x_i$ (Prob $= \frac{1}{s}$).
+
+So, Prob($x_i$ removed) $= \frac{s}{t} \times \frac{1}{s} = \frac{1}{t}$.
+
+Therefore, Prob($x_i$ survives) $= 1 - \frac{1}{t} = \frac{t-1}{t}$.
+
+**Total Probability:**
+$$
+
+```
+P(x_i \in R \text{ at } t) = P(x_i \in R \text{ at } t-1) \times P(x_i \text{ survives})
+$$
+Substitute the inductive hypothesis:
+$$
+P(x_i \in R \text{ at } t) = \frac{s}{t-1} \times \frac{t-1}{t} = \frac{s}{t}
+$$
 
 **Conclusion:**
 After step $t$, every item has probability $s/t$ of being in the reservoir.
 
----
+
+<div style="page-break-after: always;"></div>
 
 # Intersection Algorithms
 $$
@@ -633,6 +720,7 @@ $$
 \newcommand{\den}[1]{\mathcal{#1}}
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
+
 The "Intersection Problem" is a canonical operation in Search Engines (handling "AND" queries between inverted lists).
 **Problem:** Given two sorted lists $L_1$ (length $n$) and $L_2$ (length $m$), with $n \le m$, return $L_1 \cap L_2$.
 
@@ -687,6 +775,25 @@ A recursive, divide-and-conquer approach.
 4.  *Swap roles:* In the recursive calls, if the "Left" part of $L_2$ becomes shorter than $L_1$'s part, swap them so we always iterate/pivot on the shorter list.
 * **Complexity:** $O(n (1 + \log (m/n)))$. Matches the Galloping bound.
 
+### 2.3 Two-Level Memory Approach (Cache Blocking)
+Standard algorithms ignore the cache. A simple scan might fetch a cache line (block $L$) but only use 1 item if the intersection is sparse.
+**Goal:** Perform intersection at the granularity of cache blocks.
+
+**Setup:**
+1.  Partition arrays into blocks of size $L$ (cache line size).
+2.  Create a meta-array $A'$ containing the *first key* of every block in $A$. $|A'| = n/L$.
+
+**Algorithm:**
+1.  **Filter:** Intersect $B$ with the small meta-array $A'$. This identifies which blocks in $A$ *might* contain elements from $B$.
+2.  **Refine:** Only load and intersect the specific blocks $A_j$ that passed the filter.
+
+**Complexity:**
+$$
+\text{Cost} \approx O\left(\frac{n}{L} + m + m \cdot L\right)
+$$
+* $n/L$: Scanning the meta-array.
+* $m \cdot L$: Worst case, every item in $B$ falls into a different block of $A$, forcing us to scan a full block of size $L$ for each item.
+
 ---
 
 ## 3. Interpolation Search
@@ -715,7 +822,7 @@ Interpolation Search is terrible for external memory.
 
 > **Conclusion:** For in-memory uniform data, Interpolation Search is fast. For disk-based or skewed data, B-Trees or Galloping Search are superior.
 
----
+<div style="page-break-after: always;"></div>
 
 # Randomized Dictionaries
 $$
@@ -744,7 +851,11 @@ When inserting an element $x$:
     * **Tails:** Stop promoting.
 3.  Repeat until Tails occurs.
 
-
+#### Biased Skip Lists
+Standard Skip Lists assume uniform access. If some keys are accessed more frequently, we want them higher up (shorter search path).
+* **Idea:** Unlike the random coin flip, we use a **deterministic stack** based on access probability $p(x)$.
+* **Height:** We force the height of key $x$ to be proportional to $\log(1/p(x))$.
+* **Result:** Frequent items stay near the top, behaving like a static optimal search tree.
 
 ### 1.2 Complexity Analysis
 
@@ -812,6 +923,14 @@ Joins two Treaps (assuming all keys in $T_1$ < all keys in $T_2$).
     4.  Delete the dummy leaf.
 * **Complexity:** $O(\log N)$.
 
+#### Delete($k$)
+Deletion is the inverse of insertion.
+1.  Find node $u$ with key $k$.
+2.  Set priority of $u$ to $+\infty$ (for Min-Heap) or $-\infty$ (for Max-Heap).
+3.  **Rotate Down:** Swap $u$ with its child having the higher/lower priority (depending on Heap type) to maintain Heap property locally.
+4.  Repeat until $u$ is a leaf.
+5.  Cut $u$.
+
 ### 2.4 3-Sided Range Query
 **Query:** Find all nodes $(x, y)$ such that $q_1 \le x \le q_2$ and $y \le q_3$ (Range on Key, Threshold on Priority).
 
@@ -866,14 +985,15 @@ E[D_k] \approx \ln k + \ln (N-k) \le 2 \ln N \approx 1.39 \log_2 N
 $$
 **Conclusion:** Expected depth is $O(\log N)$.
 
----
+<div style="page-break-after: always;"></div>
 
-# String sorting and Tries
+# String Sorting and Tries
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
+
 Sorting strings differs fundamentally from sorting atomic keys (like integers) because strings have variable lengths, and comparisons depend on prefixes.
 
 ---
@@ -938,15 +1058,27 @@ Combines the time efficiency of Tries with the space efficiency of BSTs.
 * **Traversal:** Similar to Multi-key Quicksort. If matches `c`, follow `eq`. Else, follow `left`/`right`.
 * **Space:** $O(N)$ nodes. No dependency on $\sigma$.
 
-
-
 ### 2.3 Compacted Tries (Patricia Tries)
 Optimizes standard Tries by compressing paths of single-child nodes.
 * **Compression:** A chain of nodes `a -> p -> p -> l -> e` is collapsed into a single edge labeled "apple".
 * **Edge Label:** Stored as a triple $\langle \text{string\_id}, \text{start}, \text{end} \rangle$.
 * **Node Count:** Guaranteed $O(n)$ nodes (where $n$ is number of strings), regardless of total length $N$. Every internal node has branching factor $\ge 2$.
 
-### 2.4 Front Coding
+#### Patricia Trie Search: The 3 Phases
+Patricia Tries store only the first char of the edge label + the label length (to skip). This creates ambiguity.
+**Algorithm:**
+1.  **Blind Downward Traversal:** Follow edges matching the single character. Skip the number of characters indicated by the edge length. Do *not* check the skipped characters (blind).
+2.  **Leaf Selection:** We eventually hit a leaf (or fail). Let the leaf be string $S$.
+3.  **Upward Verification:** Calculate $LCP(P, S)$. If $LCP == |P|$, we found it. If not, the mismatch character determines the lexicographic relationship.
+* *Why?* This avoids decoding the edge labels (pointers) during the traversal, reducing cache misses.
+
+### 2.4 Array-based Solutions
+* **Naive Array of Pointers:** `malloc` for every string. Causes massive cache misses (pointer chasing).
+* **Giant Block:** Concatenate all strings into one large contiguous memory block (separated by `\0`). The "pointer" array becomes an array of integer offsets.
+    * Improves locality significantly.
+    * Allows pointer compression (offsets are smaller than 64-bit pointers).
+
+### 2.5 Front Coding
 Used for storing sorted dictionaries on disk (e.g., inside B-Tree leaves).
 * **Idea:** Sorted strings share long prefixes.
 * **Format:** Store shared prefix length $\ell$ + remaining suffix.
@@ -954,7 +1086,7 @@ Used for storing sorted dictionaries on disk (e.g., inside B-Tree leaves).
     * `alcohol` $\to$ `(2, cohol)`  (matches 'al')
     * `alcoholic` $\to$ `(5, lic)` (matches 'alcoh')
 
----
+<div style="page-break-after: always;"></div>
 
 # Full Text Indexing
 $$
@@ -1012,10 +1144,13 @@ $$
 ### 2.1 The Algorithm (Linear Time)
 Naive construction takes $O(N^2)$. Kasai's algorithm achieves $O(N)$ by iterating through suffixes in **text order** ($i = 0 \dots N$), not SA order.
 
-**Key Insight:**
-If we know the LCP of suffix $i$ (starting at $T[i]$) is $H$, what can we say about suffix $i+1$ (starting at $T[i+1]$)?
-* Suffix $i+1$ is just Suffix $i$ with the first character removed.
-* Therefore, Suffix $i+1$ must share at least $H-1$ characters with the successor of Suffix $i$'s predecessor (minus its first char).
+**Comparison: Brute Force vs Kasai**
+Example $T = \text{"banana\$"}$.
+* **Brute Force:** Compares every pair from scratch. Total comparisons can be quadratic.
+* **Kasai:**
+    1.  Compute $LCP$ for suffix `banana$` (pos 0). Result = 0.
+    2.  Move to suffix `anana$` (pos 1). We know it shares a prefix with the predecessor of `banana$`.
+    3.  If prev LCP was $H$, we start comparing from $H-1$. We skip characters we know must match.
 
 ### 2.2 The Inequality Proof
 Let $rank[i]$ be the position of suffix $i$ in the Suffix Array.
@@ -1066,6 +1201,23 @@ A Suffix Tree can be viewed as the **Cartesian Tree** of the LCP array.
 4.  **Total Time:** $O(N)$.
 
 ---
+
+## 4. Text Mining with SA
+
+**Problem:** Given pattern $P$, pattern $Q$, and distance $k$. Find if there exists an occurrence of $P$ and $Q$ in $T$ such that distance is $\le k$.
+
+**Algorithm:**
+1.  **Search:** Use Binary Search on SA to find the range of suffixes for $P$ ($[sp, ep]$) and $Q$ ($[sq, eq]$).
+2.  **Collect:** We have two sets of positions: $S_P = \{ SA[i] \mid sp \le i \le ep \}$ and $S_Q = \{ SA[j] \mid sq \le j \le eq \}$.
+3.  **Merge/Plane Sweep:**
+    * Sort $S_P$ and $S_Q$ (if not already sorted by position).
+    * Iterate through the sorted lists. For each $p \in S_P$, check if any $q \in S_Q$ falls in $[p-k, p+k]$.
+    * Since lists are sorted, this check is linear $O(|S_P| + |S_Q|)$.
+
+**Complexity:**
+$O(N)$ (Build SA) + $O(|P|\log N + |Q|\log N)$ (Search) + $O(\text{occ} \log \text{occ})$ (Sort positions) + $O(\text{occ})$ (Sweep).
+
+<div style="page-break-after: always;"></div>
 
 # Hashing Protocols
 $$
@@ -1152,7 +1304,7 @@ We can model the state as a graph:
 * **Rehash Probability:** With $\alpha < 0.5$, the probability of forming a bicycle is $O(1/N)$.
 * **Amortized Cost:** Since rehashing is rare, expected insertion time is **constant $O(1)$**.
 
----
+<div style="page-break-after: always;"></div>
 
 # Filters and Perfect Hashing
 $$
@@ -1226,6 +1378,16 @@ $$
 f_{opt} = \left( \frac{1}{2} \right)^k = (0.6185)^{M/N}
 $$
 
+### 2.4 Application: Approximate Set Intersection
+**Scenario:** Two servers $A$ and $B$ want to compute $|A \cap B|$ (e.g., Netflix CDNs syncing files) without sending the full dataset.
+**Protocol:**
+1.  $A$ sends $BF(A)$ to $B$.
+2.  $B$ checks every item $y \in B$ against $BF(A)$.
+3.  $B$ counts the matches.
+**Error:** The result is $|A \cap B| + \text{False Positives}$.
+* Expected False Positives $\approx |B \setminus A| \times f$.
+* To improve accuracy, $B$ can send the "suspected" intersection back to $A$ for exact verification (2-round protocol).
+
 ---
 
 ## 3. Spectral Bloom Filters (SBF)
@@ -1242,7 +1404,7 @@ Replace the bit array $B$ with an array of **counters** $C$.
     $$
     * *Why Min?* Collisions only *add* to the counter. The counter with the least noise is the closest upper bound to the true frequency.
 
----
+<div style="page-break-after: always;"></div>
 
 # Data Compression
 $$
@@ -1250,14 +1412,18 @@ $$
 \newcommand{\den}[1]{\mathcal{#1}}
 \newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
-
 We focus on **lossless** statistical compression. The goal is to represent a message $S$ of length $n$ using the minimum number of bits possible, bounded by the entropy of the source.
+
+### 1.1 Compression Models 
+1.  **Static:** The frequency model is fixed (e.g., standard English letter frequencies). Fast, but poor compression if data deviates from standard.
+2.  **Semi-Dynamic:** Two-pass. Pass 1 counts frequencies and builds the model (stored in header). Pass 2 encodes data. Good compression, slower.
+3.  **Dynamic:** One-pass. The model is updated on the fly as symbols are read. Decoder mirrors the updates.
 
 ---
 
-## 1. Information Theory Basics
+## 2. Information Theory Basics
 
-### 1.1 Entropy ($H_0$)
+### 2.1 Entropy ($H_0$)
 Entropy is a measure of the information content or "randomness" of a source.
 For a source alphabet $\Sigma$ where each symbol $\sigma$ appears with probability $P(\sigma)$, the **0-th order Entropy** is:
 $$
@@ -1265,7 +1431,7 @@ H_0 = \sum_{\sigma \in \Sigma} P(\sigma) \log_2 \left( \frac{1}{P(\sigma)} \righ
 $$
 * **Meaning:** $H_0$ is the theoretical lower bound on the average number of bits per symbol needed to represent the source. No compressor can beat $H_0$ (on average) if it treats symbols independently.
 
-### 1.2 Kraft's Inequality
+### 2.2 Kraft's Inequality
 For any instantaneous (prefix-free) code with codeword lengths $\ell_1, \ell_2, \dots, \ell_{|\Sigma|}$, the lengths must satisfy:
 $$
 \sum_{i=1}^{|\Sigma|} 2^{-\ell_i} \le 1
@@ -1274,11 +1440,11 @@ $$
 
 ---
 
-## 2. Huffman Coding
+## 3. Huffman Coding
 
 Huffman coding is a greedy algorithm that produces an optimal prefix-free code for a given distribution.
 
-### 2.1 Construction (Min-Heap)
+### 3.1 Construction (Min-Heap)
 1.  **Init:** Create a leaf node for each symbol $\sigma$ with weight $P(\sigma)$. Insert all into a Min-Heap.
 2.  **Loop:** While Heap size $> 1$:
     * Extract two nodes with smallest weights: $u, v$.
@@ -1287,7 +1453,7 @@ Huffman coding is a greedy algorithm that produces an optimal prefix-free code f
     * Insert $parent$ back into Heap.
 3.  **Result:** The code for symbol $\sigma$ is the path from Root to Leaf $\sigma$ (0 for left, 1 for right).
 
-### 2.2 Canonical Huffman
+### 3.2 Canonical Huffman
 Standard Huffman trees are hard to store (need pointers). **Canonical Huffman** allows us to reconstruct the code using **only** the lengths of the codewords.
 
 **Reconstruction Algorithm:**
@@ -1301,19 +1467,29 @@ Standard Huffman trees are hard to store (need pointers). **Canonical Huffman** 
     * *Logic:* This formula effectively performs a right shift. We take the "next available" integer at level $i+1$ and shift it right to find the prefix at level $i$.
 3.  **Assign:** For length $L$, the $k$-th symbol in `symb[L]` gets code $fc[L] + k$.
 
+### 3.3 Extended Huffman 
+Standard Huffman has an overhead of $+1$ bit per symbol in the worst case ($H \le L < H+1$).
+* **Idea:** Group symbols into blocks of size $k$ ($k$-tuples).
+* **Alphabet:** New alphabet size $|\Sigma|^k$.
+* **Overhead:** The $+1$ bit overhead is distributed over $k$ symbols.
+    $$
+    L_{avg} \approx H + \frac{1}{k}
+    $$
+* **Trade-off:** The tree size grows exponentially with $k$.
+
 ---
 
-## 3. Arithmetic Coding
+## 4. Arithmetic Coding
 
 Huffman has a limitation: it must use an integer number of bits (at least 1) per symbol. **Arithmetic Coding** overcomes this by mapping the entire message to a single number (interval).
 
-### 3.1 The Interval Concept
+### 4.1 The Interval Concept
 We represent the current state as an interval $[L, L+S)$ within $[0, 1)$.
 * Initially: $[0, 1)$.
 * Each symbol $\sigma$ owns a sub-interval proportional to $P(\sigma)$.
 * When we process $\sigma$, we "zoom in" to its sub-interval.
 
-### 3.2 Encoding Algorithm
+### 4.2 Encoding Algorithm
 Let $f(\sigma)$ be the cumulative probability (sum of $P(x)$ for all $x < \sigma$).
 For each symbol $c$ in message:
 1.  New Size: $S_{new} = S_{old} \times P(c)$
@@ -1322,12 +1498,12 @@ For each symbol $c$ in message:
 
 **Result:** A number $V \in [L_{final}, L_{final} + S_{final})$.
 
-### 3.3 Comparison: Huffman vs. Arithmetic
+### 4.3 Comparison: Huffman vs. Arithmetic
 Consider a symbol with $P(A) = 0.99$.
 * **Entropy:** $H(A) = \log_2(1/0.99) \approx 0.014$ bits.
 * **Huffman:** Must assign at least 1 bit to 'A'. Efficiency is terrible ($1$ vs $0.014$).
 * **Arithmetic:** The interval shrinks by factor $0.99$. After 100 'A's, size is $0.99^{100} \approx 0.36$. We still barely need 1-2 bits to encode 100 symbols.
 * **Theorem:** Arithmetic coding uses at most $n H_0 + 2$ bits total. The overhead is negligible for large $n$.
 
----
+<div style="page-break-after: always;"></div>
 

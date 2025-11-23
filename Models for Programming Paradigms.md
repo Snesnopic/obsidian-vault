@@ -39,7 +39,8 @@
   - **Temporal Logics:** Linear Time (LTL) vs Branching Time (CTL)  
   - **Mu-Calculus:** Syntax and Fixpoints for Safety ($\nu$) and Liveness ($\mu$) properties
 
----
+
+<div style="page-break-after: always;"></div>
 
 # Foundations & Preliminaries
 
@@ -171,7 +172,7 @@ pal :: Eq a => [a] -> Bool
 pal xs = (xs == reverse xs)
 ```
 
----
+<div style="page-break-after: always;"></div>
 
 # Math & Logic
 
@@ -349,7 +350,7 @@ $$f_S\left(\bigcup_{i \in \mathbb{N}} X_i\right) = \bigcup_{i \in \mathbb{N}} f_
 
 > **Note:** The same logic applies to $g_S(X) = X \cup S$ (using associativity/idempotence of union).
 
----
+<div style="page-break-after: always;"></div>
 
 # IMP Semantics
 
@@ -610,7 +611,7 @@ We apply **Rule Induction** on the standard semantics:
 
 The other cases (`skip`, `assign`, `if`, `while-false`) are trivial or analogous.
 
----
+<div style="page-break-after: always;"></div>
 
 # HOFL
 
@@ -744,7 +745,7 @@ In an **Eager** (Call-by-Value) language, the argument must be evaluated before 
 
 > **Note on Unlifted Domains:** In Eager semantics, lifting is not needed on compound types because a term of type $\tau$ *always* denotes a defined value or diverges *before* returning. Domains become: $U_{\text{int}} = \mathbb{Z}_\perp$, $U_{\tau_1 \times \tau_2} = U_{\tau_1} \times U_{\tau_2}$.
 
----
+<div style="page-break-after: always;"></div>
 
 # Concurrency
 
@@ -914,7 +915,7 @@ $$P \sim Q \iff (P \models F \iff Q \models F, \forall F \in \text{HML})$$
 Two processes are bisimilar if and only if they satisfy the same logical HML formulas.
 If two processes are not bisimilar, there always exists an HML formula that distinguishes them.
 
----
+<div style="page-break-after: always;"></div>
 
 # Real Languages
 
@@ -1151,7 +1152,7 @@ func main() {
 ```
 
 
----
+<div style="page-break-after: always;"></div>
 
 # Advanced Concurrency
 
@@ -1264,5 +1265,5 @@ $$\phi ::= \text{tt} \mid \text{ff} \mid Z \mid \phi_1 \land \phi_2 \mid \phi_1 
     * Example: $\nu Z. (p \land [\cdot] Z)$ $\to$ " $p$ holds now AND after every step $Z$ still holds". (Corresponds to $\mathbf{AG} p$).
     * *Intuition:* Allows infinite loops where $p$ is always true.
 
----
+<div style="page-break-after: always;"></div>
 

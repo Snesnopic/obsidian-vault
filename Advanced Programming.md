@@ -25,7 +25,8 @@
   - **Topics:** Large-scale Code Navigation (CLR), AI-Assisted Development (Prompt Engineering, Verification), Research Methodology  
   - **Key Implementations:** Passive Callbacks, Reflection Tracing, "Hidden Feature" Discovery Protocols
 
----
+
+<div style="page-break-after: always;"></div>
 
 # Language Processing
 
@@ -358,7 +359,7 @@ Grammar:
     
 
 
----
+<div style="page-break-after: always;"></div>
 
 # Memory Semantics
 
@@ -577,7 +578,7 @@ This is a **Tracing GC** that handles cycles. It requires identifying **Roots
 **Compaction:** To prevent fragmentation, copying collectors move live objects to a contiguous block. This requires updating all pointers in the program that reference the moved objects, a complex operation often requiring a "Stop-the-World" pause.
 
 
----
+<div style="page-break-after: always;"></div>
 
 # Rust Systems Programming
 
@@ -737,7 +738,7 @@ unsafe does NOT disable the Borrow Checker.
 It only permits the specific operations above. The borrow checker still runs on all references within the block. The goal of unsafe is to build Safe Abstractions (like `Vec<T>` or `Rc<T>`) that encapsulate unsafe low-level operations behind a strictly safe API, verified formally (e.g., RustBelt project).
 
 
----
+<div style="page-break-after: always;"></div>
 
 # Advanced Paradigms
 
@@ -921,7 +922,7 @@ Introspection and attribute access rely on enumerating properties in a dictionar
 _(Note: Metaclasses were not covered in detail in the provided source material beyond their mention in hierarchy charts.)_
 
 
----
+<div style="page-break-after: always;"></div>
 
 # Runtime Environments
 
@@ -1030,7 +1031,7 @@ _(Note: Experimental removal of the GIL is a recent development in Python 3.13 t
 - **Trade-off:** XML is **verbose**, leading to higher parsing overhead compared to binary formats. However, its structured, self-describing nature makes it robust for complex data exchange protocols (like SOAP).
     
 
----
+<div style="page-break-after: always;"></div>
 
 # Professional Practice
 
@@ -1134,5 +1135,5 @@ The evaluation prioritizes the **Process of Inquiry** over the final code arti
     
 
 
----
+<div style="page-break-after: always;"></div>
 
