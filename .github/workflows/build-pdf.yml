@@ -11,18 +11,35 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Install Pandoc
+      - name: Install Pandoc & LaTeX
         run: sudo apt-get install -y pandoc texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
 
-      - name: Build course PDFs
+      - name: Generate Master Files
         run: |
+          chmod +x generate-master.sh
+          ./generate-master.sh
+
+      - name: Build Root PDFs
+        run: |
+          # 'shopt -s nullglob' ensures the loop doesn't run if no .md files exist
+          shopt -s nullglob
+
           for file in *.md; do
-            base=$(basename "$file" .md)
-            pandoc "$file" -o "${base}.pdf"
+            if [[ "$file" == "README.md" ]]; then
+              continue
+            fi
+
+            echo "Compiling $file..."
+            
+            # Remove extension for output filename
+            base="${file%.md}"
+            
+            # Compile using pdflatex
+            pandoc "$file" -o "${base}.pdf" --pdf-engine=pdflatex
           done
 
       - name: Upload PDFs
         uses: actions/upload-artifact@v4
         with:
-          name: course-pdfs
+          name: compiled-pdfs
           path: "*.pdf"
