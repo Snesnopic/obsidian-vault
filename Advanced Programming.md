@@ -1,14 +1,3 @@
----
-geometry: margin=1in
-header-includes:
-  - |
-    \newcommand{\sem}[1]{ [\![ #1 ]\!] }
-    \newcommand{\den}[1]{\mathcal{#1}}
-    \newcommand{\floor}[1]{\lfloor #1 \rfloor}
-    \newcommand{\trans}[1]{\xrightarrow{#1}}
-    \newcommand{\wtrans}[1]{\stackrel{#1}{\Longrightarrow}}
-    \newcommand{\nat}{\mathbb{N}}
----
 
 # Advanced Programming: Course Syllabus & TOC
 
@@ -37,15 +26,15 @@ header-includes:
   - **Key Implementations:** Passive Callbacks, Reflection Tracing, "Hidden Feature" Discovery Protocols
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Language Processing
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
-\providecommand{\trans}[1]{\xrightarrow{#1}}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\trans}[1]{\xrightarrow{#1}}
 $$
 
 ## 1. Implementation of Lexical Analysis (Scanning)
@@ -366,15 +355,15 @@ Grammar:
 - _Layout:_ Languages like Python make whitespace syntactically significant, coupling Pragmatics directly to the Lexical Analyzer's logic.
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Memory Semantics
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
-\providecommand{\trans}[1]{\xrightarrow{#1}}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\trans}[1]{\xrightarrow{#1}}
 $$
 
 ## 1. The Activation Record (Stack Frame)
@@ -578,15 +567,15 @@ This is a **Tracing GC** that handles cycles. It requires identifying **Roots
 **Compaction:** To prevent fragmentation, copying collectors move live objects to a contiguous block. This requires updating all pointers in the program that reference the moved objects, a complex operation often requiring a "Stop-the-World" pause.
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Rust Systems Programming
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
-\providecommand{\trans}[1]{\xrightarrow{#1}}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\trans}[1]{\xrightarrow{#1}}
 $$
 
 ## 1. Ownership and Borrowing Mechanics
@@ -729,15 +718,15 @@ unsafe does NOT disable the Borrow Checker.
 It only permits the specific operations above. The borrow checker still runs on all references within the block. The goal of unsafe is to build Safe Abstractions (like `Vec<T>` or `Rc<T>`) that encapsulate unsafe low-level operations behind a strictly safe API, verified formally (e.g., RustBelt project).
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Advanced Paradigms
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
-\providecommand{\trans}[1]{\xrightarrow{#1}}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\trans}[1]{\xrightarrow{#1}}
 $$
 
 ## 1. Functional Constructs Implementation
@@ -906,15 +895,15 @@ Introspection and attribute access rely on enumerating properties in a dictionar
 _(Note: Metaclasses were not covered in detail in the provided source material beyond their mention in hierarchy charts.)_
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Runtime Environments
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
-\providecommand{\trans}[1]{\xrightarrow{#1}}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\trans}[1]{\xrightarrow{#1}}
 $$
 
 ## 1. Anatomy of a Managed Runtime (JVM/CLR)
@@ -1010,7 +999,7 @@ _(Note: Experimental removal of the GIL is a recent development in Python 3.13 t
 - **Trade-off:** XML is **verbose**, leading to higher parsing overhead compared to binary formats. However, its structured, self-describing nature makes it robust for complex data exchange protocols (like SOAP).
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Professional Practice
 
@@ -1107,5 +1096,5 @@ The evaluation prioritizes the **Process of Inquiry** over the final code arti
 - **Core Competency:** The ability to ask the right questions and rigorously **Double Check** the answers.
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 

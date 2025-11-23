@@ -1,14 +1,3 @@
----
-geometry: margin=1in
-header-includes:
-  - |
-    \newcommand{\sem}[1]{ [\![ #1 ]\!] }
-    \newcommand{\den}[1]{\mathcal{#1}}
-    \newcommand{\floor}[1]{\lfloor #1 \rfloor}
-    \newcommand{\trans}[1]{\xrightarrow{#1}}
-    \newcommand{\wtrans}[1]{\stackrel{#1}{\Longrightarrow}}
-    \newcommand{\nat}{\mathbb{N}}
----
 
 # Algorithm Engineering: Course Syllabus & TOC
 
@@ -87,14 +76,14 @@ header-includes:
   - Arithmetic Coding
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # IO Model and Basics
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
 
 ## 1. The Need for a New Model
@@ -274,14 +263,14 @@ If we have a standard algorithm (like random access in a Hash Table or Binary Se
 This mathematical derivation confirms that minimizing $p(\epsilon)$—by designing algorithms that respect locality ($B$)—is crucial for performance, far more than optimizing CPU instructions.
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # External Sorting and Permuting
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
 
 ## 1. Sorting vs. Permuting in the I/O Model
@@ -470,14 +459,14 @@ $$
     * *Note:* To achieve optimality for $D>1$, complex algorithms like **GreedSort** are required (not covered in standard implementation).
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Quicksort and Selection
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
 
 ## 1. In-Memory Quicksort Variants
@@ -602,8 +591,6 @@ Similar to Quicksort, but we only recurse on **one** side.
 
     $$ \\ \hat{T}(N) = O(N)$$
 
-    $$$$
-
 * **I/O Complexity:** Since partitioning is a scan, $\text{Cost} = O(N/B)$ I/Os.
 
 ---
@@ -661,14 +648,14 @@ This matches the sorting lower bound.
 |**Preference**|Generally preferred for stability and guaranteed balance.|Preferred if random writes are fast or for parallel systems.|
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Random Sampling and Streams
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
 Sampling is fundamental when datasets are too massive to process entirely. We analyze two scenarios: one where the dataset size $N$ is known and stored on disk, and one where data arrives as a **Stream** of unknown length.
 
@@ -793,14 +780,14 @@ $$
 After step $t$, every item has probability $s/t$ of being in the reservoir.
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Intersection Algorithms
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
 
 The "Intersection Problem" is a canonical operation in Search Engines (handling "AND" queries between inverted lists).
@@ -923,14 +910,14 @@ Interpolation Search is terrible for external memory.
 > **Conclusion:** For in-memory uniform data, Interpolation Search is fast. For disk-based or skewed data, B-Trees or Galloping Search are superior.
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Randomized Dictionaries
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
 In this chapter, we explore dictionary data structures that rely on **randomization** to achieve balance, rather than complex deterministic rebalancing rules (like AVL or Red-Black trees).
 
@@ -1110,14 +1097,14 @@ $$
 **Conclusion:** Expected depth is $O(\log N)$.
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # String Sorting and Tries
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
 
 Sorting strings differs fundamentally from sorting atomic keys (like integers) because strings have variable lengths, and comparisons depend on prefixes.
@@ -1234,14 +1221,14 @@ Used for storing sorted dictionaries on disk (e.g., inside B-Tree leaves).
   * `alcoholic` $\to$ `(5, lic)` (matches 'alcoh')
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Full Text Indexing
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
 Full Text Indexing solves the problem of finding a pattern $P$ in a text $T$ efficiently.
 While Suffix Trees are powerful, they are space-heavy. **Suffix Arrays (SA)** combined with the **LCP Array** offer a space-efficient alternative that supports similar operations.
@@ -1380,14 +1367,14 @@ A Suffix Tree can be viewed as the **Cartesian Tree** of the LCP array.
 $O(N)$ (Build SA) + $O(|P|\log N + |Q|\log N)$ (Search) + $O(\text{occ} \log \text{occ})$ (Sort positions) + $O(\text{occ})$ (Sweep).
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Hashing Protocols
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
 This chapter covers advanced hashing techniques that provide probabilistic guarantees on performance, moving beyond simple heuristics.
 
@@ -1481,14 +1468,14 @@ We can model the state as a graph:
 * **Amortized Cost:** Since rehashing is rare, expected insertion time is **constant $O(1)$**.
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Filters and Perfect Hashing
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
 This chapter focuses on space-efficient structures for set membership and static dictionary problems.
 
@@ -1597,14 +1584,14 @@ Replace the bit array $B$ with an array of **counters** $C$.
   * *Why Min?* Collisions only *add* to the counter. The counter with the least noise is the closest upper bound to the true frequency.
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Data Compression
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
 We focus on **lossless** statistical compression. The goal is to represent a message $S$ of length $n$ using the minimum number of bits possible, bounded by the entropy of the source.
 
@@ -1716,5 +1703,5 @@ Consider a symbol with $P(A) = 0.99$.
 * **Theorem:** Arithmetic coding uses at most $n H_0 + 2$ bits total. The overhead is negligible for large $n$.
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 

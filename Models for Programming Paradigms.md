@@ -1,14 +1,3 @@
----
-geometry: margin=1in
-header-includes:
-  - |
-    \newcommand{\sem}[1]{ [\![ #1 ]\!] }
-    \newcommand{\den}[1]{\mathcal{#1}}
-    \newcommand{\floor}[1]{\lfloor #1 \rfloor}
-    \newcommand{\trans}[1]{\xrightarrow{#1}}
-    \newcommand{\wtrans}[1]{\stackrel{#1}{\Longrightarrow}}
-    \newcommand{\nat}{\mathbb{N}}
----
 
 # Models for Programming Paradigms: Course Syllabus & TOC
 
@@ -51,7 +40,7 @@ header-includes:
   - **Mu-Calculus:** Syntax and Fixpoints for Safety ($\nu$) and Liveness ($\mu$) properties
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Foundations & Preliminaries
 
@@ -199,14 +188,14 @@ pal xs = (xs == reverse xs)
 ```
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Math & Logic
 
 This chapter formalizes the necessary tools to handle recursion, prove properties of infinite systems, and constructively define semantics.
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\Deriv}{\vdash_R}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\Deriv}{\vdash_R}
 $$
 ---
 
@@ -394,15 +383,15 @@ $$f_S\left(\bigcup_{i \in \mathbb{N}} X_i\right) = \bigcup_{i \in \mathbb{N}} f_
 > **Note:** The same logic applies to $g_S(X) = X \cup S$ (using associativity/idempotence of union).
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # IMP Semantics
 
 This chapter defines the semantics of the **IMP** language, a minimal imperative language with static memory.
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
 $$
 
 ---
@@ -671,16 +660,16 @@ We apply **Rule Induction** on the standard semantics:
 The other cases (`skip`, `assign`, `if`, `while-false`) are trivial or analogous.
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # HOFL
 
 HOFL (*Higher-Order Functional Language*) introduces functions as "first-class citizens". The complexity shifts from state management (which is absent) to the handling of complex types, recursion, and infinite domains.
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\den}[1]{\mathcal{#1}}
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
 
 ---
@@ -819,15 +808,15 @@ In an **Eager** (Call-by-Value) language, the argument must be evaluated before 
 > **Note on Unlifted Domains:** In Eager semantics, lifting is not needed on compound types because a term of type $\tau$ *always* denotes a defined value or diverges *before* returning. Domains become: $U_{\text{int}} = \mathbb{Z}_\perp$, $U_{\tau_1 \times \tau_2} = U_{\tau_1} \times U_{\tau_2}$.
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Concurrency
 
 This chapter moves from sequential models to concurrent ones. The focus is no longer on "computing a function", but on **interaction**, **non-determinism**, and **communication**.
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\trans}[1]{\xrightarrow{#1}}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\trans}[1]{\xrightarrow{#1}}
 $$
 
 ---
@@ -1003,14 +992,14 @@ Two processes are bisimilar if and only if they satisfy the same logical HML for
 If two processes are not bisimilar, there always exists an HML formula that distinguishes them.
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Real Languages
 
 This chapter bridges theoretical models (HOFL, CCS) with real-world programming languages, analyzing how abstract concepts translate into concrete implementations.
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
 $$
 ---
 
@@ -1234,17 +1223,17 @@ func main() {
 ```
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
 # Advanced Concurrency
 
 This chapter extends the CCS theory to handle abstraction (ignoring internal $\tau$ actions) and introduces temporal logics for the formal verification of properties.
 
 $$
-\providecommand{\sem}[1]{ [\![ #1 ]\!] }
-\providecommand{\trans}[1]{\xrightarrow{#1}}
-\providecommand{\wtrans}[1]{\stackrel{#1}{\Longrightarrow}}
-\providecommand{\nat}{\mathbb{N}}
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\trans}[1]{\xrightarrow{#1}}
+\newcommand{\wtrans}[1]{\stackrel{#1}{\Longrightarrow}}
+\newcommand{\nat}{\mathbb{N}}
 $$
 
 ---
@@ -1362,5 +1351,5 @@ $$\phi ::= \text{tt} \mid \text{ff} \mid Z \mid \phi_1 \land \phi_2 \mid \phi_1 
   * *Intuition:* Allows infinite loops where $p$ is always true.
 
 
-\newpage
+<div style="page-break-after: always;"></div>
 
