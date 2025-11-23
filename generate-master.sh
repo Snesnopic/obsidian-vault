@@ -15,6 +15,8 @@ header-includes:
     \newcommand{\den}[1]{\mathcal{#1}}
     \newcommand{\floor}[1]{\lfloor #1 \rfloor}
     \newcommand{\trans}[1]{\xrightarrow{#1}}
+    \newcommand{\wtrans}[1]{\stackrel{#1}{\Longrightarrow}}
+    \newcommand{\nat}{\mathbb{N}}
 ---
 
 EOF
