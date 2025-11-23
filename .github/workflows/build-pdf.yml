@@ -22,8 +22,6 @@ jobs:
       - name: Build Root PDFs
         run: |
           # 1. Create metadata.yaml with SAFE HEADER generation
-          # CRITICAL: We use 'EOF' (single quotes). 
-          # This stops Bash from eating the backslashes in \usepackage and \newcommand.
           cat <<'EOF' > metadata.yaml
           ---
           geometry: margin=1in
@@ -45,20 +43,15 @@ jobs:
           shopt -s nullglob
           
           for file in *.md; do
-            # Skip README
             if [[ "$file" == "README.md" ]]; then continue; fi
             
             echo "Processing $file..."
             base="${file%.md}"
             
             # 3. Sanitize Body Content
-            # Step A: Remove \newcommand{\mathbb} lines to prevent "Command already defined" errors
-            # Step B: Convert other \newcommand to \providecommand so they don't conflict with our header
-            sed '/\\newcommand{\\mathbb}/d' "$file" | sed 's/\\newcommand/\\providecommand/g' > "clean_body.md"
+            sed -E '/\\(re)?newcommand\s*\{\\mathbb\}/d' "$file" | sed 's/\\newcommand/\\providecommand/g' > "clean_body.md"
             
             # 4. Compile
-            # metadata.yaml supplies the header definitions
-            # clean_body.md supplies the content
             pandoc "metadata.yaml" "clean_body.md" -o "${base}.pdf" --pdf-engine=pdflatex
             
             rm "clean_body.md"
