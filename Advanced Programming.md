@@ -1,54 +1,35 @@
-# Advanced Programming
-
-
----
 
 # Advanced Programming: Course Syllabus & TOC
 
-### [Language Processing](#language-processing)
+- [Language Processing](#language-processing)  
+  - **Topics:** Lexical Analysis (Scanning), Formal Grammars (CFG), Parsing Algorithms (Recursive Descent, Shift-Reduce), Syntax vs. Semantics vs. Pragmatics  
+  - **Key Implementations:** `Token` struct, `next_token()` state machine, Parse Trees, "Dangling Else" resolution  
 
-- **Topics:** Lexical Analysis (Scanning), Formal Grammars (CFG), Parsing Algorithms (Recursive Descent, Shift-Reduce), Syntax vs. Semantics vs. Pragmatics.
-    
-- **Key Implementations:** `Token` struct, `next_token()` state machine, Parse Trees, "Dangling Else" resolution.
-    
+- [Memory Semantics](#memory-semantics)  
+  - **Topics:** Naming and Binding, Scoping Disciplines (Static vs. Dynamic), Deep vs. Shallow Binding  
+  - **Key Implementations:** Activation Records (Stack Frames), Static Chains vs. Displays, Lexical Closures, Heap Management (Ref Counting, Mark-and-Sweep)  
 
-### [Memory Semantics](#memory-semantics)
+- [Rust Systems Programming](#rust-systems-programming)  
+  - **Topics:** Ownership & Borrowing Rules, RAII, Lifetimes, Data Race Prevention  
+  - **Key Implementations:** `Box<T>` (Zero-Cost), `Rc<T>` vs `Arc<T>` (Reference Counting), Interior Mutability (`RefCell<T>` vs `Mutex<T>`), `unsafe` mechanics  
 
-- **Topics:** Naming and Binding, Scoping Disciplines (Static vs. Dynamic), Deep vs. Shallow Binding.
-    
-- **Key Implementations:** Activation Records (Stack Frames), Static Chains vs. Displays, Lexical Closures, Heap Management (Ref Counting, Mark-and-Sweep).
-    
+- [Advanced Paradigms](#advanced-paradigms)  
+  - **Topics:** Functional Programming (Lambdas, Streams), Monads (`flatMap`), Metaprogramming (Reflection, Annotations vs. Decorators), Dynamic Object Models  
+  - **Key Implementations:** Java Streams (Lazy Evaluation), `Optional<T>` Monad logic, Python `__dict__` lookup, Proxy/Wrapper patterns  
 
-### [Rust Systems Programming](#rust-systems-programming)
+- [Runtime Environments](#runtime-environments)  
+  - **Topics:** Managed Runtimes (JVM/CLR), JIT Compilation (Stubs & Back-patching), Garbage Collection Generations, Concurrency  
+  - **Key Implementations:** Method Tables, Write Barriers, CPython Global Interpreter Lock (GIL), Marshalling/Unmarshalling (PInvoke, XML)  
 
-- **Topics:** Ownership & Borrowing Rules, RAII, Lifetimes, Data Race Prevention.
-    
-- **Key Implementations:** `Box<T>` (Zero-Cost), `Rc<T>` vs `Arc<T>` (Reference Counting), Interior Mutability (`RefCell<T>` vs `Mutex<T>`), `unsafe` mechanics.
-    
-
-### [Advanced Paradigms](#advanced-paradigms)
-
-- **Topics:** Functional Programming (Lambdas, Streams), Monads (`flatMap`), Metaprogramming (Reflection, Annotations vs. Decorators), Dynamic Object Models.
-    
-- **Key Implementations:** Java Streams (Lazy Evaluation), `Optional<T>` Monad logic, Python `__dict__` lookup, Proxy/Wrapper patterns.
-    
-
-### [Runtime Environments](#runtime-environments)
-
-- **Topics:** Managed Runtimes (JVM/CLR), JIT Compilation (Stubs & Back-patching), Garbage Collection Generations, Concurrency.
-    
-- **Key Implementations:** Method Tables, Write Barriers, CPython Global Interpreter Lock (GIL), Marshalling/Unmarshalling (PInvoke, XML).
-    
-
-### [Professional Practice](#professional-practice)
-
-- **Topics:** Large-scale Code Navigation (CLR), AI-Assisted Development (Prompt Engineering, Verification), Research Methodology.
-    
-- **Key Implementations:** Passive Callbacks, Reflection Tracing, "Hidden Feature" Discovery Protocols.
+- [Professional Practice](#professional-practice)  
+  - **Topics:** Large-scale Code Navigation (CLR), AI-Assisted Development (Prompt Engineering, Verification), Research Methodology  
+  - **Key Implementations:** Passive Callbacks, Reflection Tracing, "Hidden Feature" Discovery Protocols
 
 ---
 
+<a id="language-processing"></a>
 # Language Processing
+
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
@@ -99,7 +80,7 @@ The `next_token()` function serves as the primary interface invoked by the par
 2. Determine the next token type based on the lookahead character.
     
 
-```C
+```c
 // input: char stream | output: next token
 Token next_token(InputStream *input) {
     int start_line, start_col;
@@ -257,7 +238,7 @@ Recursive Descent is a predictive strategy where every non-terminal in the gramm
 
 **Example: Expression Parsing (LL(1))**
 
-```C
+```c
 // helper to consume terminal tokens
 void match(TokenType expected_type) {
 if (current_token.type == expected_type) {
@@ -381,6 +362,7 @@ Grammar:
 ---
 
 # Memory Semantics
+
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
@@ -457,7 +439,7 @@ The scoping discipline determines the region of text where a name-to-object bind
 
 **Comparative Case Study:**
 
-```C
+```c
 // Pseudocode Example 3.18
 int n = 0; // Global
 
@@ -507,7 +489,7 @@ To support closures, the runtime cannot strictly use stack-based allocation for 
 
 **Runtime Representation:**
 
-```C
+```c
 // The "Environment" captured by the closure
 struct CapturedEnv {
     int* upvalue_count; // Pointer to heap-allocated variable
@@ -543,7 +525,7 @@ Each object maintains a count of incoming references.
 **Concept Implementation:**
 
 
-```C++
+```cpp
 struct RefCountedObject {
     int ref_count;
     Data data;
@@ -568,7 +550,7 @@ This is a **Tracing GC** that handles cycles. It requires identifying **Roots
 
 1. **Mark Phase:** Traverse object graph starting from Roots. Set a `marked` bit for every visited object.
     
-    ```C
+    ```c
     void mark(Object* obj) {
         if (obj == NULL || obj->marked) return;
         obj->marked = true;
@@ -580,7 +562,7 @@ This is a **Tracing GC** that handles cycles. It requires identifying **Roots
     
 2. **Sweep Phase:** Scan the entire heap memory. Reclaim unmarked objects. Unset mark bits for the next cycle.
     
-    ```C
+    ```c
     void sweep(Heap* heap) {
         for (Object* obj : heap->all_objects) {
             if (obj->marked) {
@@ -599,6 +581,7 @@ This is a **Tracing GC** that handles cycles. It requires identifying **Roots
 ---
 
 # Rust Systems Programming
+
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
@@ -758,6 +741,7 @@ It only permits the specific operations above. The borrow checker still runs on 
 ---
 
 # Advanced Paradigms
+
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
@@ -941,6 +925,7 @@ _(Note: Metaclasses were not covered in detail in the provided source material b
 ---
 
 # Runtime Environments
+
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
@@ -1049,6 +1034,7 @@ _(Note: Experimental removal of the GIL is a recent development in Python 3.13 t
 ---
 
 # Professional Practice
+
 ## 1. Navigating Large-Scale Codebases
 
 Analyzing real-world runtimes like the **.NET CLR** (estimated at 3,000 man-years of work) requires systematic strategies rather than instinctive browsing.
@@ -1147,4 +1133,7 @@ The evaluation prioritizes the **Process of Inquiry** over the final code arti
         
 - **Core Competency:** The ability to ask the right questions and rigorously **Double Check** the answers.
     
+
+
+---
 

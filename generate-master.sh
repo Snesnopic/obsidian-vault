@@ -10,10 +10,10 @@ for dir in */; do
   echo "" > "$master"
 
   find "$dir" -maxdepth 1 -type f -name "*.md" | sort | while read file; do
+    cat "$file" >> "$master"
+    echo "" >> "$master"
     echo "" >> "$master"
     echo "---" >> "$master"
-    echo "" >> "$master"
-    cat "$file" >> "$master"
     echo "" >> "$master"
   done
 done

@@ -1,7 +1,3 @@
-# Models for Programming Paradigms
-
-
----
 
 # Models for Programming Paradigms: Course Syllabus & TOC
 
@@ -1268,3 +1264,6 @@ $$\phi ::= \text{tt} \mid \text{ff} \mid Z \mid \phi_1 \land \phi_2 \mid \phi_1 
 * **$\nu Z. \phi$ (Greatest Fixed Point):** Used for **Safety** / Invariants.
     * Example: $\nu Z. (p \land [\cdot] Z)$ $\to$ " $p$ holds now AND after every step $Z$ still holds". (Corresponds to $\mathbf{AG} p$).
     * *Intuition:* Allows infinite loops where $p$ is always true.
+
+---
+

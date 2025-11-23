@@ -1,7 +1,3 @@
-# Algorithm Engineering
-
-
----
 
 # Algorithm Engineering: Course Syllabus & TOC
 
@@ -1338,3 +1334,6 @@ Consider a symbol with $P(A) = 0.99$.
 * **Huffman:** Must assign at least 1 bit to 'A'. Efficiency is terrible ($1$ vs $0.014$).
 * **Arithmetic:** The interval shrinks by factor $0.99$. After 100 'A's, size is $0.99^{100} \approx 0.36$. We still barely need 1-2 bits to encode 100 symbols.
 * **Theorem:** Arithmetic coding uses at most $n H_0 + 2$ bits total. The overhead is negligible for large $n$.
+
+---
+
