@@ -1,19 +1,11 @@
 #!/bin/bash
 
-# Loop through all subdirectories
 for dir in */; do
-  # Skip hidden directories (like .git)
-  if [[ "$dir" == .* ]]; then
-    continue
-  fi
+  if [ "$dir" == ".git/" ]; then continue; fi
 
-  # Define the master file name (e.g., "Algorithm Engineering.md")
-  # ${dir%/} removes the trailing slash
   master="${dir%/}.md"
 
-  # 1. Write the YAML Header safely using a HereDoc
-  # We use 'EOF' (quoted) to prevent Bash from interpreting backslashes or variables.
-  # This ensures the LaTeX macros are written correctly for Pandoc.
+  # 1. Write Header (Keep using newcommand here to ensure it exists globally)
   cat <<'EOF' > "$master"
 ---
 geometry: margin=1in
@@ -26,21 +18,21 @@ header-includes:
 
 EOF
 
-  # 2. Concatenate files
-  # Find all .md files in the directory, sort them, and loop
+  # 2. Process files
   find "$dir" -maxdepth 1 -type f -name "*.md" | sort | while read file; do
-    # Append the file content
-    cat "$file" >> "$master"
     
-    # Add spacing to prevent markdown merging
+    # 3. VITAL FIX: Convert \newcommand to \providecommand using sed
+    # This prevents "Command already defined" errors when concatenating files
+    # that already have these definitions for Obsidian support.
+    sed 's/\\newcommand/\\providecommand/g' "$file" >> "$master"
+    
     echo "" >> "$master"
     echo "" >> "$master"
     
-    # Add a clean Page Break (replaces the "---" separator)
     echo '<div style="page-break-after: always;"></div>' >> "$master"
     
     echo "" >> "$master"
   done
   
-  echo "Generated master file: $master"
+  echo "Generated: $master"
 done
