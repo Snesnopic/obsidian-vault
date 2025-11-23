@@ -1,7 +1,7 @@
 
 # Advanced Programming: Course Syllabus & TOC
 
-- [Language Processing](#language-processing)  
+- [[#Language Processing]] 
   - **Topics:** Lexical Analysis (Scanning), Formal Grammars (CFG), Parsing Algorithms (Recursive Descent, Shift-Reduce), Syntax vs. Semantics vs. Pragmatics  
   - **Key Implementations:** `Token` struct, `next_token()` state machine, Parse Trees, "Dangling Else" resolution  
 
@@ -25,11 +25,8 @@
   - **Topics:** Large-scale Code Navigation (CLR), AI-Assisted Development (Prompt Engineering, Verification), Research Methodology  
   - **Key Implementations:** Passive Callbacks, Reflection Tracing, "Hidden Feature" Discovery Protocols
 
----
-
-<a id="language-processing"></a>
+--- 
 # Language Processing
-
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\den}[1]{\mathcal{#1}}
