@@ -794,7 +794,11 @@ $$
 * **Identifier ($A$):** Used to define recursive processes (e.g., $A \stackrel{\text{def}}{=} \alpha.A$).
 
 ### 2.2 Operational Semantics (LTS)
-Transitions are of the form $P \trans{\mu} P'$.
+
+Transitions are of the form
+$$
+P \trans{\mu} P'
+$$.
 The set of actions is $\text{Act} = \mathcal{L} \cup \{\tau\}$, where $\tau$ is the invisible (internal) action.
 
 **Dynamic Rules:**

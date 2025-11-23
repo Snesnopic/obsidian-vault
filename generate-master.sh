@@ -5,7 +5,7 @@ for dir in */; do
 
   master="${dir%/}.md"
 
-  # 1. Write Header (Keep using newcommand here to ensure it exists globally)
+  # 1. Create master file with YAML header
   cat <<'EOF' > "$master"
 ---
 geometry: margin=1in
@@ -14,6 +14,7 @@ header-includes:
     \newcommand{\sem}[1]{ [\![ #1 ]\!] }
     \newcommand{\den}[1]{\mathcal{#1}}
     \newcommand{\floor}[1]{\lfloor #1 \rfloor}
+    \newcommand{\trans}[1]{\xrightarrow{#1}}
 ---
 
 EOF
@@ -21,9 +22,7 @@ EOF
   # 2. Process files
   find "$dir" -maxdepth 1 -type f -name "*.md" | sort | while read file; do
     
-    # 3. VITAL FIX: Convert \newcommand to \providecommand using sed
-    # This prevents "Command already defined" errors when concatenating files
-    # that already have these definitions for Obsidian support.
+    # 3. Convert local commands to providecommand to avoid conflict
     sed 's/\\newcommand/\\providecommand/g' "$file" >> "$master"
     
     echo "" >> "$master"
