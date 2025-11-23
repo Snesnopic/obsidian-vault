@@ -25,6 +25,7 @@ EOF
   find "$dir" -maxdepth 1 -type f -name "*.md" | sort | while read file; do
     
     # 3. Convert local commands to providecommand to avoid conflict
+    sed '/\\newcommand{\\mathbb}/d' | \
     sed 's/\\newcommand/\\providecommand/g' "$file" >> "$master"
     
     echo "" >> "$master"
