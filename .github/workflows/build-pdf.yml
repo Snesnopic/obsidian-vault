@@ -13,10 +13,12 @@ jobs:
 
       - name: Install Pandoc
         run: sudo apt-get install -y pandoc texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
-      - name: Build PDFs
+
+      - name: Build course PDFs
         run: |
-          for dir in */; do
-            pandoc "$dir"*.md -o "${dir%/}.pdf"
+          for file in *.md; do
+            base=$(basename "$file" .md)
+            pandoc "$file" -o "${base}.pdf"
           done
 
       - name: Upload PDFs
