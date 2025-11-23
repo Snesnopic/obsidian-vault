@@ -12,7 +12,6 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Pandoc & LaTeX
-        # Added texlive-science for stmaryrd (semantic brackets)
         run: sudo apt-get install -y pandoc texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-science
 
       - name: Generate Master Files
@@ -23,7 +22,8 @@ jobs:
       - name: Build Root PDFs
         run: |
           # 1. Create metadata.yaml with SAFE HEADER generation
-          # We use 'EOF' (quoted) to prevent Bash from stripping backslashes.
+          # CRITICAL: We use 'EOF' (single quotes). 
+          # This stops Bash from eating the backslashes in \usepackage and \newcommand.
           cat <<'EOF' > metadata.yaml
           ---
           geometry: margin=1in
@@ -42,7 +42,6 @@ jobs:
           EOF
 
           # 2. Loop through root markdown files safely
-          # shopt -s nullglob ensures the loop doesn't run if no .md files exist
           shopt -s nullglob
           
           for file in *.md; do
@@ -53,8 +52,8 @@ jobs:
             base="${file%.md}"
             
             # 3. Sanitize Body Content
-            # Remove \newcommand{\mathbb} lines to prevent "Command already defined" errors
-            # Convert other \newcommand to \providecommand
+            # Step A: Remove \newcommand{\mathbb} lines to prevent "Command already defined" errors
+            # Step B: Convert other \newcommand to \providecommand so they don't conflict with our header
             sed '/\\newcommand{\\mathbb}/d' "$file" | sed 's/\\newcommand/\\providecommand/g' > "clean_body.md"
             
             # 4. Compile
