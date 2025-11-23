@@ -1,3 +1,10 @@
+---
+geometry: margin=1in
+header-includes:
+  - \providecommand{\sem}[1]{ [\![ #1 ]\!] }
+  - \providecommand{\den}[1]{\mathcal{#1}}
+  - \providecommand{\floor}[1]{\lfloor #1 \rfloor}
+---
 
 # Algorithm Engineering: Course Syllabus & TOC
 
