@@ -21,7 +21,7 @@ jobs:
 
       - name: Build Root PDFs
         run: |
-          # 1. Create metadata.yaml with SAFE HEADER generation
+          # 1. Create metadata.yaml with GLOBAL DEFINITIONS
           cat <<'EOF' > metadata.yaml
           ---
           geometry: margin=1in
@@ -48,8 +48,9 @@ jobs:
             echo "Processing $file..."
             base="${file%.md}"
             
-            # 3. Sanitize Body Content
-            sed -E '/\\(re)?newcommand\s*\{\\mathbb\}/d' "$file" | sed 's/\\newcommand/\\providecommand/g' > "clean_body.md"
+            # 3. SANITIZE BODY CONTENT
+            sed -E '/\\(re)?newcommand\s*\{\\(mathbb|nat|trans|wtrans|sem|den|floor)/d' "$file" | \
+            sed 's/\\newcommand/\\providecommand/g' > "clean_body.md"
             
             # 4. Compile
             pandoc "metadata.yaml" "clean_body.md" -o "${base}.pdf" --pdf-engine=pdflatex
