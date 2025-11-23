@@ -237,7 +237,7 @@ Given the code IF C1 THEN IF C2 THEN S1 ELSE S2, two parse trees exist:
 
 Recursive Descent is a predictive strategy where every non-terminal in the grammar corresponds to a function. It relies on the `FIRST` sets of productions to select the correct path.
 
-#### Example: Expression Parsing (LL(1))**
+#### Example: Expression Parsing (LL(1))
 
 ```c
 // helper to consume terminal tokens
