@@ -1,0 +1,27 @@
+name: Build PDFs
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Install Pandoc
+        run: sudo apt-get install -y pandoc texlive-latex-base
+
+      - name: Build PDFs
+        run: |
+          for dir in */; do
+            pandoc "$dir"*.md -o "${dir%/}.pdf"
+          done
+
+      - name: Upload PDFs
+        uses: actions/upload-artifact@v3
+        with:
+          name: course-pdfs
+          path: "*.pdf"
