@@ -3,6 +3,13 @@
 .obsidian/appearance.json
 .obsidian/app.json
 
+**/_Materials/
+*.pdf
+*.mp4
+*.mp3
+*.m4a
+*.zip
+
 .obsidian/plugins/obsidian-git/data.json
 .obsidian/plugins/obsidian-git/logs/
 .obsidian/plugins/obsidian-git/tmp/
