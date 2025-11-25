@@ -1,43 +1,56 @@
 
-# Models for Programming Paradigms: Course Syllabus & TOC
+# Models for Programming Paradigms
 
-- [[#Foundations & Preliminaries]]  
-  - **Key Concepts:** Syntax vs Semantics vs Pragmatics  
-  - **Methods:** Operational Semantics (SOS: Big-Step and Small-Step), Denotational, Axiomatic  
-  - **Properties:** Termination, Determinacy, Compositionality  
+### [[# Foundations & Preliminaries]]
+* **Key Concepts:** Syntax vs Semantics vs Pragmatics.
+* **Methods:** Operational Semantics (SOS), Denotational, Axiomatic.
+* **Properties:** Termination, Determinacy, Compositionality.
 
-- [[#Math & Logic]]  
-  - **Induction:** Mathematical, Structural, Well-Founded, and Rule Induction  
-  - **Domain Theory:** Partial Orders (PO), CPO, Monotone and Continuous Functions  
-  - **Fixpoint:** Kleene's Theorem ($\text{fix}(f) = \bigsqcup f^n(\perp)$) and the Immediate Consequence Operator (ICO)  
+### [[#Math & Logic]]
+* **Induction:** Mathematical, Structural, Well-Founded, and Rule Induction.
+* **Domain Theory:** Partial Orders (PO), CPO, Monotone and Continuous Functions.
+* **Fixpoint:** Kleene's Theorem ($\text{fix}(f) = \bigsqcup f^n(\perp)$) and the Immediate Consequence Operator (ICO).
 
-- [[#IMP Semantics]]  
-  - **IMP Language:** Syntax and States ($\Sigma$)  
-  - **Operational Semantics:** Inference rules for `Aexp`, `Bexp`, `Com`  
-  - **Denotational Semantics:** Functions $\mathcal{C}\sem{c}$, handling *Lifting*, and `while` denotation  
-  - **Equivalence:** Consistency Theorem between OS and DS  
+### [[# Imp Semantics]]
+* **IMP Language:** Syntax and States ($\Sigma$).
+* **Operational Semantics:** Inference rules for `Aexp`, `Bexp`, `Com`.
+* **Denotational Semantics:** Functions $\mathcal{C}\sem{c}$, handling *Lifting*, and `while` denotation.
+* **Axiomatic Semantics:** Hoare Logic rules.
+* **Equivalence:** Consistency Theorem between OS and DS.
 
-- [[#HOFL]]  
-  - **Higher-Order Functional Language:** Syntax, Types, and Inference Rules  
-  - **Evaluation:** Canonical Forms, Lazy (Call-by-Name) vs Eager (Call-by-Value)  
-  - **Semantic Domains:** Continuous function spaces, semantics of $\lambda$-abstractions and recursion  
-  - **Haskell:** Conceptual mapping (lists, lazy evaluation)  
+### [[# HOFL]]
+* **Higher-Order Functional Language:** Syntax, Types, and Inference Rules.
+* **Evaluation:** Canonical Forms, Lazy (Call-by-Name) vs Eager (Call-by-Value).
+* **Semantic Domains:** Continuous function spaces, semantics of $\lambda$-abstractions and recursion.
+* **Haskell:** Conceptual mapping (lists, lazy evaluation).
 
-- [[#Concurrency]]  
-  - **Paradigms:** Message Passing (Erlang) vs Shared Memory/Channels (Go)  
-  - **CCS:** Syntax, LTS, and transition rules ($\tau$)  
-  - **Bisimulation:** Definition of Strong Bisimulation, Attacker/Defender game  
-  - **Logic:** HML (Hennessy-Milner Logic) and Characterization Theorem  
+### [[# Concurrency]]
+* **Paradigms:** Message Passing (Erlang) vs Shared Memory/Channels (Go).
+* **CCS:** Syntax, LTS, and transition rules ($\tau$).
+* **Bisimulation:** Definition of Strong Bisimulation, Attacker/Defender game.
+* **Logic:** HML (Hennessy-Milner Logic) and Characterization Theorem.
+* **Case Studies:** Modeling Buffers and Mutual Exclusion (Peterson).
 
-- [[#Real Languages]]  
-  - **Haskell:** Functional patterns (Guards, Data types), Type Classes, Lazy Evaluation implementation  
-  - **Erlang:** Actor Model, Asynchronous Message Passing, `receive` with timeout  
-  - **Go:** Goroutines, Buffered vs Unbuffered Channels, `select` non-determinism  
+### [[# Real Languages]]
+* **Haskell:** Functional patterns (Guards, Data types), Type Classes, Lazy Evaluation.
+* **Erlang:** Actor Model, Asynchronous Message Passing, `receive` with timeout.
+* **Go:** Goroutines, Buffered vs Unbuffered Channels, `select` non-determinism.
 
-- [[#Advanced Concurrency]]  
-  - **Weak Bisimulation:** Abstraction from internal actions ($\tau$), Weak Transition ($\stackrel{\alpha}{\Longrightarrow}$), Observational Congruence  
-  - **Temporal Logics:** Linear Time (LTL) vs Branching Time (CTL)  
-  - **Mu-Calculus:** Syntax and Fixpoints for Safety ($\nu$) and Liveness ($\mu$) properties
+### [[# Advanced Concurrency]]
+* **Weak Bisimulation:** Abstraction from internal actions ($\tau$), Weak Transition ($\stackrel{\alpha}{\Longrightarrow}$).
+* **Congruence:** Observational Congruence and Milner's $\tau$-laws.
+* **Temporal Logics:** Linear Time (LTL) vs Branching Time (CTL).
+* **Mu-Calculus:** Syntax and Fixpoints for Safety ($\nu$) and Liveness ($\mu$) properties.
+
+---
+
+##  Practice & Review
+
+### [[# Exam Questions]]
+* **Q&A:** A comprehensive list of past exam questions mapped to specific answers.
+
+### [[# Exercises]]
+* **Bank:** Collection of solved exercises on Domains, IMP, HOFL, CCS, and Real Languages.
 
 
 <div style="page-break-after: always;"></div>
@@ -135,7 +148,9 @@ The proof requires two directions:
 ### 4.1 Logical Systems
 
 Defined by a set of **Inference Rules**:
-$$\frac{\text{Premise}_1 \quad \dots \quad \text{Premise}_n}{\text{Conclusion}} \quad (\text{Rule Name})$$
+$$
+\frac{\text{Premise}_1 \quad \dots \quad \text{Premise}_n}{\text{Conclusion}} \quad (\text{Rule Name})
+$$
 
 A **Theorem** ($\vdash_R y$) is a formula for which a finite derivation (proof tree) based on the rules exists.
 
@@ -152,7 +167,9 @@ A relation $\prec \subseteq A \times A$ is well-founded if there are no infinite
 
 **Theorem (Well-Founded Induction):**
 To prove $\forall x \in A.\ P(x)$, it is sufficient to show:
-$$\forall x \in A.\ (\forall y \prec x.\ P(y)) \implies P(x)$$
+$$\
+forall x \in A.\ (\forall y \prec x.\ P(y)) \implies P(x)
+$$
 
 #### Variants of Induction
 
@@ -546,8 +563,6 @@ We define the property $P(\text{rule}) \iff \den{C}\sem{c}\sigma = \sigma'$.
     \end{aligned}
     $$
 
----
-
 #### Part 2: Completeness ($\Leftarrow$)
 
 **Goal:** Prove that $\den{C}\sem{c}\sigma = \sigma' \implies \langle c, \sigma \rangle \to \sigma'$ (assuming $\sigma' \neq \perp$).
@@ -571,7 +586,37 @@ We define the property $P(\text{rule}) \iff \den{C}\sem{c}\sigma = \sigma'$.
 
 ---
 
-## 5. Derivation Example (Swap)
+## 5. Axiomatic Semantics (Hoare Logic)
+
+Defines the meaning of commands via logical assertions.
+**Hoare Triple:** $\{P\} c \{Q\}$
+*Meaning (Partial Correctness):* If $P$ holds in the initial state and $c$ terminates, then $Q$ holds in the final state.
+
+### Inference Rules
+
+1.  **Skip:**
+    $$\frac{}{\{P\} \textbf{skip} \{P\}}$$
+
+2.  **Assignment (Backward):**
+    $$\frac{}{\{P[a/x]\} x := a \{P\}}$$
+    *Example:* To have $x > 10$ after $x := x+1$, we must have $x+1 > 10$ (i.e., $x > 9$) before.
+
+3.  **Sequence:**
+    $$\frac{\{P\} c_0 \{R\} \quad \{R\} c_1 \{Q\}}{\{P\} c_0 ; c_1 \{Q\}}$$
+
+4.  **Conditional:**
+    $$\frac{\{P \land b\} c_0 \{Q\} \quad \{P \land \neg b\} c_1 \{Q\}}{\{P\} \textbf{if } b \textbf{ then } c_0 \textbf{ else } c_1 \{Q\}}$$
+
+5.  **While:**
+    $P$ is called the loop **Invariant**.
+    $$\frac{\{P \land b\} c \{P\}}{\{P\} \textbf{while } b \textbf{ do } c \{P \land \neg b\}}$$
+
+6.  **Consequence (Weaken/Strengthen):**
+    $$\frac{P \implies P' \quad \{P'\} c \{Q'\} \quad Q' \implies Q}{\{P\} c \{Q\}}$$
+
+---
+
+## 6. Derivation Example (Swap)
 
 Big-Step derivation for the variable swap program.
 
@@ -605,7 +650,7 @@ $$
 $$
 ---
 
-## 6. Solved Exercises (Exam)
+## 7. Solved Exercises (Exam)
 
 ### Exercise: Efficiency Measure (Counting Guards)
 
@@ -658,7 +703,6 @@ We apply **Rule Induction** on the standard semantics:
   * *Thesis:* Using the new while-true rule, we can derive the transition with cost $k = 1 + k_c + k_w$. Since $k_c, k_w \in \mathbb{N}$, then $k \in \mathbb{N}$. (Verified).
 
 The other cases (`skip`, `assign`, `if`, `while-false`) are trivial or analogous.
-
 
 <div style="page-break-after: always;"></div>
 
@@ -991,6 +1035,71 @@ $$P \sim Q \iff (P \models F \iff Q \models F, \forall F \in \text{HML})$$
 Two processes are bisimilar if and only if they satisfy the same logical HML formulas.
 If two processes are not bisimilar, there always exists an HML formula that distinguishes them.
 
+---
+
+## 6. CCS at Work: Modeling Patterns
+
+This section explores how to use CCS primitives to model complex systems, data structures, and shared memory protocols.
+
+### 6.1 Modular Construction of Buffers
+We can build complex buffers by composing simple 1-position cells ($B_0^1$).
+
+**The Atomic Cell:**
+$$B_0^1 \stackrel{\text{def}}{=} \text{in}.B_1^1 \quad\quad B_1^1 \stackrel{\text{def}}{=} \overline{\text{out}}.B_0^1$$
+
+**Capacity 2 Buffer (Sequential/Chained):**
+Constructed by linking two cells in series. The output of the first feeds the input of the second via a hidden internal channel (`mid`).
+$$B_2 \stackrel{\text{def}}{=} (B_0^1[\text{mid}/\text{out}] \mid B_0^1[\text{mid}/\text{in}]) \setminus \{\text{mid}\}$$
+*Behavior:* It can accept two `in` actions before blocking, but preserves FIFO order.
+
+**Capacity 2 Buffer (Parallel):**
+Constructed by placing two cells in parallel without linking them.
+$$B_{par} \stackrel{\text{def}}{=} B_0^1 \mid B_0^1$$
+*Behavior:* It accepts two `in` actions, but does **not** guarantee order (race condition on `out`).
+
+### 6.2 Encoding Shared Memory (Variables)
+Since CCS has no mutable state, variables are modeled as **processes** that serve read/write requests.
+
+**The Variable Process:**
+A variable $X$ storing value $v$ (from a domain $V$) is a process that:
+1.  Accepts a read request ($\overline{\text{xr}}$) and sends $v$.
+2.  Accepts a write request ($\text{xw}_k$) and becomes $X$ storing $k$.
+
+$$X_v \stackrel{\text{def}}{=} \overline{\text{xr}}_v.X_v + \sum_{k \in V} \text{xw}_k.X_k$$
+
+**Using the Variable:**
+* **Read ($x$):** The client performs $\text{xr}_v$ (input) to synchronize with the variable's output.
+* **Assign ($x := k$):** The client performs $\overline{\text{xw}}_k$ (output) to trigger the variable's state change.
+* **Restriction:** The channels $\{\text{xr}, \text{xw}\}$ must be restricted to enforce synchronization between the specific client and the variable process.
+
+### 6.3 Case Study: Peterson's Mutual Exclusion
+We can verify the correctness of Peterson's algorithm by modeling the agents and the memory.
+
+**Architecture:**
+The system consists of two processes ($P_1, P_2$) and three shared variables ($b_1, b_2, k$) running in parallel.
+$$Sys \stackrel{\text{def}}{=} (P_1 \mid P_2 \mid B_{1f} \mid B_{2f} \mid K_1) \setminus \mathcal{L}_{internal}$$
+
+**Process Logic ($P_1$):**
+1.  **Enter Protocol:** Write `true` to $b_1$, write `2` to $k$.
+2.  **Busy Wait:** Loop while ($b_2$ is true AND $k$ is 2).
+3.  **Critical Section:** Perform task (e.g., `enter1`, `exit1`).
+4.  **Exit Protocol:** Write `false` to $b_1$.
+
+**Formal Verification (Recursive HML):**
+We can define properties using recursive equations (precursor to $\mu$-calculus).
+
+1.  **Mutual Exclusion (Safety):**
+    It must never be the case that both $P_1$ and $P_2$ are in the critical section.
+    $$Safe \stackrel{\text{def}}{=} [\text{enter}_1]([\text{enter}_2]\text{ff}) \land [-]Safe$$
+    *Meaning:* If $P_1$ enters, then $P_2$ cannot enter immediately. This must hold forever ($[-]Safe$).
+
+2.  **Liveness (No Deadlock):**
+    It is always possible to perform an action.
+    $$Live \stackrel{\text{def}}{=} \langle - \rangle \text{tt} \land [-]Live$$
+
+3.  **Bounded Overtaking:**
+    If $P_1$ wants to enter, $P_2$ cannot enter infinitely many times before $P_1$.
+
 
 <div style="page-break-after: always;"></div>
 
@@ -1266,29 +1375,43 @@ A relation $\mathcal{R}$ is a weak bisimulation if, for every $(p, q) \in \mathc
 Two processes are **Weakly Bisimilar** ($p \approx q$) if there exists a weak bisimulation containing them.
 
 ### 1.3 The Congruence Problem (Summation)
-
 Weak bisimulation is **NOT a congruence** with respect to the sum operator ($+$).
 
-**Counterexample:**
+**Counterexample 1 (Choice Resolution):**
 Let $P = a.\textbf{nil}$ and $Q = \tau.a.\textbf{nil}$.
 Clearly $P \approx Q$ (the initial $\tau$ is weakly unobservable).
+However, in the context $C[\cdot] = \cdot + b.\textbf{nil}$:
+* $C[P] = a.\textbf{nil} + b.\textbf{nil}$ (can do $a$ or $b$).
+* $C[Q] = \tau.a.\textbf{nil} + b.\textbf{nil}$.
+$C[Q]$ can perform a silent step $\tau$ to become $a.\textbf{nil}$, effectively **discarding** the option $b$. $C[P]$ cannot mimic this loss of capability silently. Thus $C[P] \not\approx C[Q]$.
 
-Let us place them in a sum context: $C[\cdot] = \cdot + b.\textbf{nil}$.
+**Counterexample 2 (Silent Divergence):**
+Weak bisimulation cannot distinguish between a deadlock and a silent loop (divergence).
+Let $D \stackrel{\text{def}}{=} \text{rec } x. \tau.x$ (Infinite $\tau$-loop).
+$D \approx \textbf{nil}$.
+But if we place them in a sum, the behavior might differ depending on fairness assumptions (though in standard CCS, this specific case is less critical for congruence than the choice resolution).
 
-* $C[P] = a.\textbf{nil} + b.\textbf{nil}$
-* $C[Q] = \tau.a.\textbf{nil} + b.\textbf{nil}$
+### 1.4 Observational Congruence (Weak Congruence)
+To restore compositionality, we define **Observational Congruence** ($\cong$).
+Two processes $p, q$ are congruent if:
+1. They are weakly bisimilar ($p \approx q$).
+2. **Root Condition:** For every $\alpha$ (including $\tau$), if $p \trans{\alpha} p'$ then $q \wtrans{\alpha} q'$ (with at least one $\tau$ step if $\alpha=\tau$).
+   *Ideally:* "Bob cannot stay idle on the very first move".
 
-$C[Q]$ can perform $\tau$ and become $a.\textbf{nil}$ (discarding the option $b$).
-$C[P]$ cannot simulate this $\tau$ step by becoming a state that has lost option $b$ (if it stays still, it still has $b$; if it performs $a$ or $b$, it has performed a visible action).
-Thus $C[P] \not\approx C[Q]$.
+### 1.5 Milner's $\tau$-Laws
+These laws hold for observational congruence and are useful for algebraic simplification of processes.
 
-### 1.4 Observational Congruence
+1.  $\alpha.\tau.P \cong \alpha.P$ (Absorption)
+2.  $P + \tau.P \cong \tau.P$ (Guard)
+3.  $\alpha.(P + \tau.Q) + \alpha.Q \cong \alpha.(P + \tau.Q)$ (Distributivity)
 
-To solve the problem, we define observational equality (or weak congruence):
- Two processes $p, q$ are congruent if:
-
- 1. $p \approx q$
- 2. For every $\alpha$ (including $\tau$), if $p \trans{\alpha} p'$ then $q \wtrans{\alpha} q'$ (with at least one $\tau$ step if $\alpha=\tau$).
+**Exercise: Proof of $P + \tau.P \approx \tau.P$**
+We show that $\mathcal{R} = \{(P + \tau.P, \tau.P) \mid P \in \mathcal{P}\} \cup \text{Id}$ is a weak bisimulation.
+* **Left to Right:**
+    * If $P + \tau.P \trans{\tau} P$ (right branch), $\tau.P \wtrans{\tau} P$ (via one $\tau$). Pair $(P, P) \in \text{Id}$.
+    * If $P + \tau.P \trans{\alpha} P'$ (left branch), $\tau.P \trans{\tau} P \trans{\alpha} P'$, so $\tau.P \wtrans{\alpha} P'$. Pair $(P', P') \in \text{Id}$.
+* **Right to Left:**
+    * If $\tau.P \trans{\tau} P$, then $P + \tau.P \trans{\tau} P$. Pair $(P, P) \in \text{Id}$.
 
 ---
 
@@ -1350,6 +1473,659 @@ $$\phi ::= \text{tt} \mid \text{ff} \mid Z \mid \phi_1 \land \phi_2 \mid \phi_1 
   * Example: $\nu Z. (p \land [\cdot] Z)$ $\to$ " $p$ holds now AND after every step $Z$ still holds". (Corresponds to $\mathbf{AG} p$).
   * *Intuition:* Allows infinite loops where $p$ is always true.
 
+
+<div style="page-break-after: always;"></div>
+
+# Exam Questions
+
+
+This file contains a comprehensive list of questions collected from past exams (`MPP-questions.txt`).
+Click on **[Answer]** to jump to the solution at the bottom.
+$$
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{C}}
+\newcommand{\trans}[1]{\xrightarrow{#1}}
+\newcommand{\wtrans}[1]{\stackrel{#1}{\Longrightarrow}}
+$$
+---
+## 1. Foundations & Preliminaries
+
+1.  **Termination:** What is the termination property? How is it expressed in operational and denotational semantics? [[#A1.1|Answer]]
+2.  **Determinacy:** What is the determinacy property? How is it expressed in operational and denotational semantics? [[#A1.2|Answer]]
+3.  **Equivalence:** What does it mean for two programs to be equivalent? Express it in operational and denotational terms. [[#A1.3|Answer]]
+4.  **Congruence:** What is a congruence? How to verify that an equivalence is a congruence? [[#A1.4|Answer]]
+5.  **Compositionality:** What is the compositionality principle for denotational semantics? [[#A1.5|Answer]]
+6.  **Syntax & Logic:** What are a signature, a type system, an inference rule, and a derivation? [[#A1.6|Answer]]
+7.  **Unification:** What is the unification problem and what are the rules to solve it? [[#A1.7|Answer]]
+
+---
+
+## 2. Math & Logic (Induction & Domains)
+
+8.  **Well-Foundedness:** Define infinite descending chain, well-founded relation, and minimal element. [[#A2.1|Answer]]
+9.  **Induction Principles:** State the Well-Founded Induction principle. How are Mathematical, Structural, and Rule induction derived? [[#A2.2|Answer]]
+10. **Orders:** Define Partial Order (PO), Total Order, Discrete Order, and Flat Order. [[#A2.3|Answer]]
+11. **CPO & Limits:** Define Chain, Limit (LUB), and Complete Partial Order (CPO). [[#A2.4|Answer]]
+12. **Functions:** Define Monotone and Continuous functions. How to prove them? [[#A2.5|Answer]]
+13. **Fixpoints:** What is a fixpoint? State **Kleene's Fixpoint Theorem**. [[#A2.6|Answer]]
+14. **ICO:** What is the Immediate Consequence Operator ($\hat{R}$)? When is it continuous? How is it used to compute theorems? [[#A2.7|Answer]]
+
+---
+
+## 3. IMP Semantics
+
+15. **IMP Semantics:** What is the syntax of IMP? What are the rules of its operational semantics (Big-Step)? [[#A3.1|Answer]]
+16. **Denotational IMP:** How is the denotational semantics of IMP defined? [[#A3.2|Answer]]
+17. **Consistency:** How to state the consistency between operational and denotational semantics? [[#A3.3|Answer]]
+18. **Proofs:** How to prove determinacy of commands? Which rule is used to prove divergence? [[#A3.4|Answer]]
+
+---
+
+## 4. HOFL & Haskell
+
+19. **Lambda Calculus:** What are lambda-notation, alpha-conversion, and capture-avoiding substitution? [[#A4.1|Answer]]
+20. **Functional Programming:** What is a pure functional language? What is lazy evaluation? [[#A4.2|Answer]]
+21. **Haskell Features:** Syntax for guards, pattern matching, list comprehension. What is partial application? [[#A4.3|Answer]]
+22. **HOFL Syntax & Types:** Difference between pre-terms and terms. What are the types and type rules of HOFL? [[#A4.4|Answer]]
+23. **HOFL Operational:** What is a canonical form? What are the Big-Step rules? Difference between Lazy and Eager. [[#A4.5|Answer]]
+24. **Domain Theory for HOFL:** Define the domains $\mathbb{Z}_\perp$, Cartesian Product, and Functional Domain (Lifted). [[#A4.6|Answer]]
+25. **HOFL Denotational:** How is the semantics defined? What is the **Substitution Lemma**? [[#A4.7|Answer]]
+26. **Consistency:** For which types are operational and denotational semantics consistent? Do they coincide on convergence? [[#A4.8|Answer]]
+
+---
+
+## 5. Concurrency (CCS)
+
+27. **CCS Syntax:** What is the syntax of CCS? How is iteration achieved? [[#A5.1|Answer]]
+28. **Operational Semantics:** What is the LTS style? What are the rules (Act, Sum, Par, Com, Res, Rec)? [[#A5.2|Answer]]
+29. **Process Types:** What is a finitely branching process? What is a guarded process? [[#A5.3|Answer]]
+30. **Equivalences:** Why are Graph Isomorphism and Trace Equivalence not good for CCS? [[#A5.4|Answer]]
+31. **Strong Bisimulation:** Define Strong Bisimulation and Bisimilarity. Describe the Game. [[#A5.5|Answer]]
+32. **Properties:** Is Strong Bisimilarity an equivalence? Is it a congruence? How to express it as a fixpoint? [[#A5.6|Answer]]
+33. **HML:** What is the syntax of Hennessy-Milner Logic? Relationship with Strong Bisimilarity? [[#A5.7|Answer]]
+
+---
+
+## 6. Real Languages (Go & Erlang)
+
+34. **Erlang:** How are processes created (`spawn`)? Syntax for sending/receiving? Meaning of `after`? [[#A6.1|Answer]]
+35. **Go:** How are goroutines launched? How to create channels? Buffered vs Unbuffered? Syntax for `select`? [[#A6.2|Answer]]
+
+---
+
+## 7. Advanced Concurrency
+
+36. **Weak Bisimulation:** What is a weak transition? Define Weak Bisimulation. Why is it not a congruence (Sum)? [[#A7.1|Answer]]
+37. **Weak Congruence:** What is Weak Observational Congruence? What are Milner's $\tau$-laws? [[#A7.2|Answer]]
+38. **Temporal Logics:** Syntax of LTL, CTL, CTL*. What is the difference between Linear and Branching time? [[#A7.3|Answer]]
+39. **Mu-Calculus:** Syntax. How to express Safety ($\nu$) and Liveness ($\mu$)? [[#A7.4|Answer]]
+
+---
+---
+
+# Answers
+
+### A1.1
+* **Termination:** The program produces a final value/state for a given input.
+* **Op:** $\forall \sigma. \exists n. \langle a, \sigma \rangle \to n$.
+* **Den:** $\forall \sigma. \den{A}\sem{a}\sigma \neq \perp$.
+[[#1. Foundations & Preliminaries|Back to Q]]
+
+### A1.2
+* **Determinacy:** If a program terminates, it yields a unique result.
+* **Op:** $\langle c, \sigma \rangle \to \sigma_1 \land \langle c, \sigma \rangle \to \sigma_2 \implies \sigma_1 = \sigma_2$.
+* **Den:** Implicit in the definition of function (functions are single-valued).
+[[#1. Foundations & Preliminaries|Back to Q]]
+
+### A1.3
+* **Operational Equivalence ($\sim$):** $c_1 \sim c_2 \iff \forall \sigma, \sigma'. (\langle c_1, \sigma \rangle \to \sigma' \iff \langle c_2, \sigma \rangle \to \sigma')$.
+* **Denotational Equivalence:** $\den{C}\sem{c_1} = \den{C}\sem{c_2}$.
+[[#1. Foundations & Preliminaries|Back to Q]]
+
+### A1.4
+* **Congruence:** An equivalence relation $\approx$ is a congruence if $p \approx q \implies C[p] \approx C[q]$ for any context $C[\cdot]$.
+* **Verification:** Prove that the relation is preserved by all language constructors.
+[[#1. Foundations & Preliminaries|Back to Q]]
+
+### A1.5
+**Compositionality:** The meaning of a compound expression is a function of the meanings of its immediate constituents. $\den{C}\sem{op(c_1, c_2)} = F(\den{C}\sem{c_1}, \den{C}\sem{c_2})$.
+[[#1. Foundations & Preliminaries|Back to Q]]
+
+### A1.6
+* **Signature:** Set of symbols with arity.
+* **Inference Rule:** Premises over Conclusion ($\frac{P_1 \dots P_n}{C}$).
+* **Derivation:** Tree of rules where leaves are axioms.
+[[#1. Foundations & Preliminaries|Back to Q]]
+
+### A1.7
+**Unification:** Finding a substitution $\sigma$ such that $\sigma(t_1) = \sigma(t_2)$.
+**Rules:** Delete ($t=t$), Decompose ($f(..)=f(..)$), Eliminate ($x=t$), Swap ($t=x$), Conflict (Fail), Occurs Check (Fail).
+[[#1. Foundations & Preliminaries|Back to Q]]
+
+### A2.1
+* **Descending Chain:** $a_0 \succ a_1 \succ a_2 \dots$.
+* **Well-Founded:** No infinite descending chains.
+* **Minimal Element:** $m \in Q$ such that no $x \in Q$ is smaller ($x \not\prec m$).
+[[#2. Math & Logic (Induction & Domains)|Back to Q]]
+
+### A2.2
+**WFI:** $(\forall y \prec x. P(y)) \implies P(x)$.
+* **Math:** Relation $n < n+1$ on $\mathbb{N}$.
+* **Structural:** Relation "is immediate subterm of".
+* **Rule:** Relation "is premise of".
+[[#2. Math & Logic (Induction & Domains)|Back to Q]]
+
+### A2.3
+* **Partial Order:** Reflexive, Antisymmetric, Transitive.
+* **Discrete:** $x \sqsubseteq y \iff x=y$.
+* **Flat:** $x \sqsubseteq y \iff x=\perp \lor x=y$.
+[[#2. Math & Logic (Induction & Domains)|Back to Q]]
+
+### A2.4
+* **Chain:** Totally ordered subset $\{d_i\}$.
+* **Limit ($\bigsqcup$):** Least Upper Bound.
+* **CPO:** PO where every chain has a limit. $CPO_\perp$ also has bottom.
+[[#2. Math & Logic (Induction & Domains)|Back to Q]]
+
+### A2.5
+* **Monotone:** $x \sqsubseteq y \implies f(x) \sqsubseteq f(y)$.
+* **Continuous:** $f(\bigsqcup d_i) = \bigsqcup f(d_i)$.
+* **Proof:** Show LHS $\sqsubseteq$ RHS and RHS $\sqsubseteq$ LHS (Monotonicity implies one direction).
+[[#2. Math & Logic (Induction & Domains)|Back to Q]]
+
+### A2.6
+* **Fixpoint:** $x$ such that $f(x)=x$.
+* **Kleene:** If $D$ is $CPO_\perp$ and $f$ continuous, $\text{fix}(f) = \bigsqcup_n f^n(\perp)$.
+[[#2. Math & Logic (Induction & Domains)|Back to Q]]
+
+### A2.7
+**ICO ($\hat{R}$):** Function mapping a set of facts $S$ to facts derivable in one step from $S$.
+$\text{fix}(\hat{R}) = I_R$ (set of theorems).
+[[#2. Math & Logic (Induction & Domains)|Back to Q]]
+
+### A3.1
+**IMP:** `skip`, `:=`, `;`, `if`, `while`.
+**Big-Step Rules:** E.g., $\frac{\langle b,\sigma \rangle \to \text{true} \quad \langle c, \sigma \rangle \to \sigma'}{\langle \textbf{while } b \dots \rangle \to \sigma'}$.
+[[#3. IMP Semantics|Back to Q]]
+
+### A3.2
+**Denotational:** $\den{C}\sem{c} : \Sigma \to \Sigma_\perp$.
+Defined compositionally. `while` is the fixpoint of $\Gamma_{b,c}$.
+[[#3. IMP Semantics|Back to Q]]
+
+### A3.3
+**Consistency:** $\langle c, \sigma \rangle \to \sigma' \iff \den{C}\sem{c}\sigma = \sigma'$.
+[[#3. IMP Semantics|Back to Q]]
+
+### A3.4
+* **Determinacy:** Proven by Rule Induction.
+* **Divergence:** Proven by finding a fixpoint $\perp$ or using specific inference rules for non-termination ($\to \infty$).
+[[#3. IMP Semantics|Back to Q]]
+
+### A4.1
+* **Lambda:** $\lambda x. t$.
+* **Alpha:** Renaming bound vars.
+* **Capture-avoiding:** Substitution that renames bound vars to avoid capturing free ones.
+[[#4. HOFL & Haskell|Back to Q]]
+
+### A4.2
+* **Pure:** No side effects, referential transparency.
+* **Lazy:** Arguments evaluated only when needed (Call-by-Name + Sharing).
+[[#4. HOFL & Haskell|Back to Q]]
+
+### A4.3
+* **Guards:** `| condition = value`.
+* **Pattern Matching:** `f (x:xs) = ...`.
+* **Partial App:** `inc = (+1)`.
+[[#4. HOFL & Haskell|Back to Q]]
+
+### A4.4
+**Types:** `int`, $\tau_1 \times \tau_2$, $\tau_1 \to \tau_2$.
+**Rule (App):** $\frac{\Gamma \vdash t_1 : \tau \to \sigma \quad \Gamma \vdash t_0 : \tau}{\Gamma \vdash t_1 t_0 : \sigma}$.
+[[#4. HOFL & Haskell|Back to Q]]
+
+### A4.5
+* **Canonical Form:** Value that cannot be reduced further (e.g., $\lambda x. t$, pair of terms).
+* **Lazy:** Arguments substituted unevaluated.
+* **Eager:** Arguments evaluated to canonical form before substitution.
+[[#4. HOFL & Haskell|Back to Q]]
+
+### A4.6
+* $\mathbb{Z}_\perp$: Integers + $\perp$.
+* **Lifted:** $D_\perp = \{\lfloor d \rfloor \mid d \in D\} \cup \{\perp\}$.
+* **Functional:** $[D \to E]_\perp$. (Continuous functions).
+[[#4. HOFL & Haskell|Back to Q]]
+
+### A4.7
+* **Interpretation:** $\sem{\lambda x. t}\rho = \lfloor \lambda d. \sem{t}\rho[d/x] \rfloor$.
+* **Substitution Lemma:** $\sem{t[t_0/x]}\rho = \sem{t}\rho[\sem{t_0}\rho/x]$.
+[[#4. HOFL & Haskell|Back to Q]]
+
+### A4.8
+Consistent for all types. Convergence coincides for `int` type.
+[[#4. HOFL & Haskell|Back to Q]]
+
+### A5.1
+**Syntax:** $\textbf{nil}, \alpha.P, P+Q, P|Q, P \setminus L, A$.
+**Iteration:** Via recursion (`rec x. P` or definitions $A \stackrel{\text{def}}{=} \dots$).
+[[#5. Concurrency (CCS)|Back to Q]]
+
+### A5.2
+**LTS:** Small-step.
+**Rules:** `Act` (prefix), `Sum` (choice), `Par` (interleaving), `Com` (sync $\tau$), `Res` (filtering).
+[[#5. Concurrency (CCS)|Back to Q]]
+
+### A5.3
+* **Finitely Branching:** Finite number of immediate transitions.
+* **Guarded:** Recursive calls occur under a prefix (avoids $\tau$-loops/infinite branching).
+[[#5. Concurrency (CCS)|Back to Q]]
+
+### A5.4
+* **Iso:** Distinguishes states names (too strict).
+* **Trace:** Ignores branching points (too weak, $a.(b+c) \equiv_{tr} a.b + a.c$).
+[[#5. Concurrency (CCS)|Back to Q]]
+
+### A5.5
+**Bisimulation:** $P \sim Q$ if every move of $P$ can be matched by $Q$ to an equivalent state (and vice versa).
+**Game:** Attacker moves, Defender matches. Infinite game = Defender wins (Bisimilar).
+[[#5. Concurrency (CCS)|Back to Q]]
+
+### A5.6
+Is Equivalence? Yes. Congruence? Yes.
+**Fixpoint:** $\sim = \nu F$ (Greatest Fixpoint of the bisimulation functional).
+[[#5. Concurrency (CCS)|Back to Q]]
+
+### A5.7
+**HML:** $\langle \alpha \rangle F$ (Exists move), $[\alpha]F$ (For all moves).
+**Thm:** $P \sim Q \iff (P \models F \iff Q \models F \quad \forall F)$.
+[[#5. Concurrency (CCS)|Back to Q]]
+
+### A6.1
+**Erlang:**
+* `spawn(fun)` returns Pid.
+* `Pid ! Msg` (Send). `receive Pat -> ... end` (Recv).
+* `after T`: Timeout clause in receive.
+[[#6. Real Languages (Go & Erlang)|Back to Q]]
+
+### A6.2
+**Go:**
+* `go f()` (Goroutine).
+* `make(chan int)` (Unbuffered/Sync), `make(chan int, N)` (Buffered/Async).
+* `select`: Non-deterministic choice over channels.
+[[#6. Real Languages (Go & Erlang)|Back to Q]]
+
+### A7.1
+* **Weak Trans:** $\wtrans{\alpha} = \trans{\tau}^*\trans{\alpha}\trans{\tau}^*$.
+* **Weak Bisim:** Matches $\trans{\alpha}$ with $\wtrans{\alpha}$ (ignores internal $\tau$).
+* **Not Congruence:** $P \approx \tau.P$ but $P+Q \not\approx \tau.P+Q$.
+[[#7. Advanced Concurrency|Back to Q]]
+
+### A7.2
+**Obs Congruence:** Weak bisimulation + First step must match strongly (or at least with one $\tau$).
+**Tau Laws:** $\alpha.\tau.P \cong \alpha.P$, $P+\tau.P \cong \tau.P$.
+[[#7. Advanced Concurrency|Back to Q]]
+
+### A7.3
+* **LTL:** Linear time (paths). $G, F, X, U$.
+* **CTL:** Branching time (tree). Path quantifiers $A, E$ + State operators.
+[[#7. Advanced Concurrency|Back to Q]]
+
+### A7.4
+**Mu-Calculus:**
+* Safety: $\nu Z. \Phi$ (Greatest FP, e.g., "Always").
+* Liveness: $\mu Z. \Phi$ (Least FP, e.g., "Eventually").
+[[#7. Advanced Concurrency|Back to Q]]
+```
+
+<div style="page-break-after: always;"></div>
+
+# Exercises
+
+This file aggregates exercises from all course modules. It covers Domain Theory, Semantics, HOFL, Concurrency, and Real Languages.
+
+$$
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{C}}
+\newcommand{\trans}[1]{\xrightarrow{#1}}
+\newcommand{\wtrans}[1]{\stackrel{#1}{\Longrightarrow}}
+\newcommand{\pow}[1]{\wp(#1)}
+$$
+
+---
+
+## 1. Domain Theory & Logic
+
+### Ex 1.1: Continuity on Power Sets
+**Topic:** CPO, Continuity.
+Consider the CPO $(\pow{\mathbb{N}}, \subseteq)$. Let $S \subseteq \mathbb{N}$ be a fixed set.
+Prove that the function $f_S: \pow{\mathbb{N}} \to \pow{\mathbb{N}}$ defined as $f_S(X) = X \cap S$ is **continuous**.
+
+[[#Sol 1.1|Go to Solution]]
+
+### Ex 1.2: Divisors CPO
+**Topic:** Partial Orders, Bottom.
+Let $D = \{n \in \mathbb{N} \mid n > 0\} \cup \{\infty\}$. Define a relation $\sqsubseteq$ such that:
+* For $n, m \in \mathbb{N}$, $n \sqsubseteq m$ iff $n$ divides $m$.
+* For any $x \in D$, $x \sqsubseteq \infty$.
+
+1. Is $(D, \sqsubseteq)$ a CPO?
+2. Does it have a bottom element?
+
+[[#Sol 1.2|Go to Solution]]
+
+### Ex 1.3: Composition of Continuous Functions
+**Topic:** Continuity, Fixpoints.
+Let $D, E$ be $CPO_\perp$ and $f: D \to E, g: E \to D$ be continuous functions.
+Let $h = g \circ f$ and $k = f \circ g$. Let $e_0 = \text{fix}(k)$.
+Prove that $g(e_0)$ is a fixpoint for $h$.
+
+[[#Sol 1.3|Go to Solution]]
+
+---
+
+## 2. IMP Semantics
+
+### Ex 2.1: Operational Semantics of for loops
+**Topic:** Language Extension, Big-Step rules.
+Replace the `while` command in IMP with a `for a do c` command.
+The loop executes $c$ exactly $N$ times, where $N$ is the value of $a$ in the initial state.
+1. Define the Big-Step inference rules for `for`.
+2. Prove that the command always terminates (assuming $c$ terminates).
+
+[[#Sol 2.1|Go to Solution]]
+
+### Ex 2.2: Divergence of while
+**Topic:** Denotational Semantics, Fixpoints.
+Consider the command $w = \textbf{while } x > 0 \textbf{ do } x := x + 1$.
+Using the denotational semantics (Fixpoint of $\Gamma$), prove that $\den{C}\sem{w}\sigma = \perp$ for any $\sigma$ where $\sigma(x) > 0$.
+
+[[#Sol 2.2|Go to Solution]]
+
+---
+
+## 3. HOFL & Haskell
+
+### Ex 3.1: Typing Derivation
+**Topic:** HOFL Type System.
+Derive the type for the term $t = \lambda f. \lambda x. (f (f x))$.
+
+[[#Sol 3.1|Go to Solution]]
+
+### Ex 3.2: Haskell - Palindromes
+**Topic:** Functional Programming, Lists.
+Write a Haskell function `pal` that checks if a list is a palindrome.
+Then write `pals` that filters a list of strings, keeping only palindromes.
+
+[[#Sol 3.2|Go to Solution]]
+
+### Ex 3.3: Haskell - Quicksort
+**Topic:** Recursion, List Comprehension.
+Implement the Quicksort algorithm in Haskell using list comprehensions.
+
+[[#Sol 3.3|Go to Solution]]
+
+---
+
+## 4. Concurrency (CCS)
+
+### Ex 4.1: Guardedness
+**Topic:** CCS Syntax.
+Check if the following processes are **guarded**:
+1. $A \stackrel{\text{def}}{=} \alpha.A + \beta.\textbf{nil}$
+2. $B \stackrel{\text{def}}{=} \text{rec } x. (x \mid \alpha.\textbf{nil})$
+3. $C \stackrel{\text{def}}{=} \text{rec } x. (\alpha.x \mid \beta.x)$
+
+[[#Sol 4.1|Go to Solution]]
+
+### Ex 4.2: Strong Bisimulation Game
+**Topic:** Strong Bisimulation.
+Let $P = a.(b.\textbf{nil} + c.\textbf{nil})$ and $Q = a.b.\textbf{nil} + a.c.\textbf{nil}$.
+Show that $P \not\sim Q$ by describing the winning strategy for the Attacker (Alice).
+
+[[#Sol 4.2|Go to Solution]]
+
+### Ex 4.3: Weak Bisimulation (Tau-laws)
+**Topic:** Weak Bisimulation.
+Prove that $P + \tau.P \approx \tau.P$.
+(Hint: Construct a weak bisimulation relation $\mathcal{R}$ containing the pair).
+
+[[#Sol 4.3|Go to Solution]]
+
+### Ex 4.4: Buffer Capacity
+**Topic:** Modeling.
+Show that a buffer of capacity 2 implemented as two parallel cells ($B_0^1 \mid B_0^1$) is **NOT** bisimilar to a sequential 2-position buffer. (Focus on the traces).
+
+[[#Sol 4.4|Go to Solution]]
+
+### Ex 4.5: HML Formula
+**Topic:** Logic.
+Find an HML formula that distinguishes $P$ from $Q$ in Ex 4.2.
+
+[[#Sol 4.5|Go to Solution]]
+
+---
+
+## 5. Real Languages (Go/Erlang)
+
+### Ex 5.1: Erlang Temperature Server
+**Topic:** Actors, Message Passing.
+Write an Erlang server that:
+1. Receives `{Pid, celsius, C}` and replies `{self(), fahrenheit, F}`.
+2. Receives `{Pid, fahrenheit, F}` and replies `{self(), celsius, C}`.
+3. Handles a `stop` message.
+
+[[#Sol 5.1|Go to Solution]]
+
+### Ex 5.2: Go Pairing
+**Topic:** Channels, Goroutines.
+Write a Go function `pairing(in1, in2 chan int) chan [2]int` that reads one integer from `in1`, one from `in2`, pairs them, and sends the array on the output channel.
+
+[[#Sol 5.2|Go to Solution]]
+
+---
+
+# Solutions
+
+### Sol 1.1
+**Proof:**
+We need to show $f_S(\bigcup_i X_i) = \bigcup_i f_S(X_i)$ for any chain $\{X_i\}$.
+* **LHS:** $f_S(\bigcup X_i) = (\bigcup X_i) \cap S$.
+* **RHS:** $\bigcup (f_S(X_i)) = \bigcup (X_i \cap S)$.
+* By the general distributive law of set theory ($(\bigcup A_i) \cap B = \bigcup (A_i \cap B)$), LHS = RHS.
+* Therefore, $f_S$ is continuous.
+
+[[#Ex 1.1: Continuity on Power Sets|Back to Exercise]]
+
+### Sol 1.2
+1.  **Yes, it is a CPO.** The relation is reflexive (n divides n), antisymmetric (n|m & m|n $\implies$ n=m), transitive.
+    * Chains in $\mathbb{N}$ must be finite because $n$ divides $m$ implies $n \le m$ (or $m=0$, handled separately). Infinite chains must eventually stabilize or go to $\infty$.
+    * Limit of any chain exists (max element or $\infty$).
+2.  **Bottom:** Yes, $1$ divides every number. $\perp = 1$.
+
+[[#Ex 1.2: Divisors CPO|Back to Exercise]]
+
+### Sol 1.3
+We need to prove $h(g(e_0)) = g(e_0)$.
+1.  $e_0 = \text{fix}(k)$, so $k(e_0) = e_0$.
+2.  Substitute definitions: $k = f \circ g$, so $f(g(e_0)) = e_0$.
+3.  Apply $g$ to both sides: $g(f(g(e_0))) = g(e_0)$.
+4.  Since $h = g \circ f$, we have $h(g(e_0)) = g(e_0)$.
+    Thus, $g(e_0)$ is a fixpoint of $h$.
+
+[[#Ex 1.3: Composition of Continuous Functions|Back to Exercise]]
+
+### Sol 2.1
+**Rules:**
+$$\frac{\langle a, \sigma \rangle \to N \quad N \le 0}{\langle \textbf{for } a \textbf{ do } c, \sigma \rangle \to \sigma} \quad \frac{\langle a, \sigma \rangle \to N \quad N > 0 \quad \langle c; \textbf{for } (N-1) \textbf{ do } c, \sigma \rangle \to \sigma'}{\langle \textbf{for } a \textbf{ do } c, \sigma \rangle \to \sigma'}$$
+**Termination:** Proved by mathematical induction on the value $N = \den{A}\sem{a}\sigma$. Base case ($N \le 0$) terminates immediately (skip). Step ($N$) reduces to execution of $c$ (terminates by hypothesis) followed by `for` on $N-1$, which terminates by Inductive Hypothesis.
+
+[[#Ex 2.1: Operational Semantics of for loops|Back to Exercise]]
+
+### Sol 2.2
+$\Gamma(\varphi)(\sigma) = \text{cond}(\sigma(x)>0, \varphi(\sigma[x+1/x]), \sigma)$.
+Let's compute approximations for a state $\sigma$ with $\sigma(x) > 0$:
+* $\Gamma^0(\perp)\sigma = \perp$.
+* $\Gamma^1(\perp)\sigma = \text{cond}(\text{true}, \perp, \sigma) = \perp$.
+* By induction, $\Gamma^n(\perp)\sigma = \perp$ for all $n$.
+    The fixpoint is the limit $\bigsqcup \perp = \perp$. The program diverges.
+
+[[#Ex 2.2: Divergence of while|Back to Exercise]]
+
+### Sol 3.1
+Term: $\lambda f. \lambda x. f(fx)$.
+1.  Assume $x : \alpha$.
+2.  For $f(x)$ to be valid, $f : \alpha \to \beta$.
+3.  The result of $f(x)$ is type $\beta$.
+4.  For outer $f(\dots)$ to be valid, $f$ takes $\beta$. So $\alpha = \beta$.
+5.  Thus $f : \alpha \to \alpha$.
+6.  Result type is $\alpha$.
+7.  Total type: $(\alpha \to \alpha) \to \alpha \to \alpha$.
+
+[[#Ex 3.1: Typing Derivation|Back to Exercise]]
+
+### Sol 3.2
+```haskell
+pal :: Eq a => [a] -> Bool
+pal xs = xs == reverse xs
+
+pals :: [String] -> [String]
+pals list = filter pal list
+````
+
+[[#Ex 3.2: Haskell - Palindromes|Back to Exercise]]
+
+### Sol 3.3
+
+Haskell
+
+```
+qsort :: Ord a => [a] -> [a]
+qsort [] = []
+qsort (x:xs) = qsort smaller ++ [x] ++ qsort larger
+    where
+        smaller = [a | a <- xs, a <= x]
+        larger  = [b | b <- xs, b > x]
+```
+
+[[#Ex 3.3: Haskell - Quicksort|Back to Exercise]]
+
+### Sol 4.1
+
+1. **Guarded.** $A$ appears under $\alpha$.
+    
+2. **Unguarded.** $x$ appears in parallel with $\alpha.\textbf{nil}$, not under a prefix. (Infinite branching).
+    
+3. **Guarded.** $x$ appears under $\alpha$ and $\beta$.
+    
+
+[[#Ex 4.1: Guardedness|Back to Exercise]]
+
+### Sol 4.2
+
+**Attacker Strategy:**
+
+1. Alice plays $Q \trans{a} b.\textbf{nil}$ (left branch).
+    
+2. Bob must play $P \trans{a} b.\textbf{nil} + c.\textbf{nil}$ (only move).
+    
+3. Current state: $(b.\textbf{nil} + c.\textbf{nil}, \quad b.\textbf{nil})$.
+    
+4. Alice plays Left side: $\trans{c} \textbf{nil}$.
+    
+5. Bob (on Right side $b.\textbf{nil}$) cannot perform $c$. **Alice wins.**
+    
+
+[[#Ex 4.2: Strong Bisimulation Game|Back to Exercise]]
+
+### Sol 4.3
+
+Relation $\mathcal{R} = \{(P + \tau.P, \tau.P)\} \cup Id$.
+
+- **Challenge $P+\tau.P$:**
+    
+    - Move $P+\tau.P \trans{\tau} P$ (right option). Defender matches $\tau.P \wtrans{\tau} P$. Result $(P,P) \in Id$.
+        
+    - Move $P+\tau.P \trans{\alpha} P'$ (left option). Defender matches $\tau.P \trans{\tau} P \trans{\alpha} P'$. Result $(P', P') \in Id$.
+        
+- **Challenge $\tau.P$:**
+    
+    - Move $\tau.P \trans{\tau} P$. Defender matches $P+\tau.P \trans{\tau} P$ (right option). Result $(P,P) \in Id$.
+        
+
+[[#Ex 4.3: Weak Bisimulation (Tau-laws)|Back to Exercise]]
+
+### Sol 4.4
+
+A sequential buffer $B_2$ guarantees FIFO order.
+
+Parallel buffer $B_{par} = B_0^1 \mid B_0^1$:
+
+1. Input $a$ (left), Input $b$ (right). State: $B_1^1(a) \mid B_1^1(b)$.
+    
+2. Can output $b$ _before_ $a$ (race condition on output channels).
+    
+3. Sequential buffer cannot do this. Trace $\{in(a), in(b), out(b)\}$ is possible for Parallel but not Sequential.
+    
+
+[[#Ex 4.4: Buffer Capacity|Back to Exercise]]
+
+### Sol 4.5
+
+Formula: $[a](\langle b \rangle \text{tt} \land \langle c \rangle \text{tt})$.
+
+- $P \models F$ because after $a$, state is $(b+c)$ which enables both $b$ and $c$.
+    
+- $Q \not\models F$ because after $a$ it reaches either $b.\textbf{nil}$ (no $c$) or $c.\textbf{nil}$ (no $b$). The box $[a]$ requires the property to hold for _all_ outcomes.
+    
+
+[[#Ex 4.5: HML Formula|Back to Exercise]]
+
+### Sol 5.1
+
+Erlang
+
+```
+-module(tempserver).
+-export([start/0, loop/0]).
+
+start() -> spawn(tempserver, loop, []).
+
+loop() ->
+    receive
+        {Pid, celsius, C} ->
+            F = 1.8 * C + 32,
+            Pid ! {self(), fahrenheit, F},
+            loop();
+        {Pid, fahrenheit, F} ->
+            C = (F - 32) / 1.8,
+            Pid ! {self(), celsius, C},
+            loop();
+        stop ->
+            true
+    end.
+```
+
+[[#Ex 5.1: Erlang Temperature Server|Back to Exercise]]
+
+### Sol 5.2
+
+Go
+
+```
+func pairing(in1, in2 chan int) chan [2]int {
+    out := make(chan [2]int)
+    go func() {
+        for {
+            v1 := <-in1
+            v2 := <-in2
+            out <- [2]int{v1, v2}
+        }
+    }()
+    return out
+}
+```
+
+[[#Ex 5.2: Go Pairing|Back to Exercise]]
 
 <div style="page-break-after: always;"></div>
 

@@ -1,5 +1,5 @@
 
-# Advanced Programming: Course Syllabus & TOC
+# Advanced Programming
 
 - [[#Language Processing]]  
   - **Topics:** Lexical Analysis (Scanning), Formal Grammars (CFG), Parsing Algorithms (Recursive Descent, Shift-Reduce), Syntax vs. Semantics vs. Pragmatics  
@@ -181,11 +181,28 @@ WSToken get_next_ws_token(WSInputStream *input) {
 }
 ```
 
+#### Whitespace Compiler Architecture (Implementation Details)
+The Whitespace compiler demonstrates a full pipeline for a stack-based language:
+1.  **Tokenizer:** Filters input, converting strictly `[Space]`, `[Tab]`, `[LF]` into an internal instruction enum.
+2.  **Parser:** A recursive descent parser builds an Intermediate Representation (List of Instructions).
+3.  **Code Generation (.NET):**
+    * Whitespace is a **Stack Machine** (operands are pushed/popped, not stored in registers).
+    * The compiler translates Whitespace instructions directly to **CIL (Common Intermediate Language)** via the `System.Reflection.Emit` library.
+    * *Mapping:* `PUSH n` $\to$ `ldc.i4 n`; `ADD` $\to$ `add`.
+    * *Abstract Interpretation:* The compiler tracks stack height statically to detect underflows (popping from an empty stack) at compile-time.
+    
 ---
 
 ## 2. Grammars and Syntax in Practice
 
 The **Syntax Grammar** is a Context-Free Grammar (CFG), typically expressed in BNF or EBNF. It defines the hierarchical composition of tokens into valid structures.
+
+### 2.0 The Chomsky Hierarchy
+Grammars are classified by their expressive power. Each level strictly includes the previous one:
+* **Type 3 (Regular):** Recognizable by Finite Automata. Used for Tokenizers. Cannot handle nested structures (e.g., balanced parentheses).
+* **Type 2 (Context-Free):** Recognizable by Pushdown Automata. Used for Parsers. Defines the hierarchical structure.
+* **Type 1 (Context-Sensitive):** Requires Linear Bounded Automata.
+* **Type 0 (Unrestricted):** Equivalent to Turing Machines.
 
 ### 2.1 CFG Rules for Common Constructs
 
@@ -229,6 +246,13 @@ Given the code IF C1 THEN IF C2 THEN S1 ELSE S2, two parse trees exist:
 
 - _Resolution:_ Prefer **Shift**. This associates the `ELSE` with the nearest (top-of-stack) `IF`, enforcing the standard inner-binding convention.
 
+### 2.3 General Ambiguity Resolution
+Ambiguity occurs when a string has multiple valid parse trees.
+* *Example:* `9 - 5 + 2`.
+    * Interpretation A: `(9 - 5) + 2 = 6` (Left-associative).
+    * Interpretation B: `9 - (5 + 2) = 2` (Right-associative).
+* *Resolution:* Languages define **Precedence** (multiplication before addition) and **Associativity** to resolve these conflicts deterministically.
+
 ---
 
 ## 3. Parsing Algorithms and Code
@@ -237,7 +261,7 @@ Given the code IF C1 THEN IF C2 THEN S1 ELSE S2, two parse trees exist:
 
 Recursive Descent is a predictive strategy where every non-terminal in the grammar corresponds to a function. It relies on the `FIRST` sets of productions to select the correct path.
 
-#### Example: Expression Parsing (LL(1))
+#### Example: Expression Parsing (LL(1))**
 
 ```c
 // helper to consume terminal tokens
@@ -354,6 +378,16 @@ Grammar:
 
 - _Layout:_ Languages like Python make whitespace syntactically significant, coupling Pragmatics directly to the Lexical Analyzer's logic.
 
+### 4.4 The Compiler Pipeline (Analysis vs. Synthesis)
+Language processing is structured into two main phases: **Analysis** (breaking down the source) and **Synthesis** (building the target).
+
+1.  **Lexical Analysis:** Converts characters to tokens (Regular Languages).
+2.  **Syntax Analysis:** Converts tokens to a Parse Tree/AST (Context-Free Languages).
+3.  **Semantic Analysis:** Enforces rules not capturable by CFGs (e.g., type checking, variable declaration).
+4.  **Intermediate Representation (IR):** A machine-independent structure (like Trees or RTL) facilitating optimization.
+5.  **Code Generation:** Translates IR to Target Code (Machine code, Bytecode).
+
+> **Historical Note:** Determinism in this pipeline is critical. The **Ariane 5 explosion (1996)** was caused by a semantic error (integer overflow) in code reused from Ariane 4, illustrating the catastrophic risks of inadequate safety checks.
 
 <div style="page-break-after: always;"></div>
 
@@ -409,7 +443,16 @@ typedef struct ActivationRecord {
 } Frame;
 ```
 
-### 1.2 Variable Resolution: Static Chain vs. Display
+### 1.2 Case Study: The `printf` Stack Mechanics
+The C function `printf` illustrates the dependency between the compiled code and the **Runtime System**.
+* **The Illusion of Compilation:** C is considered "fully compiled", but `printf` is not compiled into the user's binary; it resides in a shared **Runtime Library** linked at execution.
+* **Calling Convention (cdecl):**
+    * `printf` accepts a variable number of arguments (variadic).
+    * The **Caller** pushes arguments onto the stack (right-to-left).
+    * The **Caller** is responsible for cleaning up the stack after the call returns.
+    * *Why?* Only the caller knows how many arguments were pushed. The Callee (`printf`) calculates this dynamically based on the format string, which is risky.
+    
+### 1.3 Variable Resolution: Static Chain vs. Display
 
 In languages with **nested subroutines** (Pascal, Ada, ML, Scheme), the runtime must resolve non-local, non-global variables.
 
@@ -979,6 +1022,47 @@ void addNumbers(List<? super Integer> list) {
     // Integer n = list.get(0); // Error: Could be Object
 }
 ```
+---
+
+## 6. Asynchronous Programming Paradigms
+
+Traditional threading models (one thread per task) scale poorly for I/O-bound operations (e.g., waiting for a DB query blocks an expensive OS thread). Asynchronous programming decouples the **waiting** from the **thread**.
+
+### 6.1 The AJAX Pattern & Callback Hell
+Historically popularized by the `XMLHttpRequest` object in browsers.
+* **Mechanism:** Initiate a request and register a **Callback function** to be invoked when the state changes (e.g., `onreadystatechange`).
+* **The Problem (Callback Hell):** Chaining sequential operations (read A, then read B) leads to deeply nested callbacks, making code unreadable and hard to debug.
+
+### 6.2 Functional Programming & Concurrency
+Functional Programming (FP) naturally aids concurrency due to **Immutability**.
+* If functions are pure (no side effects) and data is immutable, there is no shared mutable state.
+* **No Race Conditions:** Multiple threads can read/compute on the same data without locks.
+
+### 6.3 Continuation-Passing Style (CPS)
+CPS is the theoretical foundation for modern async features (Promises, Futures, `async/await`).
+* **Concept:** Instead of a function returning a value, it takes an extra argument (a "continuation" function) representing "what to do next".
+* **Control Flow:** The function "returns" by calling the continuation with the result.
+* **Relevance:** This allows a computation to be **suspended** (saving the continuation) and **resumed** later (invoking the continuation), potentially on a different thread, without blocking the original caller.
+
+## 7. Asynchronous Programming Paradigms
+
+Traditional threading models (one thread per task) scale poorly for I/O-bound operations (e.g., waiting for a DB query blocks an expensive OS thread). Asynchronous programming decouples the **waiting** from the **thread**.
+
+### 7.1 The AJAX Pattern & Callback Hell
+Historically popularized by the `XMLHttpRequest` object in browsers (originally an Microsoft ActiveX component, then standardized).
+* **Mechanism:** Initiate a request and register a **Callback function** to be invoked when the state changes (e.g., `onreadystatechange`).
+* **The Problem (Callback Hell):** Chaining sequential operations (e.g., *fetch A*, then *fetch B* using A's result) leads to deeply nested callbacks, making the control flow difficult to read and debug compared to linear imperative code.
+
+### 7.2 Functional Programming & Concurrency
+Functional Programming (FP) naturally aids concurrency due to **Immutability**.
+* **Statelessness:** If functions are pure (no side effects) and data is immutable, there is no shared mutable state to protect.
+* **No Race Conditions:** Multiple threads can read/compute on the same data without locks. The trade-off is often higher memory usage due to data copying rather than in-place modification.
+
+### 7.3 Continuation-Passing Style (CPS)
+CPS is the theoretical foundation for modern async features (like JavaScript **Promises** or C# **Tasks**).
+* **Concept:** Instead of a function returning a value to the caller, it takes an extra argument (a "continuation" function) representing "what to do next".
+* **Control Flow:** The function "returns" by invoking the continuation with the result.
+* **Suspension & Resumption:** This style allows a computation to be **suspended** (saving the continuation/closure) and **resumed** later (invoking the continuation), potentially on a different thread, without blocking the original thread during the wait.
 
 
 <div style="page-break-after: always;"></div>
@@ -1044,11 +1128,52 @@ JIT compilation occurs **on-demand** (lazy compilation) to minimize startup ti
 
 - **Interoperability (PInvoke):** The CLR mediates calls between managed and unmanaged worlds via **Platform Invoke (PInvoke)**. It uses **Custom Attributes** to identify the external DLL and function. The runtime automatically handles the **Marshalling** of data across this boundary.
 
+### 1.4 Intermediate Representations (IR) Evolution
+Runtimes rely on IRs to decouple source languages from target architectures.
+* **P-Code (Pascal):** Early portable IR for abstract stack machines.
+* **Java Bytecode:** Stack-based IR. Retains high-level metadata (classes, methods) allowing runtime reflection.
+* **CIL (.NET):** Designed for multi-language interoperability (C#, F#, VB).
+* **LLVM IR:** A modern, SSA-based (Static Single Assignment) representation designed for optimization. It bridges the gap between high-level syntax and machine code, powering languages like Rust, Swift, and Clang/C++.
+
 ---
+## 2. Concurrency Models and Hardware Reality
 
-## 2. Concurrency and the Global Interpreter Lock (GIL)
+Concurrency is not just a language abstraction; it is strictly bound to the underlying hardware and Operating System capabilities.
 
-### 2.1 Mechanism and Purpose
+### 2.1 The Hardware Constraints
+Modern execution is dictated by the CPU architecture (e.g., x86, ARM, RISC-V).
+* **Core Complexity:** CPUs are not abstract mathematical entities. They include branch predictors, multiple levels of Caches (L1, L2, L3), and interconnects (Mesh) between tiles.
+* **Memory Wall:** Accessing RAM is slow. Multiple cores contend for memory access. High Bandwidth Memory (HBM) is introduced to mitigate this, but data locality remains crucial for performance.
+* **Atomicity:** The CPU does not operate on references directly but copies data to registers. Read-Modify-Write operations are **not atomic** by default, leading to **Race Conditions** where updates can be lost if not synchronized.
+
+### 2.2 Evolution of Concurrency Abstractions
+1.  **Processes:** The original unit of concurrency. They provide strong isolation (memory, security) but have high context-switch overhead (TLB flush, etc.).
+2.  **Threads:** Lighter execution units sharing the same process memory space.
+    * *Pros:* Lower overhead than processes.
+    * *Cons:* Shared state leads to race conditions; creating/destroying threads is still expensive (OS resources).
+3.  **Collaborative Concurrency (Fibers):** Software-scheduled execution without OS preemption. Relies on the code spontaneously yielding control. Efficient but risky (a stuck fiber blocks everything).
+
+### 2.3 The Thread Pool Pattern
+To mitigate the cost of thread allocation, Runtimes (CLR/JVM) implement **Thread Pools**.
+* **Mechanism:** A collection of pre-allocated worker threads consumes tasks from a blocking queue.
+* **Workflow:**
+    1.  Application submits a "Task" (e.g., `Action` or `Runnable`) to the queue.
+    2.  An idle worker picks the task and executes it.
+    3.  Upon completion, the worker returns to the pool (does not die).
+* **Advantage:** Reuse of OS threads, reduced latency for starting tasks.
+
+### 2.4 Synchronization Primitives Implementation
+Languages provide keywords like `synchronized` (Java) or `lock` (C#) to handle mutual exclusion.
+* **Java `synchronized`:** Not syntactic sugar. It maps directly to **Monitors** embedded in the object header and specific bytecode instructions (`monitorenter`/`monitorexit`).
+* **C# `lock`:** Syntactic sugar. It compiles down to `Monitor.Enter` and `Monitor.Exit` wrapped in a `try/finally` block to ensure lock release on exceptions.
+
+$$
+\text{Race Condition} \iff \exists \text{ threads } T_1, T_2 : \text{access}(T_1, x) \cap \text{access}(T_2, x) \neq \emptyset \land \exists \text{write}
+$$
+
+## 3. Concurrency and the Global Interpreter Lock (GIL)
+
+### 3.1 Mechanism and Purpose
 
 The **Global Interpreter Lock (GIL)** in CPython is a mutex that enforces a critical section around the Python interpreter loop.
 
@@ -1056,7 +1181,7 @@ The **Global Interpreter Lock (GIL)** in CPython is a mutex that enforces a cr
 
 - **Reason:** CPython's internal data structures, particularly those dealing with **Reference Counting** for memory management, are not thread-safe. The GIL ensures atomic access to these structures without requiring fine-grained locking on every object.
 
-### 2.2 Impact on Workloads
+### 3.2 Impact on Workloads
 
 - **CPU-Bound:** The GIL severely limits performance. Multi-threaded CPU-intensive tasks (e.g., complex math) cannot run in parallel on multiple cores, effectively serializing execution.
 
@@ -1066,15 +1191,15 @@ _(Note: Experimental removal of the GIL is a recent development in Python 3.13 t
 
 ---
 
-## 3. Interoperability and Marshalling
+## 4. Interoperability and Marshalling
 
-### 3.1 Formal Definitions
+### 4.1 Formal Definitions
 
 - **Marshalling:** The process of transforming the in-memory representation of an object (specific to a language's runtime layout) into a standardized format suitable for storage or transmission (e.g., serializing a C++ struct to a byte stream for a network socket).
 
 - **Unmarshalling:** The reverse process of reconstructing the in-memory object from the serialized format.
 
-### 3.2 Data Interchange with XML
+### 4.2 Data Interchange with XML
 
 **XML (eXtensible Markup Language)** serves as a structured, text-based format for marshalling data between heterogeneous systems.
 
@@ -1156,6 +1281,18 @@ Use AI to **discover** hidden mechanisms rather than just solving problems.
 - **Desugaring:** Ask AI to "desugar" high-level syntax (e.g., `lock` or `await`) into its low-level semantic equivalent (e.g., State Machines or Monitor calls) to understand the implementation.
 
 - **Architectural Analysis:** Use AI to reason about the structure of a codebase, identifying potential vulnerabilities or design patterns.
+
+### 2.4 Probabilistic Generation & Temperature
+LLMs are non-deterministic. They generate tokens based on probability distributions.
+* **Temperature:** A hyperparameter controlling randomness.
+    * *Low ($\approx 0$):* Deterministic, safer for code syntax.
+    * *High ($> 1$):* Creative, high variance, risk of hallucinations.
+* **Implication:** The same prompt can yield correct code once and buggy code the next. Verification is mandatory.
+
+### 2.5 The "Human in the Loop" Philosophy
+* **Responsibility:** The central thesis of the course is that the programmer shifts from being a *writer* to an *auditor*. You are responsible for the code's behavior, security, and correctness, regardless of whether you or an AI wrote it.
+* **The "Turing Prophecy":** Alan Turing predicted machines would eventually generate their own instruction tables. We are living this shift.
+
 
 ---
 
