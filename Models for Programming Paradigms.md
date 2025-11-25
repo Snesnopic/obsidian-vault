@@ -11,32 +11,32 @@
 * **Domain Theory:** Partial Orders (PO), CPO, Monotone and Continuous Functions.
 * **Fixpoint:** Kleene's Theorem ($\text{fix}(f) = \bigsqcup f^n(\perp)$) and the Immediate Consequence Operator (ICO).
 
-### [[# Imp Semantics]]
+### [[#Imp Semantics]]
 * **IMP Language:** Syntax and States ($\Sigma$).
 * **Operational Semantics:** Inference rules for `Aexp`, `Bexp`, `Com`.
 * **Denotational Semantics:** Functions $\mathcal{C}\sem{c}$, handling *Lifting*, and `while` denotation.
 * **Axiomatic Semantics:** Hoare Logic rules.
 * **Equivalence:** Consistency Theorem between OS and DS.
 
-### [[# HOFL]]
+### [[#HOFL]]
 * **Higher-Order Functional Language:** Syntax, Types, and Inference Rules.
 * **Evaluation:** Canonical Forms, Lazy (Call-by-Name) vs Eager (Call-by-Value).
 * **Semantic Domains:** Continuous function spaces, semantics of $\lambda$-abstractions and recursion.
 * **Haskell:** Conceptual mapping (lists, lazy evaluation).
 
-### [[# Concurrency]]
+### [[#Concurrency]]
 * **Paradigms:** Message Passing (Erlang) vs Shared Memory/Channels (Go).
 * **CCS:** Syntax, LTS, and transition rules ($\tau$).
 * **Bisimulation:** Definition of Strong Bisimulation, Attacker/Defender game.
 * **Logic:** HML (Hennessy-Milner Logic) and Characterization Theorem.
 * **Case Studies:** Modeling Buffers and Mutual Exclusion (Peterson).
 
-### [[# Real Languages]]
+### [[#Real Languages]]
 * **Haskell:** Functional patterns (Guards, Data types), Type Classes, Lazy Evaluation.
 * **Erlang:** Actor Model, Asynchronous Message Passing, `receive` with timeout.
 * **Go:** Goroutines, Buffered vs Unbuffered Channels, `select` non-determinism.
 
-### [[# Advanced Concurrency]]
+### [[#Advanced Concurrency]]
 * **Weak Bisimulation:** Abstraction from internal actions ($\tau$), Weak Transition ($\stackrel{\alpha}{\Longrightarrow}$).
 * **Congruence:** Observational Congruence and Milner's $\tau$-laws.
 * **Temporal Logics:** Linear Time (LTL) vs Branching Time (CTL).
@@ -46,10 +46,10 @@
 
 ##  Practice & Review
 
-### [[# Exam Questions]]
+### [[#Exam Questions]]
 * **Q&A:** A comprehensive list of past exam questions mapped to specific answers.
 
-### [[# Exercises]]
+### [[#Exercises]]
 * **Bank:** Collection of solved exercises on Domains, IMP, HOFL, CCS, and Real Languages.
 
 
@@ -1775,10 +1775,8 @@ Is Equivalence? Yes. Congruence? Yes.
 * Safety: $\nu Z. \Phi$ (Greatest FP, e.g., "Always").
 * Liveness: $\mu Z. \Phi$ (Least FP, e.g., "Eventually").
 [[#7. Advanced Concurrency|Back to Q]]
-```
 
 <div style="page-break-after: always;"></div>
-
 # Exercises
 
 This file aggregates exercises from all course modules. It covers Domain Theory, Semantics, HOFL, Concurrency, and Real Languages.
