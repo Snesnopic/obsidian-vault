@@ -439,7 +439,13 @@ $$\Sigma \stackrel{\text{def}}{=} \text{Loc} \to \mathbb{Z}$$
 * **Update Notation:** $\sigma[n/x]$ denotes a state identical to $\sigma$ except for the variable $x$, which now holds the value $n$.
 
 ---
+<details>
+<summary>Mostra/Nascondi contenuto</summary>
 
+Qui dentro puoi mettere testo, liste, codice, immagini…
+Perfetto per note lunghe o spiegazioni che non vuoi vedere sempre.
+
+</details>
 ## 2. Operational Semantics (Big-Step)
 
 Defined via inference rules relating a program and an initial state to a final result (hiding intermediate steps). This style is also known as **Natural Semantics**.
