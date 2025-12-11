@@ -1,42 +1,46 @@
 
 # Models for Programming Paradigms
-
-### [[# Foundations & Preliminaries]]
+$$
+\newcommand{\sem}[1]{ [\![ #1 ]\!] }
+\newcommand{\den}[1]{\mathcal{#1}}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
+$$
+1. [[# Foundations & Preliminaries]]
 * **Key Concepts:** Syntax vs Semantics vs Pragmatics.
 * **Methods:** Operational Semantics (SOS), Denotational, Axiomatic.
 * **Properties:** Termination, Determinacy, Compositionality.
 
-### [[#Math & Logic]]
+2. [[#Math & Logic]]
 * **Induction:** Mathematical, Structural, Well-Founded, and Rule Induction.
 * **Domain Theory:** Partial Orders (PO), CPO, Monotone and Continuous Functions.
 * **Fixpoint:** Kleene's Theorem ($\text{fix}(f) = \bigsqcup f^n(\perp)$) and the Immediate Consequence Operator (ICO).
 
-### [[#Imp Semantics]]
+3. [[# Imp Semantics]]
 * **IMP Language:** Syntax and States ($\Sigma$).
 * **Operational Semantics:** Inference rules for `Aexp`, `Bexp`, `Com`.
 * **Denotational Semantics:** Functions $\mathcal{C}\sem{c}$, handling *Lifting*, and `while` denotation.
 * **Axiomatic Semantics:** Hoare Logic rules.
 * **Equivalence:** Consistency Theorem between OS and DS.
 
-### [[#HOFL]]
+4. [[# HOFL]]
 * **Higher-Order Functional Language:** Syntax, Types, and Inference Rules.
 * **Evaluation:** Canonical Forms, Lazy (Call-by-Name) vs Eager (Call-by-Value).
 * **Semantic Domains:** Continuous function spaces, semantics of $\lambda$-abstractions and recursion.
 * **Haskell:** Conceptual mapping (lists, lazy evaluation).
 
-### [[#Concurrency]]
+5. [[#Concurrency]]
 * **Paradigms:** Message Passing (Erlang) vs Shared Memory/Channels (Go).
 * **CCS:** Syntax, LTS, and transition rules ($\tau$).
 * **Bisimulation:** Definition of Strong Bisimulation, Attacker/Defender game.
 * **Logic:** HML (Hennessy-Milner Logic) and Characterization Theorem.
 * **Case Studies:** Modeling Buffers and Mutual Exclusion (Peterson).
 
-### [[#Real Languages]]
+6. [[#Real Languages]]
 * **Haskell:** Functional patterns (Guards, Data types), Type Classes, Lazy Evaluation.
 * **Erlang:** Actor Model, Asynchronous Message Passing, `receive` with timeout.
 * **Go:** Goroutines, Buffered vs Unbuffered Channels, `select` non-determinism.
 
-### [[#Advanced Concurrency]]
+7. [[# Advanced Concurrency]]
 * **Weak Bisimulation:** Abstraction from internal actions ($\tau$), Weak Transition ($\stackrel{\alpha}{\Longrightarrow}$).
 * **Congruence:** Observational Congruence and Milner's $\tau$-laws.
 * **Temporal Logics:** Linear Time (LTL) vs Branching Time (CTL).
@@ -46,11 +50,11 @@
 
 ##  Practice & Review
 
-### [[#Exam Questions]]
-* **Q&A:** A comprehensive list of past exam questions mapped to specific answers.
+1. [[#Exam Questions]]
+* A comprehensive list of past exam questions mapped to specific answers.
 
-### [[#Exercises]]
-* **Bank:** Collection of solved exercises on Domains, IMP, HOFL, CCS, and Real Languages.
+2. [[#Exercises]]
+* Collection of solved exercises on Domains, IMP, HOFL, CCS, and Real Languages.
 
 
 <div style="page-break-after: always;"></div>
@@ -389,15 +393,178 @@ $$f_S\left(\bigcup_{i \in \mathbb{N}} X_i\right) = \bigcup_{i \in \mathbb{N}} f_
 **Proof:**
 
 1. **LHS (Left Hand Side):**
-    $$f_S\left(\bigcup_{i} X_i\right) = \left(\bigcup_{i} X_i\right) \cap S$$
+    $$
+    f_S\left(\bigcup_{i} X_i\right) = \left(\bigcup_{i} X_i\right) \cap S
+    $$
 2. **RHS (Right Hand Side):**
-    $$\bigcup_{i} f_S(X_i) = \bigcup_{i} (X_i \cap S)$$
+    $$
+    \bigcup_{i} f_S(X_i) = \bigcup_{i} (X_i \cap S)
+    $$
 3. **Conclusion:**
     By the distributive property of intersection over union (including infinite union), we know that:
-    $$(\bigcup_{i} X_i) \cap S = \bigcup_{i} (X_i \cap S)$$
+    $$
+    (\bigcup_{i} X_i) \cap S = \bigcup_{i} (X_i \cap S)
+    $$
     Thus LHS = RHS. The function is continuous.
 
 > **Note:** The same logic applies to $g_S(X) = X \cup S$ (using associativity/idempotence of union).
+
+---
+
+## 6. Calculus of Relations
+
+The Calculus of Relations (CR) is an algebraic framework for reasoning about binary relations. It generalizes set theory and functions, providing a powerful language for abstract semantics.
+
+### 6.1 Syntax and Operations
+A relation $R$ is a subset of the Cartesian product of two sets $A \times B$.
+The calculus defines the following operations on relations $R, S$:
+
+* **Boolean Operations:**
+    * **Union ($R \cup S$):** $x (R \cup S) y \iff x R y \lor x S y$.
+    * **Intersection ($R \cap S$):** $x (R \cap S) y \iff x R y \land x S y$.
+    * **Complement ($\neg R$ or $\bar{R}$):** $x \bar{R} y \iff \neg (x R y)$.
+* **Relational Operations:**
+    * **Composition ($R ; S$):** $x (R ; S) z \iff \exists y . x R y \land y S z$.
+    * **Converse / Transpose ($R^\circ$ or $R^{-1}$):** $y R^\circ x \iff x R y$.
+* **Constants:**
+    * **Empty Relation ($\mathbb{O}$):** The relation containing no pairs (False).
+    * **Universal Relation ($\mathbb{1}$):** The relation containing all pairs (True).
+    * **Identity ($\mathbb{I}$):** The diagonal relation $\{(x,x) \mid x \in A\}$.
+
+### 6.2 Tarski's Axioms
+Alfred Tarski axiomatized the calculus of relations. A **Relation Algebra** is a structure satisfying:
+
+1.  **Boolean Algebra:** The set of relations forms a Boolean algebra with $\cup, \cap, \neg, \mathbb{O}, \mathbb{1}$.
+2.  **Associativity:** Composition is associative: $(R ; S) ; T = R ; (S ; T)$.
+3.  **Identity:** $\mathbb{I}$ is the neutral element for composition: $R ; \mathbb{I} = R = \mathbb{I} ; R$.
+4.  **Involution:** Conversion is an involution: $(R^\circ)^\circ = R$ and $(R ; S)^\circ = S^\circ ; R^\circ$.
+5.  **Distributivity:** Composition distributes over union: $R ; (S \cup T) = (R ; S) \cup (R ; T)$.
+6.  **Tarski's Rule:** $R \neq \mathbb{O} \implies \mathbb{1} ; R ; \mathbb{1} = \mathbb{1}$ (If a relation is non-empty, it relates everything in the universal context).
+
+### 6.3 Properties of Relations in CR
+We can define standard properties purely algebraically:
+
+| Property                   | Definition in CR                         | Meaning                            |
+| :------------------------- | :--------------------------------------- | :--------------------------------- |
+| **Reflexive**              | $\mathbb{I} \subseteq R$                 | $\forall x. x R x$                 |
+| **Transitive**             | $R ; R \subseteq R$                      | $x R y \land y R z \implies x R z$ |
+| **Symmetric**              | $R \subseteq R^\circ$ (or $R = R^\circ$) | $x R y \implies y R x$             |
+| **Univalent (Functional)** | $R^\circ ; R \subseteq \mathbb{I}$       | $x R y \land x R z \implies y = z$ |
+| **Total**                  | $\mathbb{I} \subseteq R ; R^\circ$       | $\forall x. \exists y. x R y$      |
+| **Injective**              | $R ; R^\circ \subseteq \mathbb{I}$       | $x R y \land z R y \implies x = z$ |
+| **Surjective**             | $\mathbb{I} \subseteq R^\circ ; R$       | $\forall y. \exists x. x R y$      |
+
+> **Note:** A function is a relation that is both *Univalent* and *Total*. A bijection is a relation that is *Univalent, Total, Injective,* and *Surjective*.
+
+### 6.4 Algebraic Structures and Laws
+The set of relations $CR_\Sigma$ equipped with its operations forms specific algebraic structures.
+
+1.  **Boolean Algebra:** $(CR_\Sigma, \cup, \cap, \neg, \mathbb{O}, \mathbb{1})$ is a Boolean Algebra.
+2.  **Monoid:** $(CR_\Sigma, ;, \mathbb{I})$ is a Monoid (Associativity of composition, Identity element).
+3.  **Semiring:** $(CR_\Sigma, \cup, \mathbb{O}, ;, \mathbb{I})$ forms an **Idempotent Semiring** (or Dioid).
+    * $\cup$ is the addition (idempotent, commutative, with unit $\mathbb{O}$).
+    * $;$ is the multiplication (associative, distributes over $\cup$, with unit $\mathbb{I}$ and zero $\mathbb{O}$).
+    * **Distributivity Law:** $(e \cup f) ; g \equiv (e ; g) \cup (f ; g)$.
+    * **Zero Law:** $e ; \mathbb{O} \equiv \mathbb{O} \equiv \mathbb{O} ; e$.
+
+**Involution Laws (Converse/Transpose):**
+The conversion operator $(\cdot)^{op}$ is an involution that interacts with other operators:
+* **Involution:** $(e^{op})^{op} \equiv e$.
+* **Contravariance (Composition):** $(e ; f)^{op} \equiv f^{op} ; e^{op}$ (Order reversal).
+* **Homomorphism (Union):** $(e \cup f)^{op} \equiv e^{op} \cup f^{op}$.
+* **Interaction with Complement:** $\overline{(e^{op})} \equiv (\overline{e})^{op}$.
+* **Constants:** $\mathbb{I}^{op} \equiv \mathbb{I}$, $\mathbb{O}^{op} \equiv \mathbb{O}$, $\mathbb{1}^{op} \equiv \mathbb{1}$.
+
+### 6.5 Semantics of Regular Expressions over Relations
+We can define relations using regular expressions $e \in Reg_\Sigma$. The semantics of an expression can be seen as the union of the semantics of all individual "paths" or "traces" denoted by that expression.
+
+**Lemma (Trace Semantics):**
+For all expressions $e \in Reg_\Sigma$ and for all interpretations $\mathcal{I}$:
+$$
+\sem{e}_\mathcal{I} = \bigcup_{\nu \in [e]} \sem{\nu}_\mathcal{I}
+$$
+Where $[e]$ is the set of strings (words) generated by the expression $e$.
+
+**Proof Sketch (by Structural Induction on $e$):**
+* **Base Cases:**
+    * $e = \emptyset$ (Empty set): $\sem{\emptyset}_\mathcal{I} = \emptyset = \bigcup_{v \in \emptyset} \dots$
+    * $e = \epsilon$ (Empty word): $\sem{\epsilon}_\mathcal{I} = \mathbb{I} = \sem{\epsilon}_\mathcal{I}$ (since $[\epsilon] = \{\epsilon\}$).
+    * $e = a$ (Atom): $\sem{a}_\mathcal{I} = R_a = \bigcup_{v \in \{a\}} \sem{v}_\mathcal{I}$.
+* **Inductive Steps:**
+    * **Union ($e = f + g$):**
+        $\sem{f+g}_\mathcal{I} = \sem{f}_\mathcal{I} \cup \sem{g}_\mathcal{I}$.
+        By IH: $(\bigcup_{\nu \in [f]} \sem{\nu}) \cup (\bigcup_{\mu \in [g]} \sem{\mu}) = \bigcup_{\xi \in [f] \cup [g]} \sem{\xi} = \bigcup_{\xi \in [f+g]} \sem{\xi}$.
+    * **Concatenation ($e = f \cdot g$):**
+        $\sem{f \cdot g}_\mathcal{I} = \sem{f}_\mathcal{I} ; \sem{g}_\mathcal{I}$.
+        Using distributivity of composition over union (infinite unions included in complete lattices):
+        $(\bigcup_{\nu} \sem{\nu}) ; (\bigcup_{\mu} \sem{\mu}) = \bigcup_{\nu, \mu} (\sem{\nu} ; \sem{\mu}) = \bigcup_{\xi \in [f \cdot g]} \sem{\xi}$.
+
+### 6.4 Algebraic Structures and Laws
+The set of relations $CR_\Sigma$ equipped with its operations forms specific algebraic structures.
+
+1.  **Boolean Algebra:** $(CR_\Sigma, \cup, \cap, \neg, \mathbb{O}, \mathbb{1})$ is a Boolean Algebra.
+2.  **Monoid:** $(CR_\Sigma, ;, \mathbb{I})$ is a Monoid (Associativity of composition, Identity element).
+3.  **Semiring:** $(CR_\Sigma, \cup, \mathbb{O}, ;, \mathbb{I})$ forms an **Idempotent Semiring** (or Dioid).
+    * $\cup$ is the addition (idempotent, commutative, with unit $\mathbb{O}$).
+    * $;$ is the multiplication (associative, distributes over $\cup$, with unit $\mathbb{I}$ and zero $\mathbb{O}$).
+    * **Distributivity Law:** $(e \cup f) ; g \equiv (e ; g) \cup (f ; g)$.
+    * **Zero Law:** $e ; \mathbb{O} \equiv \mathbb{O} \equiv \mathbb{O} ; e$.
+
+**Involution Laws (Converse/Transpose):**
+The conversion operator $(\cdot)^{op}$ is an involution that interacts with other operators:
+* **Involution:** $(e^{op})^{op} \equiv e$.
+* **Contravariance (Composition):** $(e ; f)^{op} \equiv f^{op} ; e^{op}$ (Order reversal).
+* **Homomorphism (Union):** $(e \cup f)^{op} \equiv e^{op} \cup f^{op}$.
+* **Interaction with Complement:** $\overline{(e^{op})} \equiv (\overline{e})^{op}$.
+* **Constants:** $\mathbb{I}^{op} \equiv \mathbb{I}$, $\mathbb{O}^{op} \equiv \mathbb{O}$, $\mathbb{1}^{op} \equiv \mathbb{1}$.
+
+### 6.5 Semantics of Regular Expressions over Relations
+We can define relations using regular expressions $e \in Reg_\Sigma$. The semantics of an expression can be seen as the union of the semantics of all individual "paths" or "traces" denoted by that expression.
+
+**Lemma (Trace Semantics):**
+For all expressions $e \in Reg_\Sigma$ and for all interpretations $\mathcal{I}$:
+$$
+\sem{e}_\mathcal{I} = \bigcup_{\nu \in [e]} \sem{\nu}_\mathcal{I}
+$$
+Where $[e]$ is the set of strings (words) generated by the expression $e$.
+
+**Proof Sketch (by Structural Induction on $e$):**
+* **Base Cases:**
+    * $e = \emptyset$ (Empty set): $\sem{\emptyset}_\mathcal{I} = \emptyset = \bigcup_{v \in \emptyset} \dots$
+    * $e = \epsilon$ (Empty word): $\sem{\epsilon}_\mathcal{I} = \mathbb{I} = \sem{\epsilon}_\mathcal{I}$ (since $[\epsilon] = \{\epsilon\}$).
+    * $e = a$ (Atom): $\sem{a}_\mathcal{I} = R_a = \bigcup_{v \in \{a\}} \sem{v}_\mathcal{I}$.
+* **Inductive Steps:**
+    * **Union ($e = f + g$):**
+        $\sem{f+g}_\mathcal{I} = \sem{f}_\mathcal{I} \cup \sem{g}_\mathcal{I}$.
+        By IH: $(\bigcup_{\nu \in [f]} \sem{\nu}) \cup (\bigcup_{\mu \in [g]} \sem{\mu}) = \bigcup_{\xi \in [f] \cup [g]} \sem{\xi} = \bigcup_{\xi \in [f+g]} \sem{\xi}$.
+    * **Concatenation ($e = f \cdot g$):**
+        $\sem{f \cdot g}_\mathcal{I} = \sem{f}_\mathcal{I} ; \sem{g}_\mathcal{I}$.
+        Using distributivity of composition over union (infinite unions included in complete lattices):
+        $(\bigcup_{\nu} \sem{\nu}) ; (\bigcup_{\mu} \sem{\mu}) = \bigcup_{\nu, \mu} (\sem{\nu} ; \sem{\mu}) = \bigcup_{\xi \in [f \cdot g]} \sem{\xi}$.
+
+### 6.6 Coreflexive Relations (Tests)
+To model logical tests (guards) within the Calculus of Relations, we use **Coreflexive Relations**.
+
+**Definition:**
+A relation $R$ on set $A$ is coreflexive if it is contained in the identity:
+$$
+R \subseteq \mathbb{I}_A \iff \forall (x,y) \in R .\ x = y
+$$
+We denote the set of coreflexives as $Cor(A)$.
+
+**Isomorphism with Predicates:**
+There is a bijection between subsets of $A$ (Predicates) and Coreflexives:
+1.  From Predicate to Relation: $c(P) = \{(x,x) \mid x \in P\}$.
+2.  From Relation to Predicate: $p(R) = \{x \mid (x,x) \in R\}$.
+
+**Properties of Tests:**
+For coreflexive relations $R, S \in Cor(A)$, the boolean intersection coincides with sequential composition:
+$$
+R \cap S = R ; S
+$$
+*Proof Intuition:* Since they are diagonal subsets, the only way to compose $(x,x)$ and $(y,y)$ is if $x=y$, which is exactly the intersection.
+
+> **Role in KAT:** This property allows Kleene Algebra with Tests to treat logical conjunction ($b_1 \land b_2$) as sequential composition ($b_1 \cdot b_2$) within the algebraic framework.
 
 
 <div style="page-break-after: always;"></div>
@@ -439,6 +606,7 @@ $$\Sigma \stackrel{\text{def}}{=} \text{Loc} \to \mathbb{Z}$$
 * **Update Notation:** $\sigma[n/x]$ denotes a state identical to $\sigma$ except for the variable $x$, which now holds the value $n$.
 
 ---
+
 ## 2. Operational Semantics (Big-Step)
 
 Defined via inference rules relating a program and an initial state to a final result (hiding intermediate steps). This style is also known as **Natural Semantics**.
@@ -668,19 +836,29 @@ We want to insert an efficiency measure into the operational semantics of IMP.
 The idea is that every time we evaluate a `Bexp` (in `if` or `while`), the cost $k$ increases by 1. Structural commands sum the costs of sub-commands.
 
 * **Skip / Assign:** No guard evaluated.
-    $$\frac{}{\langle \textbf{skip}, \sigma \rangle \xrightarrow{0} \sigma} \quad \frac{\langle a, \sigma \to n \rangle}{\langle x:=a, \sigma \rangle \xrightarrow{0} \sigma[n/x]}$$
+    $$
+    \frac{}{\langle \textbf{skip}, \sigma \rangle \xrightarrow{0} \sigma} \quad \frac{\langle a, \sigma \to n \rangle}{\langle x:=a, \sigma \rangle \xrightarrow{0} \sigma[n/x]}
+    $$
 
 * **Sequence:** Sum of costs.
-    $$\frac{\langle c_0, \sigma \rangle \xrightarrow{k_1} \sigma'' \quad \langle c_1, \sigma'' \rangle \xrightarrow{k_2} \sigma'}{\langle c_0 ; c_1, \sigma \rangle \xrightarrow{k_1 + k_2} \sigma'}$$
+    $$
+    \frac{\langle c_0, \sigma \rangle \xrightarrow{k_1} \sigma'' \quad \langle c_1, \sigma'' \rangle \xrightarrow{k_2} \sigma'}{\langle c_0 ; c_1, \sigma \rangle \xrightarrow{k_1 + k_2} \sigma'}
+    $$
 
 * **If-Then-Else:** Cost 1 (for the guard) + cost of the chosen branch.
-    $$\frac{\langle b, \sigma \rangle \to \textbf{true} \quad \langle c_0, \sigma \rangle \xrightarrow{k} \sigma'}{\langle \textbf{if } b \dots, \sigma \rangle \xrightarrow{k+1} \sigma'} \quad \frac{\langle b, \sigma \rangle \to \textbf{false} \quad \langle c_1, \sigma \rangle \xrightarrow{k} \sigma'}{\langle \textbf{if } b \dots, \sigma \rangle \xrightarrow{k+1} \sigma'}$$
+    $$
+    \frac{\langle b, \sigma \rangle \to \textbf{true} \quad \langle c_0, \sigma \rangle \xrightarrow{k} \sigma'}{\langle \textbf{if } b \dots, \sigma \rangle \xrightarrow{k+1} \sigma'} \quad \frac{\langle b, \sigma \rangle \to \textbf{false} \quad \langle c_1, \sigma \rangle \xrightarrow{k} \sigma'}{\langle \textbf{if } b \dots, \sigma \rangle \xrightarrow{k+1} \sigma'}
+    $$
 
 * **While:**
   * *False Case:* Evaluate guard (1) and exit.
-        $$\frac{\langle b, \sigma \rangle \to \textbf{false}}{\langle \textbf{while } b \textbf{ do } c, \sigma \rangle \xrightarrow{1} \sigma}$$
+        $$
+        \frac{\langle b, \sigma \rangle \to \textbf{false}}{\langle \textbf{while } b \textbf{ do } c, \sigma \rangle \xrightarrow{1} \sigma}
+        $$
   * *True Case:* Evaluate guard (1) + body cost ($k_c$) + subsequent iterations cost ($k_w$).
-        $$\frac{\langle b, \sigma \rangle \to \textbf{true} \quad \langle c, \sigma \rangle \xrightarrow{k_c} \sigma'' \quad \langle \textbf{while } \dots, \sigma'' \rangle \xrightarrow{k_w} \sigma'}{\langle \textbf{while } b \textbf{ do } c, \sigma \rangle \xrightarrow{1 + k_c + k_w} \sigma'}$$
+        $$
+        \frac{\langle b, \sigma \rangle \to \textbf{true} \quad \langle c, \sigma \rangle \xrightarrow{k_c} \sigma'' \quad \langle \textbf{while } \dots, \sigma'' \rangle \xrightarrow{k_w} \sigma'}{\langle \textbf{while } b \textbf{ do } c, \sigma \rangle \xrightarrow{1 + k_c + k_w} \sigma'}
+        $$
 
 #### 2. Proof (Rule Induction)
 
@@ -702,6 +880,55 @@ We apply **Rule Induction** on the standard semantics:
   * *Thesis:* Using the new while-true rule, we can derive the transition with cost $k = 1 + k_c + k_w$. Since $k_c, k_w \in \mathbb{N}$, then $k \in \mathbb{N}$. (Verified).
 
 The other cases (`skip`, `assign`, `if`, `while-false`) are trivial or analogous.
+
+---
+## 8. Relational Semantics & Kleene Algebra with Tests (KAT)
+
+We can abstract the semantics of IMP using **Kleene Algebra with Tests (KAT)**. This algebraic framework combines:
+* **Kleene Algebra ($K, +, \cdot, *, 0, 1$):** Models the control flow (nondeterminism, sequence, iteration).
+* **Boolean Algebra ($B, \lor, \land, \neg, 0, 1$):** Models the assertions/tests (guards).
+
+### 8.1 Encoding IMP into KAT
+We define a translation function $k : \text{Com} \to \text{KAT}$.
+
+* **Skip:** $k(\textbf{skip}) = 1$ (Identity).
+* **Abort:** $k(\textbf{abort}) = 0$ (Empty relation/Failure).
+* **Assignment:** $k(x:=e)$ is an atomic action.
+* **Sequence:** $k(c_1 ; c_2) = k(c_1) \cdot k(c_2)$.
+* **Conditional:**
+  $$
+   k(\textbf{if } b \textbf{ then } c_1 \textbf{ else } c_2) = (b \cdot k(c_1)) + (\neg b \cdot k(c_2))
+   $$
+* **While Loop:**
+  $$
+   k(\textbf{while } b \textbf{ do } c) = (b \cdot k(c))^* \cdot \neg b
+   $$
+
+### 8.2 Soundness & Completeness
+The standard interpretation of KAT is the **Relational Model** ($\mathcal{P}(\Sigma \times \Sigma)$).
+**Theorem:** For any commands $c, d$:
+$$
+k(c) =_{KAT} k(d) \implies c \sim d
+$$
+(Algebraic equality implies semantic equivalence).
+
+### 8.3 Schematic KAT (SKAT) Laws
+Additional laws specific to assignments (useful for program transformation):
+1.  **Assignment Swap:**
+    $$
+    (x:=a \cdot y:=b) = (y:=b \cdot x:=a)
+    $$
+    *Condition:* $x \neq y$, $x \notin \text{vars}(b)$, $y \notin \text{vars}(a)$.
+2.  **Test Propagation:**
+    $$
+    (x:=a \cdot b) = (b[a/x] \cdot x:=a)
+    $$
+    *Meaning:* Checking $b$ after assigning $x:=a$ is equivalent to checking $b$ with $a$ substituted for $x$ *before* the assignment.
+3.  **Variable Independence:**
+    $$
+    b \cdot x:=a = x:=a \cdot b
+    $$
+    *Condition:* $x \notin \text{vars}(b)$.
 
 <div style="page-break-after: always;"></div>
 
@@ -729,16 +956,24 @@ $$
 ### 1.2 Type System
 
 Types are defined inductively:
-$$\tau ::= \text{int} \mid \tau_0 \times \tau_1 \mid \tau_0 \to \tau_1$$
+$$
+\tau ::= \text{int} \mid \tau_0 \times \tau_1 \mid \tau_0 \to \tau_1
+$$
 
 A term is **well-typed** ($t : \tau$) if a derivation exists using the following inference rules ($\Gamma \vdash t : \tau$):
 
 * **Abstraction (abs):**
-    $$\frac{\Gamma, x:\tau_0 \vdash t : \tau_1}{\Gamma \vdash \lambda x. t : \tau_0 \to \tau_1}$$
+    $$
+    \frac{\Gamma, x:\tau_0 \vdash t : \tau_1}{\Gamma \vdash \lambda x. t : \tau_0 \to \tau_1}
+    $$
 * **Application (app):**
-    $$\frac{\Gamma \vdash t_1 : \tau_0 \to \tau_1 \quad \Gamma \vdash t_0 : \tau_0}{\Gamma \vdash t_1 t_0 : \tau_1}$$
+    $$
+    \frac{\Gamma \vdash t_1 : \tau_0 \to \tau_1 \quad \Gamma \vdash t_0 : \tau_0}{\Gamma \vdash t_1 t_0 : \tau_1}
+    $$
 * **Recursion (rec):**
-    $$\frac{\Gamma, x:\tau \vdash t : \tau}{\Gamma \vdash \text{rec } x. t : \tau}$$
+    $$
+    \frac{\Gamma, x:\tau \vdash t : \tau}{\Gamma \vdash \text{rec } x. t : \tau}
+    $$
 
 ---
 
@@ -760,10 +995,14 @@ Values that require no further computation (final results).
 $$\frac{t_0 \to n_0 \quad t_1 \to n_1}{t_0 \text{ op } t_1 \to n_0 \underline{\text{op}} n_1} \quad \frac{t \to 0 \quad t_0 \to c_0}{\text{if } t \dots \to c_0} \quad \frac{t \to n \neq 0 \quad t_1 \to c_1}{\text{if } t \dots \to c_1}$$
 
 **Pairs and Projections:**
-$$\frac{}{(t_0, t_1) \to (t_0, t_1)} \quad \frac{t \to (t_0, t_1) \quad t_0 \to c_0}{\text{fst}(t) \to c_0}$$
+$$
+\frac{}{(t_0, t_1) \to (t_0, t_1)} \quad \frac{t \to (t_0, t_1) \quad t_0 \to c_0}{\text{fst}(t) \to c_0}
+$$
 
 **Application (Lazy / Call-by-Name):**
-$$\frac{t_1 \to \lambda x. t'_1 \quad t'_1[t_0/x] \to c}{(t_1 t_0) \to c}$$
+$$
+\frac{t_1 \to \lambda x. t'_1 \quad t'_1[t_0/x] \to c}{(t_1 t_0) \to c}
+$$
 *Note:* The argument $t_0$ is substituted into the function body **without being evaluated**.
 
 ---
@@ -775,7 +1014,9 @@ To define denotational semantics (especially for `rec`), domains must be **CPOs*
 ### 3.1 Lifted Domains ($D_\perp$)
 
 To distinguish between a computed result and non-termination, we use *lifted* domains.
-$$D_\perp \triangleq \{\perp\} \cup \{\floor{d} \mid d \in D\}$$
+$$
+D_\perp \triangleq \{\perp\} \cup \{\floor{d} \mid d \in D\}
+$$
 
 * $\perp$: No information (divergence).
 * $\floor{d}$: Defined value $d$ (convergence).
@@ -784,10 +1025,14 @@ $$D_\perp \triangleq \{\perp\} \cup \{\floor{d} \mid d \in D\}$$
 
 1. **Lifting Function:** $\floor{\cdot} : D \to D_\perp$. Maps $d \mapsto \floor{d}$.
 2. **Lifting Operator $(\cdot)^*$:** Extends a continuous function $f: D \to E$ to a function $f^*: D_\perp \to E$.
-    $$f^*(x) = \begin{cases} \perp_E & \text{if } x = \perp_{D_\perp} \\ f(d) & \text{if } x = \floor{d} \end{cases}$$
+    $$
+    f^*(x) = \begin{cases} \perp_E & \text{if } x = \perp_{D_\perp} \\ f(d) & \text{if } x = \floor{d} \end{cases}
+    $$
 
 3. **De-lifting (Let notation):** Syntactic sugar for handling lifted values.
-    $$(\text{let } x \leftarrow t . e) \equiv (\lambda x. e)^* (t)$$
+    $$
+    (\text{let } x \leftarrow t . e) \equiv (\lambda x. e)^* (t)
+    $$
     If $t$ diverges ($\perp$), the whole expression diverges. If $t = \floor{d}$, it evaluates $e$ with $x=d$.
 
 ---
@@ -817,15 +1062,21 @@ Maps terms and environments to elements of the domain: $\sem{t} : \text{Env} \to
 **Functional Constructs:**
 
 * **Abstraction ($\lambda$):**
-    $$\sem{\lambda x. t}\rho = \floor{\lambda d. \sem{t}\rho[d/x]}$$
+    $$
+    \sem{\lambda x. t}\rho = \floor{\lambda d. \sem{t}\rho[d/x]}
+    $$
     The result is a defined element ($\floor{\dots}$) in the functional domain.
 * **Application:**
-    $$\sem{t_1 t_0}\rho = \text{let } \varphi \leftarrow \sem{t_1}\rho . \varphi(\sem{t_0}\rho)$$
+    $$
+    \sem{t_1 t_0}\rho = \text{let } \varphi \leftarrow \sem{t_1}\rho . \varphi(\sem{t_0}\rho)
+    $$
     1. Evaluate $t_1$. If it diverges, return $\perp$.
     2. If it converges to a function $\varphi$, apply $\varphi$ to the denotation of the argument $\sem{t_0}\rho$ (without evaluating it first $\to$ Lazy).
 
 **Recursion (`rec`):**
-$$\sem{\text{rec } x. t}\rho = \text{fix}(\lambda d. \sem{t}\rho[d/x])$$
+$$
+\sem{\text{rec } x. t}\rho = \text{fix}(\lambda d. \sem{t}\rho[d/x])
+$$
 Computes the least fixed point of the function mapping $x$ to the body $t$.
 
 ---
@@ -835,7 +1086,9 @@ Computes the least fixed point of the function mapping $x$ to the body $t$.
 ### 5.1 Correctness Theorem
 
 Denotational semantics is consistent with operational semantics.
-$$t \to c \implies \forall \rho.\ \sem{t}\rho = \sem{c}\rho$$
+$$
+t \to c \implies \forall \rho.\ \sem{t}\rho = \sem{c}\rho
+$$
 
 ### 5.2 Lazy vs Eager (Unlifted)
 
@@ -980,13 +1233,19 @@ We prove that $P = a.(b.\textbf{nil} + c.\textbf{nil})$ and $Q = a.b.\textbf{nil
 **Alice's Winning Strategy:**
 
 1. **Alice** chooses $Q$ (the non-deterministic process) and makes the left branch transition:
-    $$Q \trans{a} b.\textbf{nil}$$
+    $$
+    Q \trans{a} b.\textbf{nil}
+    $$
     We are now in the pair $(b.\textbf{nil} + c.\textbf{nil}, \quad b.\textbf{nil})$.
 2. **Bob** must respond with $P \trans{a}$. $P$ has only one choice:
-    $$P \trans{a} b.\textbf{nil} + c.\textbf{nil}$$
+    $$
+    P \trans{a} b.\textbf{nil} + c.\textbf{nil}
+    $$
     The new configuration is: $(b.\textbf{nil} + c.\textbf{nil}, \quad b.\textbf{nil})$.
 3. **Alice** now chooses the left process and performs action $c$:
-    $$(b.\textbf{nil} + c.\textbf{nil}) \trans{c} \textbf{nil}$$
+    $$
+    (b.\textbf{nil} + c.\textbf{nil}) \trans{c} \textbf{nil}
+    $$
 4. **Bob** must respond with the right process ($b.\textbf{nil}$) performing $c$. But $b.\textbf{nil}$ can only perform $b$.
     **Bob is stuck. Alice wins.** $\implies P \not\sim Q$.
 
@@ -1002,14 +1261,20 @@ Modal logic for describing process properties. It is used as an alternative to b
 
 ### 4.1 Syntax
 
-$$F ::= \text{tt} \mid \text{ff} \mid F_1 \land F_2 \mid F_1 \lor F_2 \mid \langle \alpha \rangle F \mid [\alpha]F$$
+$$
+F ::= \text{tt} \mid \text{ff} \mid F_1 \land F_2 \mid F_1 \lor F_2 \mid \langle \alpha \rangle F \mid [\alpha]F
+$$
 
 ### 4.2 Semantics
 
 * **Diamond ($\langle \alpha \rangle F$):** (Possibility / "Exists") It is *possible* to perform action $\alpha$ and end up in *at least one* state satisfying $F$.
-    $$P \models \langle \alpha \rangle F \iff \exists P'. (P \trans{\alpha} P' \land P' \models F)$$
+    $$
+    P \models \langle \alpha \rangle F \iff \exists P'. (P \trans{\alpha} P' \land P' \models F)
+    $$
 * **Box ($[\alpha]F$):** (Necessity / "For all") *After every* action $\alpha$, *all* resulting states must satisfy $F$.
-    $$P \models [\alpha]F \iff \forall P'. (P \trans{\alpha} P' \implies P' \models F)$$
+    $$
+    P \models [\alpha]F \iff \forall P'. (P \trans{\alpha} P' \implies P' \models F)
+    $$
     *Note:* If the process cannot perform $\alpha$, $[\alpha]F$ is vacuously true.
 
 > **Duality:** $[\alpha]F \equiv \neg \langle \alpha \rangle \neg F$.
@@ -1030,7 +1295,9 @@ The formula is: **$[a](\langle b \rangle \text{tt} \land \langle c \rangle \text
 ### 4.4 Hennessy-Milner Theorem
 
 For finitely branching processes:
-$$P \sim Q \iff (P \models F \iff Q \models F, \forall F \in \text{HML})$$
+$$
+P \sim Q \iff (P \models F \iff Q \models F, \forall F \in \text{HML})
+$$
 Two processes are bisimilar if and only if they satisfy the same logical HML formulas.
 If two processes are not bisimilar, there always exists an HML formula that distinguishes them.
 
@@ -1044,16 +1311,22 @@ This section explores how to use CCS primitives to model complex systems, data s
 We can build complex buffers by composing simple 1-position cells ($B_0^1$).
 
 **The Atomic Cell:**
-$$B_0^1 \stackrel{\text{def}}{=} \text{in}.B_1^1 \quad\quad B_1^1 \stackrel{\text{def}}{=} \overline{\text{out}}.B_0^1$$
+$$
+B_0^1 \stackrel{\text{def}}{=} \text{in}.B_1^1 \quad\quad B_1^1 \stackrel{\text{def}}{=} \overline{\text{out}}.B_0^1
+$$
 
 **Capacity 2 Buffer (Sequential/Chained):**
 Constructed by linking two cells in series. The output of the first feeds the input of the second via a hidden internal channel (`mid`).
-$$B_2 \stackrel{\text{def}}{=} (B_0^1[\text{mid}/\text{out}] \mid B_0^1[\text{mid}/\text{in}]) \setminus \{\text{mid}\}$$
+$$
+B_2 \stackrel{\text{def}}{=} (B_0^1[\text{mid}/\text{out}] \mid B_0^1[\text{mid}/\text{in}]) \setminus \{\text{mid}\}
+$$
 *Behavior:* It can accept two `in` actions before blocking, but preserves FIFO order.
 
 **Capacity 2 Buffer (Parallel):**
 Constructed by placing two cells in parallel without linking them.
-$$B_{par} \stackrel{\text{def}}{=} B_0^1 \mid B_0^1$$
+$$
+B_{par} \stackrel{\text{def}}{=} B_0^1 \mid B_0^1
+$$
 *Behavior:* It accepts two `in` actions, but does **not** guarantee order (race condition on `out`).
 
 ### 6.2 Encoding Shared Memory (Variables)
@@ -1064,7 +1337,9 @@ A variable $X$ storing value $v$ (from a domain $V$) is a process that:
 1.  Accepts a read request ($\overline{\text{xr}}$) and sends $v$.
 2.  Accepts a write request ($\text{xw}_k$) and becomes $X$ storing $k$.
 
-$$X_v \stackrel{\text{def}}{=} \overline{\text{xr}}_v.X_v + \sum_{k \in V} \text{xw}_k.X_k$$
+$$
+X_v \stackrel{\text{def}}{=} \overline{\text{xr}}_v.X_v + \sum_{k \in V} \text{xw}_k.X_k
+$$
 
 **Using the Variable:**
 * **Read ($x$):** The client performs $\text{xr}_v$ (input) to synchronize with the variable's output.
@@ -1076,7 +1351,9 @@ We can verify the correctness of Peterson's algorithm by modeling the agents and
 
 **Architecture:**
 The system consists of two processes ($P_1, P_2$) and three shared variables ($b_1, b_2, k$) running in parallel.
-$$Sys \stackrel{\text{def}}{=} (P_1 \mid P_2 \mid B_{1f} \mid B_{2f} \mid K_1) \setminus \mathcal{L}_{internal}$$
+$$
+Sys \stackrel{\text{def}}{=} (P_1 \mid P_2 \mid B_{1f} \mid B_{2f} \mid K_1) \setminus \mathcal{L}_{internal}
+$$
 
 **Process Logic ($P_1$):**
 1.  **Enter Protocol:** Write `true` to $b_1$, write `2` to $k$.
@@ -1089,12 +1366,16 @@ We can define properties using recursive equations (precursor to $\mu$-calculus)
 
 1.  **Mutual Exclusion (Safety):**
     It must never be the case that both $P_1$ and $P_2$ are in the critical section.
-    $$Safe \stackrel{\text{def}}{=} [\text{enter}_1]([\text{enter}_2]\text{ff}) \land [-]Safe$$
+    $$
+    Safe \stackrel{\text{def}}{=} [\text{enter}_1]([\text{enter}_2]\text{ff}) \land [-]Safe
+    $$
     *Meaning:* If $P_1$ enters, then $P_2$ cannot enter immediately. This must hold forever ($[-]Safe$).
 
 2.  **Liveness (No Deadlock):**
     It is always possible to perform an action.
-    $$Live \stackrel{\text{def}}{=} \langle - \rangle \text{tt} \land [-]Live$$
+    $$
+    Live \stackrel{\text{def}}{=} \langle - \rangle \text{tt} \land [-]Live
+    $$
 
 3.  **Bounded Overtaking:**
     If $P_1$ wants to enter, $P_2$ cannot enter infinitely many times before $P_1$.
@@ -1356,11 +1637,15 @@ Example: A buffer that performs an internal $\tau$ step to move data ($a.\tau.\b
 We define a new transition relation that "skips" $\tau$ actions.
 
 * **Silent Weak Transition ($\wtrans{\tau}$):** A sequence of zero or more $\tau$ steps.
-    $$p \wtrans{\tau} q \iff p (\trans{\tau})^* q$$
+    $$
+    p \wtrans{\tau} q \iff p (\trans{\tau})^* q
+    $$
     *(Note: $p \wtrans{\tau} p$ is always true).*
 
 * **Observable Weak Transition ($\wtrans{\alpha}$):** An action $\alpha$ "surrounded" by $\tau$ steps.
-    $$p \wtrans{\alpha} q \iff \exists p', q'.\ p \wtrans{\tau} p' \trans{\alpha} q' \wtrans{\tau} q$$
+    $$
+    p \wtrans{\alpha} q \iff \exists p', q'.\ p \wtrans{\tau} p' \trans{\alpha} q' \wtrans{\tau} q
+    $$
     *Meaning: do some internal work, then the visible action, then more internal work.*
 
 ### 1.2 Definition of Weak Bisimulation ($\approx$)
@@ -1460,7 +1745,9 @@ It is the most powerful logic (subsumes LTL and CTL). It is based on fixpoints.
 
 ### 3.1 Basic Syntax
 
-$$\phi ::= \text{tt} \mid \text{ff} \mid Z \mid \phi_1 \land \phi_2 \mid \phi_1 \lor \phi_2 \mid \langle \alpha \rangle \phi \mid [\alpha]\phi \mid \mu Z. \phi \mid \nu Z. \phi$$
+$$
+\phi ::= \text{tt} \mid \text{ff} \mid Z \mid \phi_1 \land \phi_2 \mid \phi_1 \lor \phi_2 \mid \langle \alpha \rangle \phi \mid [\alpha]\phi \mid \mu Z. \phi \mid \nu Z. \phi
+$$
 
 ### 3.2 Fixpoints and Properties
 
@@ -1472,6 +1759,103 @@ $$\phi ::= \text{tt} \mid \text{ff} \mid Z \mid \phi_1 \land \phi_2 \mid \phi_1 
   * Example: $\nu Z. (p \land [\cdot] Z)$ $\to$ " $p$ holds now AND after every step $Z$ still holds". (Corresponds to $\mathbf{AG} p$).
   * *Intuition:* Allows infinite loops where $p$ is always true.
 
+---
+
+## 4. Formal Semantics of Temporal Logics
+
+### 4.1 LTL Semantics (Linear Time)
+LTL formulas are evaluated over a linear structure $S: P \to \wp(\mathbb{N})$ representing when atomic propositions hold.
+Let $S^k$ denote the time shifted by $k$ steps.
+
+**Satisfaction Relation ($S \models \psi$):**
+* $S \models \mathbf{X}\psi \iff S^1 \models \psi$ (Next)
+* $S \models \mathbf{F}\psi \iff \exists k. S^k \models \psi$ (Finally)
+* $S \models \mathbf{G}\psi \iff \forall k. S^k \models \psi$ (Globally)
+* $S \models \psi_1 \mathbf{U} \psi_2 \iff \exists k. (S^k \models \psi_2 \land \forall i < k. S^i \models \psi_1)$ (Until)
+
+**Derived Equivalences:**
+* $\mathbf{F}\psi \equiv \text{tt} \mathbf{U} \psi$
+* $\mathbf{G}\psi \equiv \neg \mathbf{F} \neg \psi$
+
+### 4.2 CTL Semantics (Branching Time)
+CTL is defined on a branching structure (infinite tree).
+It relies on a minimal set of operators: $EX, EG, E(\cdot U \cdot)$.
+
+**Derived Operators:**
+* $\mathbf{AX}\psi \equiv \neg \mathbf{EX} \neg \psi$ (All Next)
+* $\mathbf{AF}\psi \equiv \neg \mathbf{EG} \neg \psi$ (All Finally)
+* $\mathbf{AG}\psi \equiv \neg \mathbf{EF} \neg \psi$ (All Globally)
+
+## 5. Specification Examples
+
+### 5.1 Shared Resource
+System with 2 processes ($p_1, p_2$) accessing a resource $r$.
+Atoms: $req_i$ (request), $use_i$ (access), $rel_i$ (release).
+
+1.  **Mutual Exclusion:** Only one uses $r$ at a time.
+    $\mathbf{G} \neg (use_1 \land use_2)$
+2.  **No Starvation:** If $p_1$ requests, it eventually accesses.
+    $\mathbf{G} (req_1 \implies \mathbf{F} use_1)$
+3.  **Priority:** If both request, $p_1$ gets access first.
+    $\mathbf{G} ((req_1 \land req_2) \implies (\neg use_2 \mathbf{U} (use_1 \land \neg use_2)))$
+
+### 5.2 The "Dogs" Problem
+Three dogs, two couches, one garden.
+Predicates: $couch_{i,j}$ (dog $i$ on couch $j$), $garden_i$ (dog $i$ in garden).
+
+1.  **LTL:** If dog 1 is in garden, he stays there until he sits on a couch (or stays forever).
+    $\mathbf{G} (garden_1 \implies ( (\mathbf{G} garden_1) \lor (garden_1 \mathbf{U} (couch_{1,1} \lor couch_{1,2})) ) )$
+2.  **CTL:** If couch 1 is occupied (by dog 1 or 3), dog 2 eventually goes to garden.
+    $\mathbf{AG} ((couch_{1,1} \lor couch_{3,1}) \implies \mathbf{AF} garden_2)$
+
+## 6. Mu-Calculus Deep Dive
+
+The $\mu$-calculus is the most expressive temporal logic, subsuming LTL, CTL, and CTL*. Its semantics is based on the complete lattice of sets of states $(\wp(V), \subseteq)$. Since all operators are monotonic, the Knaster-Tarski theorem guarantees the existence of fixpoints.
+
+### 6.1 Syntax & Positive Normal Form
+Formulas are typically required to be in **Positive Normal Form** (negations only appear directly before atomic propositions). This ensures monotonicity.
+
+**Negation Rules (De Morgan for Fixpoints):**
+* $\neg \mu X. \phi(X) \equiv \nu X. \neg \phi(\neg X / X)$
+* $\neg \nu X. \phi(X) \equiv \mu X. \neg \phi(\neg X / X)$
+* $\neg \langle \alpha \rangle \phi \equiv [\alpha] \neg \phi$
+
+### 6.2 Fixpoint Computation (Example)
+Let us compute the denotation of a formula on a finite LTS.
+**Formula:** $\Phi = \mu X. ( (p \land [ \cdot ] X) \lor (\neg p \land \langle \cdot \rangle X) )$.
+* *Intuitive Meaning:* "Eventually reach a 'safe' state where $p$ holds and all successors are safe, OR if $p$ doesn't hold, keep moving". This is a hybrid property combining Liveness ($\mu$) and Safety ($[\cdot]$).
+
+**LTS Setup:**
+* States: $V = \{s_1, s_2, s_3, s_4\}$.
+* Transitions: $s_1 \to s_2$, $s_1 \to s_3$, $s_2 \to s_3$, $s_3 \to s_3$ (loop), $s_3 \to s_4$, $s_4 \to \dots$ (deadlock or external).
+* Predicate: $P = \{s_4\}$ (only $s_4$ satisfies $p$).
+
+**Iterative Calculation ($\sem{\Phi} = \bigcup_{n} f^n(\emptyset)$):**
+Since it is a Least Fixpoint ($\mu$), we start from the empty set $\emptyset$.
+
+1.  **Step 0:** $S_0 = \emptyset$.
+2.  **Step 1:** Evaluate body with $X = \emptyset$.
+    * Term 1: $p \land [\cdot]\emptyset \implies \{s_4\} \cap \{v \mid \forall w. v \to w \implies w \in \emptyset\}$.
+      $s_4$ has no outgoing transitions (or only to $\emptyset$), so $[\cdot]\emptyset$ is true for $s_4$. $\to \{s_4\}$.
+    * Term 2: $\neg p \land \langle \cdot \rangle \emptyset \implies \{s_1, s_2, s_3\} \cap \emptyset = \emptyset$.
+    * **Result:** $S_1 = \{s_4\}$.
+3.  **Step 2:** Evaluate body with $X = \{s_4\}$.
+    * Term 1: $p \land [\cdot]\{s_4\} \to \{s_4\} \cap \{s \mid \text{successors}(s) \subseteq \{s_4\}\}$. ($s_4$ is trivial). $\to \{s_4\}$.
+    * Term 2: $\neg p \land \langle \cdot \rangle \{s_4\} \to \{s_1, s_2, s_3\} \cap \{s \mid \exists w \in \{s_4\}. s \to w\}$.
+      Only $s_3$ has a transition to $s_4$. $\to \{s_3\}$.
+    * **Result:** $S_2 = \{s_3, s_4\}$.
+4.  **Step 3:** Evaluate body with $X = \{s_3, s_4\}$.
+    * Term 2: $\langle \cdot \rangle \{s_3, s_4\}$. Now $s_1$ can reach $s_3$, and $s_2$ can reach $s_3$.
+    * **Result:** $S_3 = \{s_1, s_2, s_3, s_4\}$.
+5.  **Step 4:** Stability reached ($S_4 = S_3$).
+    The set of states satisfying $\Phi$ is the entire set $V$.
+
+### 6.3 Alternation Depth
+The power of $\mu$-calculus lies in nesting fixpoints.
+* **Alternation Depth ($AD$):** The number of alternating nestings between $\mu$ and $\nu$.
+    * $AD=0$: HML (no recursion).
+    * $AD=1$: CTL (simple recursion, e.g., $\mathbf{AG} p = \nu X. p \land [\cdot]X$).
+    * $AD=2$: LTL and CTL* (properties like fairness $\mathbf{GF} p$).
 
 <div style="page-break-after: always;"></div>
 
@@ -1774,8 +2158,11 @@ Is Equivalence? Yes. Congruence? Yes.
 * Safety: $\nu Z. \Phi$ (Greatest FP, e.g., "Always").
 * Liveness: $\mu Z. \Phi$ (Least FP, e.g., "Eventually").
 [[#7. Advanced Concurrency|Back to Q]]
+```
+
 
 <div style="page-break-after: always;"></div>
+
 # Exercises
 
 This file aggregates exercises from all course modules. It covers Domain Theory, Semantics, HOFL, Concurrency, and Real Languages.
