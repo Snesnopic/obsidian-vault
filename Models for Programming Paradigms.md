@@ -1,10 +1,6 @@
 
 # Models for Programming Paradigms
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 1. [[# Foundations & Preliminaries]]
 * **Key Concepts:** Syntax vs Semantics vs Pragmatics.
 * **Methods:** Operational Semantics (SOS), Denotational, Axiomatic.
@@ -217,6 +213,7 @@ This chapter formalizes the necessary tools to handle recursion, prove propertie
 $$
 \newcommand{\sem}[1]{ [\![ #1 ]\!] }
 \newcommand{\Deriv}{\vdash_R}
+\newcommand{\wtrans}[1]{\stackrel{#1}{\Longrightarrow}}
 $$
 ---
 
@@ -1121,12 +1118,12 @@ $$
 
 Both use *Message Passing*, but with opposite philosophies regarding memory and synchronization.
 
-| Feature | **Erlang** | **Go** |
-| :--- | :--- | :--- |
-| **Concurrent Entity** | Process (Actor) isolated (separate heap). | Goroutine (Lightweight Thread) with shared memory. |
-| **Communication** | **Asynchronous** (Infinite Mailbox). Sender does not block. | **Synchronous** (default). `ch <- v` blocks until there is a receiver (Rendezvous). |
-| **Philosophy** | "Let it crash" & Isolation. | "Do not communicate by sharing memory; share memory by communicating." |
-| **Reception** | `receive` with Pattern Matching on the mailbox. | `<- ch` (select for multiple wait). |
+| Feature               | **Erlang**                                                  | **Go**                                                                              |
+| :-------------------- | :---------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| **Concurrent Entity** | Process (Actor) isolated (separate heap).                   | Goroutine (Lightweight Thread) with shared memory.                                  |
+| **Communication**     | **Asynchronous** (Infinite Mailbox). Sender does not block. | **Synchronous** (default). `ch <- v` blocks until there is a receiver (Rendezvous). |
+| **Philosophy**        | "Let it crash" & Isolation.                                 | "Do not communicate by sharing memory; share memory by communicating."              |
+| **Reception**         | `receive` with Pattern Matching on the mailbox.             | `<- ch` (select for multiple wait).                                                 |
 
 ---
 
@@ -1859,306 +1856,564 @@ The power of $\mu$-calculus lies in nesting fixpoints.
 
 <div style="page-break-after: always;"></div>
 
-# Exam Questions
+# Exam Questions & Answers (Part 1)
+
+This section covers the mathematical foundations: Logic, Unification, and Induction principles.
+
+## Part 1: Logic, Unification & Induction
+
+### Questions
+1.  **Signature:** What is a signature $\Sigma$? [[#A1.1|Answer]]
+2.  **Terms:** What is a term over a signature? [[#A1.2|Answer]]
+3.  **Substitution:** What is a substitution? [[#A1.3|Answer]]
+4.  **Instantiation:** What is the instantiation order on substitutions? [[#A1.4|Answer]]
+5.  **Unification Problem:** What is the Unification Problem? [[#A1.5|Answer]]
+6.  **MGU:** What is a Most General Unifier (MGU)? [[#A1.6|Answer]]
+7.  **Algorithm:** Describe the Unification Algorithm (Martelli-Montanari). [[#A1.7|Answer]]
+8.  **Logical System:** What is a Logical System? [[#A1.8|Answer]]
+9.  **Derivations:** What is a derivation rule and a derivation tree? [[#A1.9|Answer]]
+10. **Goal-oriented:** What is a goal-oriented derivation? [[#A1.10|Answer]]
+11. **Well-Foundedness:** What is a well-founded relation? [[#A1.11|Answer]]
+12. **WFI Principle:** What is the Principle of Well-Founded Induction? [[#A1.12|Answer]]
+13. **Structural Induction:** What is Structural Induction? [[#A1.13|Answer]]
+14. **Rule Induction:** What is Rule Induction? [[#A1.14|Answer]]
+15. **Application:** How to prove properties of the operational semantics using Rule Induction? [[#A1.15|Answer]]
 
 
-This file contains a comprehensive list of questions collected from past exams (`MPP-questions.txt`).
-Click on **[Answer]** to jump to the solution at the bottom.
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{C}}
-\newcommand{\trans}[1]{\xrightarrow{#1}}
-\newcommand{\wtrans}[1]{\stackrel{#1}{\Longrightarrow}}
-$$
----
-## 1. Foundations & Preliminaries
 
-1.  **Termination:** What is the termination property? How is it expressed in operational and denotational semantics? [[#A1.1|Answer]]
-2.  **Determinacy:** What is the determinacy property? How is it expressed in operational and denotational semantics? [[#A1.2|Answer]]
-3.  **Equivalence:** What does it mean for two programs to be equivalent? Express it in operational and denotational terms. [[#A1.3|Answer]]
-4.  **Congruence:** What is a congruence? How to verify that an equivalence is a congruence? [[#A1.4|Answer]]
-5.  **Compositionality:** What is the compositionality principle for denotational semantics? [[#A1.5|Answer]]
-6.  **Syntax & Logic:** What are a signature, a type system, an inference rule, and a derivation? [[#A1.6|Answer]]
-7.  **Unification:** What is the unification problem and what are the rules to solve it? [[#A1.7|Answer]]
-
----
-
-## 2. Math & Logic (Induction & Domains)
-
-8.  **Well-Foundedness:** Define infinite descending chain, well-founded relation, and minimal element. [[#A2.1|Answer]]
-9.  **Induction Principles:** State the Well-Founded Induction principle. How are Mathematical, Structural, and Rule induction derived? [[#A2.2|Answer]]
-10. **Orders:** Define Partial Order (PO), Total Order, Discrete Order, and Flat Order. [[#A2.3|Answer]]
-11. **CPO & Limits:** Define Chain, Limit (LUB), and Complete Partial Order (CPO). [[#A2.4|Answer]]
-12. **Functions:** Define Monotone and Continuous functions. How to prove them? [[#A2.5|Answer]]
-13. **Fixpoints:** What is a fixpoint? State **Kleene's Fixpoint Theorem**. [[#A2.6|Answer]]
-14. **ICO:** What is the Immediate Consequence Operator ($\hat{R}$)? When is it continuous? How is it used to compute theorems? [[#A2.7|Answer]]
-
----
-
-## 3. IMP Semantics
-
-15. **IMP Semantics:** What is the syntax of IMP? What are the rules of its operational semantics (Big-Step)? [[#A3.1|Answer]]
-16. **Denotational IMP:** How is the denotational semantics of IMP defined? [[#A3.2|Answer]]
-17. **Consistency:** How to state the consistency between operational and denotational semantics? [[#A3.3|Answer]]
-18. **Proofs:** How to prove determinacy of commands? Which rule is used to prove divergence? [[#A3.4|Answer]]
-
----
-
-## 4. HOFL & Haskell
-
-19. **Lambda Calculus:** What are lambda-notation, alpha-conversion, and capture-avoiding substitution? [[#A4.1|Answer]]
-20. **Functional Programming:** What is a pure functional language? What is lazy evaluation? [[#A4.2|Answer]]
-21. **Haskell Features:** Syntax for guards, pattern matching, list comprehension. What is partial application? [[#A4.3|Answer]]
-22. **HOFL Syntax & Types:** Difference between pre-terms and terms. What are the types and type rules of HOFL? [[#A4.4|Answer]]
-23. **HOFL Operational:** What is a canonical form? What are the Big-Step rules? Difference between Lazy and Eager. [[#A4.5|Answer]]
-24. **Domain Theory for HOFL:** Define the domains $\mathbb{Z}_\perp$, Cartesian Product, and Functional Domain (Lifted). [[#A4.6|Answer]]
-25. **HOFL Denotational:** How is the semantics defined? What is the **Substitution Lemma**? [[#A4.7|Answer]]
-26. **Consistency:** For which types are operational and denotational semantics consistent? Do they coincide on convergence? [[#A4.8|Answer]]
-
----
-
-## 5. Concurrency (CCS)
-
-27. **CCS Syntax:** What is the syntax of CCS? How is iteration achieved? [[#A5.1|Answer]]
-28. **Operational Semantics:** What is the LTS style? What are the rules (Act, Sum, Par, Com, Res, Rec)? [[#A5.2|Answer]]
-29. **Process Types:** What is a finitely branching process? What is a guarded process? [[#A5.3|Answer]]
-30. **Equivalences:** Why are Graph Isomorphism and Trace Equivalence not good for CCS? [[#A5.4|Answer]]
-31. **Strong Bisimulation:** Define Strong Bisimulation and Bisimilarity. Describe the Game. [[#A5.5|Answer]]
-32. **Properties:** Is Strong Bisimilarity an equivalence? Is it a congruence? How to express it as a fixpoint? [[#A5.6|Answer]]
-33. **HML:** What is the syntax of Hennessy-Milner Logic? Relationship with Strong Bisimilarity? [[#A5.7|Answer]]
-
----
-
-## 6. Real Languages (Go & Erlang)
-
-34. **Erlang:** How are processes created (`spawn`)? Syntax for sending/receiving? Meaning of `after`? [[#A6.1|Answer]]
-35. **Go:** How are goroutines launched? How to create channels? Buffered vs Unbuffered? Syntax for `select`? [[#A6.2|Answer]]
-
----
-
-## 7. Advanced Concurrency
-
-36. **Weak Bisimulation:** What is a weak transition? Define Weak Bisimulation. Why is it not a congruence (Sum)? [[#A7.1|Answer]]
-37. **Weak Congruence:** What is Weak Observational Congruence? What are Milner's $\tau$-laws? [[#A7.2|Answer]]
-38. **Temporal Logics:** Syntax of LTL, CTL, CTL*. What is the difference between Linear and Branching time? [[#A7.3|Answer]]
-39. **Mu-Calculus:** Syntax. How to express Safety ($\nu$) and Liveness ($\mu$)? [[#A7.4|Answer]]
-
----
----
-
-# Answers
+## Answers (Part 1)
 
 ### A1.1
-* **Termination:** The program produces a final value/state for a given input.
-* **Op:** $\forall \sigma. \exists n. \langle a, \sigma \rangle \to n$.
-* **Den:** $\forall \sigma. \den{A}\sem{a}\sigma \neq \perp$.
-[[#1. Foundations & Preliminaries|Back to Q]]
+**Signature $\Sigma$**
+A **signature** $\Sigma$ is a set of function symbols (or operators), each associated with a specific **arity** (number of arguments).
+$$\Sigma = \{ (f, n) \mid f \text{ is a symbol}, n \in \mathbb{N} \}$$
+It is often partitioned as $\Sigma = \bigcup_{n} \Sigma_n$, where $\Sigma_n$ contains operators of arity $n$.
+* $c \in \Sigma_0$: Constants.
+* $f \in \Sigma_1$: Unary operators, etc.
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
 
 ### A1.2
-* **Determinacy:** If a program terminates, it yields a unique result.
-* **Op:** $\langle c, \sigma \rangle \to \sigma_1 \land \langle c, \sigma \rangle \to \sigma_2 \implies \sigma_1 = \sigma_2$.
-* **Den:** Implicit in the definition of function (functions are single-valued).
-[[#1. Foundations & Preliminaries|Back to Q]]
+**Terms ($T_\Sigma(X)$)**
+The set of **terms** $T_\Sigma(X)$ over a signature $\Sigma$ and a countable set of variables $X$ is defined inductively:
+1.  **Variables:** If $x \in X$, then $x$ is a term.
+2.  **Operators:** If $f \in \Sigma_n$ and $t_1, \dots, t_n$ are terms, then $f(t_1, \dots, t_n)$ is a term.
+*Note:* A term with no variables ($T_\Sigma(\emptyset)$) is called a **ground term** (or closed term).
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
 
 ### A1.3
-* **Operational Equivalence ($\sim$):** $c_1 \sim c_2 \iff \forall \sigma, \sigma'. (\langle c_1, \sigma \rangle \to \sigma' \iff \langle c_2, \sigma \rangle \to \sigma')$.
-* **Denotational Equivalence:** $\den{C}\sem{c_1} = \den{C}\sem{c_2}$.
-[[#1. Foundations & Preliminaries|Back to Q]]
+**Substitution**
+A substitution $\sigma$ is a partial function from variables to terms:
+$$\sigma: X \to T_\Sigma(X)$$
+such that $\sigma(x) \neq x$ for only a finite set of variables (the *domain* of $\sigma$).
+It is usually denoted as $\sigma = [t_1/x_1, \dots, t_n/x_n]$.
+The application of $\sigma$ to a term $t$ (written $t\sigma$) replaces simultaneously every occurrence of $x_i$ in $t$ with $t_i$.
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
 
 ### A1.4
-* **Congruence:** An equivalence relation $\approx$ is a congruence if $p \approx q \implies C[p] \approx C[q]$ for any context $C[\cdot]$.
-* **Verification:** Prove that the relation is preserved by all language constructors.
-[[#1. Foundations & Preliminaries|Back to Q]]
+**Instantiation Order**
+Given two substitutions $\theta$ and $\sigma$, we say that $\theta$ is **more general** than $\sigma$ (written $\theta \preceq \sigma$ or $\sigma$ is an instance of $\theta$) if there exists a substitution $\rho$ such that:
+$$\sigma = \rho \circ \theta$$
+This means $\sigma$ can be obtained by further instantiating the results of $\theta$.
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
 
 ### A1.5
-**Compositionality:** The meaning of a compound expression is a function of the meanings of its immediate constituents. $\den{C}\sem{op(c_1, c_2)} = F(\den{C}\sem{c_1}, \den{C}\sem{c_2})$.
-[[#1. Foundations & Preliminaries|Back to Q]]
+**Unification Problem**
+Given a set of equations between terms $E = \{t_1 = u_1, \dots, t_n = u_n\}$, the **unification problem** asks to find a substitution $\sigma$ (called a **unifier**) that makes both sides of each equation syntactically identical:
+$$\forall i.\ t_i\sigma \equiv u_i\sigma$$
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
 
 ### A1.6
-* **Signature:** Set of symbols with arity.
-* **Inference Rule:** Premises over Conclusion ($\frac{P_1 \dots P_n}{C}$).
-* **Derivation:** Tree of rules where leaves are axioms.
-[[#1. Foundations & Preliminaries|Back to Q]]
+**Most General Unifier (MGU)**
+A unifier $\mu$ for a problem $E$ is a **Most General Unifier** if it is more general than any other unifier of $E$.
+Formally: $\forall \sigma$ unifier of $E$, $\exists \rho$ such that $\sigma = \rho \circ \mu$.
+*Property:* If an MGU exists, it is unique up to variable renaming.
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
 
 ### A1.7
-**Unification:** Finding a substitution $\sigma$ such that $\sigma(t_1) = \sigma(t_2)$.
-**Rules:** Delete ($t=t$), Decompose ($f(..)=f(..)$), Eliminate ($x=t$), Swap ($t=x$), Conflict (Fail), Occurs Check (Fail).
-[[#1. Foundations & Preliminaries|Back to Q]]
+**Unification Algorithm (Martelli-Montanari)**
+The algorithm transforms a set of equations $E$ by non-deterministically applying the following rules until termination or failure:
+1.  **Delete:** $\{t = t\} \cup E' \implies E'$ (Remove trivial identities).
+2.  **Decompose:** $\{f(t_1, \dots, t_n) = f(u_1, \dots, u_n)\} \cup E' \implies \{t_1=u_1, \dots, t_n=u_n\} \cup E'$.
+3.  **Conflict:** $\{f(\dots) = g(\dots)\} \cup E' \implies \text{FAIL}$ if $f \neq g$.
+4.  **Swap:** $\{t = x\} \cup E' \implies \{x = t\} \cup E'$ if $t$ is not a variable.
+5.  **Eliminate:** $\{x = t\} \cup E' \implies \{x = t\} \cup E'[t/x]$ if $x \in Vars(E')$ and $x \notin Vars(t)$.
+6.  **Occurs Check:** $\{x = t\} \cup E' \implies \text{FAIL}$ if $x \neq t$ but $x \in Vars(t)$ (circularity, e.g., $x = f(x)$).
+
+If it terminates with $\{x_1=t_1, \dots, x_k=t_k\}$, this set represents the MGU.
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
+
+### A1.8
+**Logical System**
+A logical system $R$ is defined by a set of **inference rules**. Each rule has the form:
+$$\frac{P_1 \quad P_2 \quad \dots \quad P_n}{C}$$
+Where $P_i$ are the **premises** and $C$ is the **conclusion**.
+* If $n=0$, the rule is an **axiom** (e.g., $\langle \textbf{skip}, \sigma \rangle \to \sigma$).
+* Formulas derivable using these rules are called **theorems** of the system.
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
+
+### A1.9
+**Derivations**
+* A **derivation** (or proof) for a formula $\phi$ is a finite tree where:
+    * The root is labeled by $\phi$.
+    * The leaves are instances of axioms.
+    * Each internal node is the result of applying an inference rule to its children.
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
+
+### A1.10
+**Goal-Oriented Derivation**
+A "bottom-up" strategy to find a proof. Starting from the desired conclusion (**Goal**), one applies rules backward to generate sub-goals, repeating until all sub-goals are axioms (empty set of goals). This is the basis of Logic Programming (e.g., Prolog).
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
+
+### A1.11
+**Well-Founded Relation**
+A binary relation $\prec$ on a set $A$ is **well-founded** if it admits no infinite descending chains:
+$$\dots \prec a_2 \prec a_1 \prec a_0$$
+*Equivalent (Minimal Element Principle):* Every non-empty subset $Q \subseteq A$ has a **minimal element** $m$ (an element such that no $x \in Q$ satisfies $x \prec m$).
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
+
+### A1.12
+**Principle of Well-Founded Induction**
+Let $\prec$ be a well-founded relation on $A$. To prove a property $P(x)$ for all $x \in A$, it is sufficient to prove:
+$$\forall x \in A.\ (\forall y \prec x.\ P(y)) \implies P(x)$$
+*Intuition:* If $P(x)$ holds assuming it holds for all "smaller" elements, then it holds for everyone.
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
+
+### A1.13
+**Structural Induction**
+A special case of Well-Founded Induction where $\prec$ is the "immediate sub-term" relation.
+To prove $P(t)$ for all terms $t \in T_\Sigma$:
+1.  Prove $P$ for constants and variables (Base cases).
+2.  Prove $P(f(t_1, \dots, t_n))$ assuming $P(t_1), \dots, P(t_n)$ (Inductive step).
+*Limitation:* It is strictly tied to syntax. It works for properties of the program structure, but often fails for behavioral properties (e.g., transition semantics) where **Rule Induction** is needed.
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
+
+### A1.14
+**Rule Induction**
+The fundamental principle for proving properties of systems defined by inference rules (like Operational Semantics).
+Let $I_R$ be the set of theorems (derivable formulas). To prove that a property $P$ holds for all $\delta \in I_R$:
+* Prove that $P$ is **closed under the rules**.
+* For every rule $\frac{y_1 \dots y_n}{x}$:
+    $$P(y_1) \land \dots \land P(y_n) \implies P(x)$$
+If this implication holds for all rules (including axioms, where premises are empty), then $P$ holds for all derivable theorems.
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
+
+### A1.15
+**Application of Rule Induction**
+Used to prove properties of the transition relation $\to$ (e.g., Determinacy).
+Since the relation $\langle c, \sigma \rangle \to \sigma'$ is defined by rules:
+1.  **Base Cases:** Prove the property holds for axioms (e.g., `skip`, assignment).
+2.  **Inductive Steps:** For rules with premises (e.g., sequence, if, while), assume the property holds for the transitions in the premises (Inductive Hypothesis) and prove it holds for the conclusion.
+[[#Part 1: Logic, Unification & Induction|Back to Q]]
+
+
+
+## Part 2: IMP & Operational Semantics
+
+### Questions
+16. **Syntax:** What is the syntax of IMP (Aexp, Bexp, Com)? [[#A2.1|Answer]]
+17. **Small-Step Config:** What is the configuration of a small-step semantics? [[#A2.2|Answer]]
+18. **Small-Step Rules:** What are the rules of the Small-Step Operational Semantics (SOS) of IMP? [[#A2.3|Answer]]
+19. **Big-Step Rules:** What are the rules of the Big-Step Operational Semantics of IMP? [[#A2.4|Answer]]
+20. **Comparison:** What is the difference between small-step and big-step semantics? [[#A2.5|Answer]]
+21. **Termination (Aexp):** How to prove termination of arithmetic expressions? [[#A2.6|Answer]]
+22. **Determinacy (Aexp):** How to prove determinacy of arithmetic expressions? [[#A2.7|Answer]]
+23. **Determinacy (Com):** How to prove determinacy of commands? (Crucial Proof) [[#A2.8|Answer]]
+24. **Divergence:** Which rule allows proving the divergence of a command? [[#A2.9|Answer]]
+25. **Equivalence:** What is the definition of Program Equivalence based on operational semantics? [[#A2.10|Answer]]
+
+## Answers (Part 2)
 
 ### A2.1
-* **Descending Chain:** $a_0 \succ a_1 \succ a_2 \dots$.
-* **Well-Founded:** No infinite descending chains.
-* **Minimal Element:** $m \in Q$ such that no $x \in Q$ is smaller ($x \not\prec m$).
-[[#2. Math & Logic (Induction & Domains)|Back to Q]]
+**Syntax of IMP**
+IMP is defined by three syntactic categories:
+1.  **Aexp** (Arithmetic Expressions): $a ::= n \mid x \mid a_0 + a_1 \mid a_0 - a_1 \dots$
+2.  **Bexp** (Boolean Expressions): $b ::= \text{true} \mid \text{false} \mid a_0 = a_1 \mid a_0 \leq a_1 \mid \neg b \mid b_0 \land b_1 \dots$
+3.  **Com** (Commands):
+    $$c ::= \textbf{skip} \mid x := a \mid c_0 ; c_1 \mid \textbf{if } b \textbf{ then } c_0 \textbf{ else } c_1 \mid \textbf{while } b \textbf{ do } c$$
+*Note:* The state (memory) is a function $\sigma: \text{Loc} \to \mathbb{Z}$.
+[[#Part 2: IMP & Operational Semantics|Back to Q]]
 
 ### A2.2
-**WFI:** $(\forall y \prec x. P(y)) \implies P(x)$.
-* **Math:** Relation $n < n+1$ on $\mathbb{N}$.
-* **Structural:** Relation "is immediate subterm of".
-* **Rule:** Relation "is premise of".
-[[#2. Math & Logic (Induction & Domains)|Back to Q]]
+**Small-Step Configuration**
+A configuration is a pair $\langle c, \sigma \rangle$ representing the command yet to be executed and the current memory.
+* **Transitions:** $\langle c, \sigma \rangle \to \langle c', \sigma' \rangle$ (intermediate step) or $\langle c, \sigma \rangle \to \sigma'$ (termination).
+* **Property:** SOS describes the computation *step-by-step*, allowing the observation of intermediate states (useful for concurrency).
+[[#Part 2: IMP & Operational Semantics|Back to Q]]
 
 ### A2.3
-* **Partial Order:** Reflexive, Antisymmetric, Transitive.
-* **Discrete:** $x \sqsubseteq y \iff x=y$.
-* **Flat:** $x \sqsubseteq y \iff x=\perp \lor x=y$.
-[[#2. Math & Logic (Induction & Domains)|Back to Q]]
+**Small-Step Rules (Key Examples)**
+* **Assignment:** $\langle x:=n, \sigma \rangle \to \sigma[n/x]$ (where $n$ is a value).
+* **Sequence:**
+    $$\frac{\langle c_0, \sigma \rangle \to \langle c_0', \sigma' \rangle}{\langle c_0; c_1, \sigma \rangle \to \langle c_0'; c_1, \sigma' \rangle} \quad \text{and} \quad \frac{\langle c_0, \sigma \rangle \to \sigma'}{\langle c_0; c_1, \sigma \rangle \to \langle c_1, \sigma' \rangle}$$
+* **While (Unrolling):**
+    $$\langle \textbf{while } b \textbf{ do } c, \sigma \rangle \to \langle \textbf{if } b \textbf{ then } (c; \textbf{while } b \textbf{ do } c) \textbf{ else skip}, \sigma \rangle$$
+[[#Part 2: IMP & Operational Semantics|Back to Q]]
 
 ### A2.4
-* **Chain:** Totally ordered subset $\{d_i\}$.
-* **Limit ($\bigsqcup$):** Least Upper Bound.
-* **CPO:** PO where every chain has a limit. $CPO_\perp$ also has bottom.
-[[#2. Math & Logic (Induction & Domains)|Back to Q]]
+**Big-Step Rules (Natural Semantics)**
+Describes the relation between initial state and final state directly: $\langle c, \sigma \rangle \to \sigma'$.
+* **Skip:** $\langle \textbf{skip}, \sigma \rangle \to \sigma$.
+* **Sequence:**
+    $$\frac{\langle c_0, \sigma \rangle \to \sigma'' \quad \langle c_1, \sigma'' \rangle \to \sigma'}{\langle c_0; c_1, \sigma \rangle \to \sigma'}$$
+* **While (True):**
+    $$\frac{\langle b, \sigma \rangle \to \text{true} \quad \langle c, \sigma \rangle \to \sigma'' \quad \langle \textbf{while } b \textbf{ do } c, \sigma'' \rangle \to \sigma'}{\langle \textbf{while } b \textbf{ do } c, \sigma \rangle \to \sigma'}$$
+[[#Part 2: IMP & Operational Semantics|Back to Q]]
 
 ### A2.5
-* **Monotone:** $x \sqsubseteq y \implies f(x) \sqsubseteq f(y)$.
-* **Continuous:** $f(\bigsqcup d_i) = \bigsqcup f(d_i)$.
-* **Proof:** Show LHS $\sqsubseteq$ RHS and RHS $\sqsubseteq$ LHS (Monotonicity implies one direction).
-[[#2. Math & Logic (Induction & Domains)|Back to Q]]
+**Small-step vs Big-step**
+* **Small-step (SOS):** Closer to the physical execution (abstract machine). Can distinguish between deadlock and infinite loop. Necessary for **concurrency** (interleaving).
+* **Big-step:** More abstract. Concise for proving properties like equivalence or writing interpreters/compilers. Cannot easily model non-terminating computations (they just have no derivation tree).
+[[#Part 2: IMP & Operational Semantics|Back to Q]]
 
 ### A2.6
-* **Fixpoint:** $x$ such that $f(x)=x$.
-* **Kleene:** If $D$ is $CPO_\perp$ and $f$ continuous, $\text{fix}(f) = \bigsqcup_n f^n(\perp)$.
-[[#2. Math & Logic (Induction & Domains)|Back to Q]]
+**Termination of Aexp**
+We prove that "Every arithmetic expression $a$ evaluates to a value $n$".
+**Method:** Structural Induction on $a$.
+1.  **Base Cases:** $n$ evaluates to $n$; $x$ evaluates to $\sigma(x)$.
+2.  **Inductive Step ($a_0 + a_1$):** Assume $a_0 \to n_0$ and $a_1 \to n_1$ (IH). Then by the rule for $+$, $a_0 + a_1 \to n_{sum}$.
+*Conclusion:* Expressions in IMP always terminate (no recursion/loops inside expressions).
+[[#Part 2: IMP & Operational Semantics|Back to Q]]
 
 ### A2.7
-**ICO ($\hat{R}$):** Function mapping a set of facts $S$ to facts derivable in one step from $S$.
-$\text{fix}(\hat{R}) = I_R$ (set of theorems).
-[[#2. Math & Logic (Induction & Domains)|Back to Q]]
+**Determinacy of Aexp**
+**Theorem:** $\forall a, \sigma, n, m.\ (\langle a, \sigma \rangle \to n \land \langle a, \sigma \rangle \to m) \implies n = m$.
+**Method:** Structural Induction on $a$ (since rules for expressions are syntax-directed).
+* Since for every syntactic form (e.g., $a_0 + a_1$) there is exactly one applicable rule, the result is unique.
+[[#Part 2: IMP & Operational Semantics|Back to Q]]
+
+### A2.8
+**Determinacy of Commands**
+**Theorem:** $\forall c, \sigma, \sigma_1, \sigma_2.\ (\langle c, \sigma \rangle \to \sigma_1 \land \langle c, \sigma \rangle \to \sigma_2) \implies \sigma_1 = \sigma_2$.
+**Method:** **Rule Induction** on the derivation of $\langle c, \sigma \rangle \to \sigma_1$.
+*(Structural induction fails because of the `while` loop)*.
+
+**Proof Sketch:**
+Let $P(\langle c, \sigma \rangle \to \sigma_1)$ be the property: "for all $\sigma_2$, if $\langle c, \sigma \rangle \to \sigma_2$ then $\sigma_1 = \sigma_2$".
+1.  **Base Cases (Skip/Assign):** Trivial (only one rule applies).
+2.  **Step (Sequence $c_0; c_1$):**
+    * Premises: $\langle c_0, \sigma \rangle \to \sigma'$ and $\langle c_1, \sigma' \rangle \to \sigma_1$.
+    * IH: Determinacy holds for $c_0$ transition and $c_1$ transition.
+    * Assume another derivation $\langle c_0; c_1, \sigma \rangle \to \sigma_2$. This *must* come from $\langle c_0, \sigma \rangle \to \sigma''$ and $\langle c_1, \sigma'' \rangle \to \sigma_2$.
+    * By IH on $c_0$, $\sigma' = \sigma''$.
+    * By IH on $c_1$ (starting from same $\sigma'$), $\sigma_1 = \sigma_2$. QED.
+[[#Part 2: IMP & Operational Semantics|Back to Q]]
+
+### A2.9
+**Divergence**
+A command $c$ **diverges** in $\sigma$ if there is no state $\sigma'$ such that $\langle c, \sigma \rangle \to \sigma'$ (in Big-Step).
+In Small-Step, it corresponds to an **infinite sequence** of transitions:
+$$\langle c, \sigma \rangle \to \langle c_1, \sigma_1 \rangle \to \langle c_2, \sigma_2 \rangle \to \dots$$
+*Proof:* To prove divergence formally, we usually find a property (invariant) preserved by the small-step rules that prevents reaching a terminal state.
+[[#Part 2: IMP & Operational Semantics|Back to Q]]
+
+### A2.10
+**Operational Equivalence**
+Two commands $c_1, c_2$ are operationally equivalent ($c_1 \sim_{op} c_2$) if, for all starting states $\sigma$:
+1.  They both diverge; OR
+2.  They both terminate in the same state $\sigma'$.
+Formally (using Big-Step):
+$$\forall \sigma, \sigma'. \ (\langle c_1, \sigma \rangle \to \sigma' \iff \langle c_2, \sigma \rangle \to \sigma')$$
+[[#Part 2: IMP & Operational Semantics|Back to Q]]
+
+
+
+## Part 3: Orders, Fixpoints & Domain Theory
+
+### Questions
+26. **Partial Order:** What is a Partial Order (PO)? [[#A3.1|Answer]]
+27. **CPO:** What is a Complete Partial Order (CPO) and a Chain? [[#A3.2|Answer]]
+28. **Bottom:** What is a pointed CPO ($CPO_\perp$)? [[#A3.3|Answer]]
+29. **Monotonicity:** What is a monotone function? [[#A3.4|Answer]]
+30. **Continuity:** What is a continuous function? [[#A3.5|Answer]]
+31. **Kleene's Theorem:** **What is Kleene's Fixpoint Theorem?** (Statement & Proof Sketch) [[#A3.6|Answer]]
+32. **Knaster-Tarski:** What is the Knaster-Tarski Theorem? [[#A3.7|Answer]]
+33. **ICO:** **What is the Immediate Consequence Operator $\hat{R}$?** [[#A3.8|Answer]]
+34. **Logic Fixpoint:** How can the set of theorems of a logical system be seen as a fixpoint? [[#A3.9|Answer]]
+35. **Discrete/Flat:** What is a discrete domain and a flat domain? [[#A3.10|Answer]]
+36. **Constructions:** How are Product ($D \times E$) and Function Space ($[D \to E]$) domains defined? [[#A3.11|Answer]]
+37. **Lifting:** What is the Lifted Domain $D_\perp$? [[#A3.12|Answer]]
+
+
+
+## Answers (Part 3)
 
 ### A3.1
-**IMP:** `skip`, `:=`, `;`, `if`, `while`.
-**Big-Step Rules:** E.g., $\frac{\langle b,\sigma \rangle \to \text{true} \quad \langle c, \sigma \rangle \to \sigma'}{\langle \textbf{while } b \dots \rangle \to \sigma'}$.
-[[#3. IMP Semantics|Back to Q]]
+**Partial Order (PO)**
+A partial order is a pair $(D, \sqsubseteq)$ where $D$ is a set and $\sqsubseteq$ is a binary relation that is:
+1.  **Reflexive:** $\forall d \in D.\ d \sqsubseteq d$.
+2.  **Transitive:** $\forall d_1, d_2, d_3.\ d_1 \sqsubseteq d_2 \land d_2 \sqsubseteq d_3 \implies d_1 \sqsubseteq d_3$.
+3.  **Antisymmetric:** $\forall d_1, d_2.\ d_1 \sqsubseteq d_2 \land d_2 \sqsubseteq d_1 \implies d_1 = d_2$.
+[[#Part 3: Orders, Fixpoints & Domain Theory|Back to Q]]
 
 ### A3.2
-**Denotational:** $\den{C}\sem{c} : \Sigma \to \Sigma_\perp$.
-Defined compositionally. `while` is the fixpoint of $\Gamma_{b,c}$.
-[[#3. IMP Semantics|Back to Q]]
+**Chain & CPO**
+* **Chain:** A sequence $\{d_i\}_{i \in \mathbb{N}}$ of elements in $D$ such that $\forall i.\ d_i \sqsubseteq d_{i+1}$ (increasing sequence).
+* **CPO (Complete Partial Order):** A partial order $(D, \sqsubseteq)$ is complete if every chain $\{d_i\}$ has a **Least Upper Bound (LUB)**, denoted as $\bigsqcup_{i \in \mathbb{N}} d_i$, in $D$.
+[[#Part 3: Orders, Fixpoints & Domain Theory|Back to Q]]
 
 ### A3.3
-**Consistency:** $\langle c, \sigma \rangle \to \sigma' \iff \den{C}\sem{c}\sigma = \sigma'$.
-[[#3. IMP Semantics|Back to Q]]
+**Pointed CPO ($CPO_\perp$)**
+A CPO is **pointed** (or *with bottom*) if it contains a least element, denoted $\perp$ (bottom), such that $\forall d \in D.\ \perp \sqsubseteq d$.
+*Relevance:* $\perp$ represents "no information", "non-termination", or "undefined".
+[[#Part 3: Orders, Fixpoints & Domain Theory|Back to Q]]
 
 ### A3.4
-* **Determinacy:** Proven by Rule Induction.
-* **Divergence:** Proven by finding a fixpoint $\perp$ or using specific inference rules for non-termination ($\to \infty$).
-[[#3. IMP Semantics|Back to Q]]
+**Monotone Function**
+A function $f: D \to E$ between POs is **monotone** if it preserves the order:
+$$\forall d_1, d_2 \in D.\ d_1 \sqsubseteq_D d_2 \implies f(d_1) \sqsubseteq_E f(d_2)$$
+*Intuition:* More information in input yields at least as much information in output.
+[[#Part 3: Orders, Fixpoints & Domain Theory|Back to Q]]
+
+### A3.5
+**Continuous Function**
+A function $f: D \to E$ between CPOs is **continuous** if it preserves limits of chains:
+For every chain $\{d_i\}_{i \in \mathbb{N}}$ in $D$:
+$$f\left(\bigsqcup_{i \in \mathbb{N}} d_i\right) = \bigsqcup_{i \in \mathbb{N}} f(d_i)$$
+*Note:* Continuity implies monotonicity.
+*Relevance:* Allows computing the result of a limit by computing the limit of the results.
+[[#Part 3: Orders, Fixpoints & Domain Theory|Back to Q]]
+
+### A3.6
+**Kleene's Fixpoint Theorem**
+**Statement:** Let $(D, \sqsubseteq)$ be a pointed CPO ($CPO_\perp$) and $f: D \to D$ be a **continuous** function. Then $f$ has a **least fixpoint** (lfp), computed as:
+$$\text{fix}(f) = \bigsqcup_{n \in \mathbb{N}} f^n(\perp)$$
+where $f^0(\perp) = \perp$ and $f^{n+1}(\perp) = f(f^n(\perp))$.
+
+**Proof Sketch (Required in exam):**
+1.  **Chain Construction:** Since $\perp \sqsubseteq f(\perp)$ and $f$ is monotone, by induction $\perp \sqsubseteq f(\perp) \sqsubseteq f^2(\perp) \dots$ is a chain.
+2.  **Existence:** Since $D$ is a CPO, the limit $u = \bigsqcup f^n(\perp)$ exists.
+3.  **Fixpoint Property:** $f(u) = f(\bigsqcup f^n(\perp)) = \text{(continuity)} = \bigsqcup f(f^n(\perp)) = \bigsqcup f^{n+1}(\perp) = u$.
+4.  **Least Property:** Let $d$ be another fixpoint ($f(d)=d$). Since $\perp \sqsubseteq d$, by monotonicity $f^n(\perp) \sqsubseteq f^n(d) = d$. Thus $u = \bigsqcup f^n(\perp) \sqsubseteq d$.
+[[#Part 3: Orders, Fixpoints & Domain Theory|Back to Q]]
+
+### A3.7
+**Knaster-Tarski Theorem**
+Let $(L, \sqsubseteq)$ be a **Complete Lattice** (limits exist for *any* subset, not just chains) and $f: L \to L$ be a **monotone** function.
+Then the set of fixpoints of $f$ is a complete lattice itself, and:
+$$\text{lfp}(f) = \mathop{\large\sqcap} \{ x \in L \mid f(x) \sqsubseteq x \}$$
+*(Used when we don't have continuity, e.g., for sets of derivation rules, but Kleene is preferred for computability).*
+[[#Part 3: Orders, Fixpoints & Domain Theory|Back to Q]]
+
+### A3.8
+**Immediate Consequence Operator ($\hat{R}$)**
+Given a logical system with rules $R$, $\hat{R}: \wp(\text{Formulas}) \to \wp(\text{Formulas})$ is defined as:
+$$\hat{R}(S) = \{ y \mid \exists \frac{x_1 \dots x_n}{y} \in R \text{ s.t. } \{x_1, \dots, x_n\} \subseteq S \}$$
+It calculates all facts that can be derived in *exactly one step* from the set of known facts $S$.
+*Prop:* $\hat{R}$ is continuous on the powerset lattice.
+[[#Part 3: Orders, Fixpoints & Domain Theory|Back to Q]]
+
+### A3.9
+**Fixpoint Semantics of Logic**
+The set of all provable theorems $I_R$ is the **least fixpoint** of the operator $\hat{R}$.
+$$I_R = \bigcup_{n \in \mathbb{N}} \hat{R}^n(\emptyset)$$
+This relates logical derivation (proof trees) with domain theory (limits of approximation).
+[[#Part 3: Orders, Fixpoints & Domain Theory|Back to Q]]
+
+### A3.10
+**Discrete & Flat Domains**
+* **Discrete Domain:** A set ordered by identity only ($d_1 \sqsubseteq d_2 \iff d_1 = d_2$). No approximation, only equality.
+* **Flat Domain ($S_\perp$):** A discrete domain $S$ augmented with a bottom $\perp$. Order: $\perp \sqsubseteq x$ for all $x$, and $x \sqsubseteq y \iff x=y$ for $x,y \neq \perp$. (Used for integers, booleans in IMP).
+[[#Part 3: Orders, Fixpoints & Domain Theory|Back to Q]]
+
+### A3.11
+**Product and Function Domains**
+* **Product ($D \times E$):** Pairs $(d, e)$. Order is component-wise:
+    $$(d_1, e_1) \sqsubseteq (d_2, e_2) \iff d_1 \sqsubseteq_D d_2 \land e_1 \sqsubseteq_E e_2$$
+    Limit is component-wise.
+* **Function Space ($[D \to E]$):** The set of **continuous** functions from $D$ to $E$. Order is point-wise:
+    $$f \sqsubseteq g \iff \forall d \in D.\ f(d) \sqsubseteq_E g(d)$$
+    Limit is point-wise: $(\bigsqcup f_i)(d) = \bigsqcup (f_i(d))$.
+[[#Part 3: Orders, Fixpoints & Domain Theory|Back to Q]]
+
+### A3.12
+**Lifted Domain ($D_\perp$)**
+Used to distinguish "undefined" from "defined but bottom" (in lazy evaluation) or simply to add a bottom to a domain.
+Elements: $D \cup \{\perp_{new}\}$.
+Order: $\perp_{new} \sqsubseteq x$ for all $x$, and elements of $D$ keep their original order.
+*(Critical for HOFL Denotational Semantics).*
+[[#Part 3: Orders, Fixpoints & Domain Theory|Back to Q]]
+
+
+
+## Part 4: HOFL & Denotational Semantics
+
+### Questions
+38. **Syntax:** What is the syntax of HOFL? What is the difference between pre-terms and terms? [[#A4.1|Answer]]
+39. **Typing:** What are the rules of the Type System (Judgments $\Gamma \vdash t : \tau$)? [[#A4.2|Answer]]
+40. **Principal Type:** What is a Principal Type? [[#A4.3|Answer]]
+41. **Canonical Forms:** What is a Canonical Form in HOFL? [[#A4.4|Answer]]
+42. **Operational Semantics:** What are the rules for the Lazy Operational Semantics of HOFL? [[#A4.5|Answer]]
+43. **Evaluation Strategy:** What is the difference between Lazy (Call-by-Name) and Eager (Call-by-Value)? [[#A4.6|Answer]]
+44. **Domains:** How are the semantic domains for types ($D_\tau$) defined? [[#A4.7|Answer]]
+45. **Denotational Semantics:** How is the interpretation function $\sem{t}_\rho$ defined? [[#A4.8|Answer]]
+46. **Substitution Lemma:** **What is the Substitution Lemma?** (Crucial for consistency) [[#A4.9|Answer]]
+47. **Consistency:** What is the relation between Operational and Denotational semantics? [[#A4.10|Answer]]
+
+
+## Answers (Part 4)
 
 ### A4.1
-* **Lambda:** $\lambda x. t$.
-* **Alpha:** Renaming bound vars.
-* **Capture-avoiding:** Substitution that renames bound vars to avoid capturing free ones.
-[[#4. HOFL & Haskell|Back to Q]]
+**HOFL Syntax**
+* **Pre-terms:** The raw grammar of the language:
+  $$t ::= x \mid n \mid t_0 + t_1 \mid \textbf{if } t \textbf{ then } t_0 \textbf{ else } t_1 \mid (t_0, t_1) \mid \textbf{fst}(t) \mid \textbf{snd}(t) \mid \lambda x. t \mid t_0 t_1 \mid \textbf{rec } x. t$$
+* **Terms:** The subset of pre-terms that are **well-typed** according to the type system. Only terms have a guaranteed semantics.
+[[#Part 4: HOFL & Denotational Semantics|Back to Q]]
 
 ### A4.2
-* **Pure:** No side effects, referential transparency.
-* **Lazy:** Arguments evaluated only when needed (Call-by-Name + Sharing).
-[[#4. HOFL & Haskell|Back to Q]]
+**Type System Rules**
+Judgments of form $\Gamma \vdash t : \tau$, where $\Gamma$ assigns types to free variables.
+* **Var:** $\Gamma, x:\tau \vdash x : \tau$
+* **Abs:** $\frac{\Gamma, x:\tau_1 \vdash t : \tau_2}{\Gamma \vdash \lambda x. t : \tau_1 \to \tau_2}$
+* **App:** $\frac{\Gamma \vdash t_1 : \tau_1 \to \tau_2 \quad \Gamma \vdash t_2 : \tau_1}{\Gamma \vdash t_1 t_2 : \tau_2}$
+* **Rec:** $\frac{\Gamma, x:\tau \vdash t : \tau}{\Gamma \vdash \textbf{rec } x. t : \tau}$ (Fixed point requires domain consistency).
+[[#Part 4: HOFL & Denotational Semantics|Back to Q]]
 
 ### A4.3
-* **Guards:** `| condition = value`.
-* **Pattern Matching:** `f (x:xs) = ...`.
-* **Partial App:** `inc = (+1)`.
-[[#4. HOFL & Haskell|Back to Q]]
+**Principal Type**
+A type $\tau$ is the **principal type** of a term $t$ if:
+1.  $\Gamma \vdash t : \tau$ is derivable.
+2.  For any other derivable type $\tau'$ for $t$, there exists a substitution $\sigma$ such that $\tau' = \tau\sigma$.
+*Algorithm:* Uses Unification (Robinson/Martelli-Montanari) to infer the most general type constraints.
+[[#Part 4: HOFL & Denotational Semantics|Back to Q]]
 
 ### A4.4
-**Types:** `int`, $\tau_1 \times \tau_2$, $\tau_1 \to \tau_2$.
-**Rule (App):** $\frac{\Gamma \vdash t_1 : \tau \to \sigma \quad \Gamma \vdash t_0 : \tau}{\Gamma \vdash t_1 t_0 : \sigma}$.
-[[#4. HOFL & Haskell|Back to Q]]
+**Canonical Forms**
+The values that result from a terminating computation.
+$$c ::= n \mid (t_0, t_1) \mid \lambda x. t$$
+*Note:* In Lazy semantics, the components of a pair $(t_0, t_1)$ are *not* required to be canonical forms themselves.
+[[#Part 4: HOFL & Denotational Semantics|Back to Q]]
 
 ### A4.5
-* **Canonical Form:** Value that cannot be reduced further (e.g., $\lambda x. t$, pair of terms).
-* **Lazy:** Arguments substituted unevaluated.
-* **Eager:** Arguments evaluated to canonical form before substitution.
-[[#4. HOFL & Haskell|Back to Q]]
+**Lazy Operational Semantics ($t \downarrow c$)**
+Big-step semantics where arguments are not evaluated before function application.
+* **App:**
+  $$\frac{t_1 \downarrow \lambda x.t'_1 \quad t'_1[t_2/x] \downarrow c}{t_1 t_2 \downarrow c}$$
+  *(Note that $t_2$ is substituted `as is` into the body).*
+* **Fst:**
+  $$\frac{t \downarrow (t_1, t_2) \quad t_1 \downarrow c}{\textbf{fst}(t) \downarrow c}$$
+[[#Part 4: HOFL & Denotational Semantics|Back to Q]]
 
 ### A4.6
-* $\mathbb{Z}_\perp$: Integers + $\perp$.
-* **Lifted:** $D_\perp = \{\lfloor d \rfloor \mid d \in D\} \cup \{\perp\}$.
-* **Functional:** $[D \to E]_\perp$. (Continuous functions).
-[[#4. HOFL & Haskell|Back to Q]]
+**Lazy vs Eager**
+* **Lazy (Call-by-Name):** Arguments are substituted unevaluated. Functions are applied immediately.
+  * *Advantage:* Can handle infinite structures (streams). Terminates more often.
+* **Eager (Call-by-Value):** Arguments are evaluated to canonical form *before* application.
+  * Rule: $\frac{t_1 \downarrow \lambda x.t'_1 \quad t_2 \downarrow c_2 \quad t'_1[c_2/x] \downarrow c}{t_1 t_2 \downarrow c}$
+[[#Part 4: HOFL & Denotational Semantics|Back to Q]]
 
 ### A4.7
-* **Interpretation:** $\sem{\lambda x. t}\rho = \lfloor \lambda d. \sem{t}\rho[d/x] \rfloor$.
-* **Substitution Lemma:** $\sem{t[t_0/x]}\rho = \sem{t}\rho[\sem{t_0}\rho/x]$.
-[[#4. HOFL & Haskell|Back to Q]]
+**Semantic Domains**
+Defined inductively on types to handle partiality (lifting).
+* $D_{int} = \mathbb{Z}_\perp$ (Flat domain of integers).
+* $D_{\tau_1 \times \tau_2} = (D_{\tau_1} \times D_{\tau_2})_\perp$ (Lifted product).
+* $D_{\tau_1 \to \tau_2} = [D_{\tau_1} \to D_{\tau_2}]_\perp$ (Lifted function space).
+* *Why Lifted?* To distinguish between a diverging computation ($\perp$) and a computation that returns a value (even if that value is a function or pair).
+[[#Part 4: HOFL & Denotational Semantics|Back to Q]]
 
 ### A4.8
-Consistent for all types. Convergence coincides for `int` type.
-[[#4. HOFL & Haskell|Back to Q]]
+**Denotational Semantics ($\sem{t}_\rho$)**
+Maps a term $t$ and an environment $\rho$ to an element in $D_\tau$.
+* $\sem{n}_\rho = \lfloor n \rfloor$ (Lifted value).
+* $\sem{\lambda x. t}_\rho = \lfloor \boldsymbol{\lambda} d. \sem{t}_{\rho[d/x]} \rfloor$ (Returns a lifted continuous function).
+* $\sem{t_1 t_2}_\rho = \text{Let } \varphi \Leftarrow \sem{t_1}_\rho \text{ in } \varphi(\sem{t_2}_\rho)$ (Monadic bind: if $t_1$ diverges, result is $\perp$).
+* $\sem{\textbf{rec } x. t}_\rho = \text{fix}(\boldsymbol{\lambda} d. \sem{t}_{\rho[d/x]})$.
+[[#Part 4: HOFL & Denotational Semantics|Back to Q]]
+
+### A4.9
+**Substitution Lemma**
+The denotation of a term with a substitution is equal to the denotation of the term in an updated environment.
+$$\sem{t[t'/x]}_\rho = \sem{t}_{\rho[\sem{t'}_\rho/x]}$$
+*Importance:* It is the key step to prove that the operational rule for application (which uses substitution) matches the denotational definition (which uses environment update).
+[[#Part 4: HOFL & Denotational Semantics|Back to Q]]
+
+### A4.10
+**Consistency**
+**Theorem:** For any closed term $t$ and canonical form $c$:
+$$t \downarrow c \implies \sem{t} = \sem{c}$$
+*Interpretation:* The Operational semantics is **correct** with respect to Denotational semantics.
+*Note:* The converse (Completeness) does NOT hold in the standard model (due to the "Parallel OR" problem, although for HOFL/PC it's more about full abstraction issues).
+[[#Part 4: HOFL & Denotational Semantics|Back to Q]]
+
+
+
+## Part 5: Concurrency (CCS)
+
+### Questions
+48. **Syntax:** What is the syntax of CCS? [[#A5.1|Answer]]
+49. **LTS:** What is the Labeled Transition System (LTS) for CCS? [[#A5.2|Answer]]
+50. **Derivation:** How is the `Com` (Communication) rule defined? [[#A5.3|Answer]]
+51. **Strong Bisimulation:** What is the definition of Strong Bisimulation? [[#A5.4|Answer]]
+52. **Bisimilarity:** What is Strong Bisimilarity ($\sim$)? [[#A5.5|Answer]]
+53. **Game:** What are the rules of the Bisimulation Game? [[#A5.6|Answer]]
+54. **Congruence:** Is Strong Bisimilarity a congruence? [[#A5.7|Answer]]
+55. **Verification:** How to prove that two processes are strongly bisimilar? [[#A5.8|Answer]]
+
+## Answers (Part 5)
 
 ### A5.1
-**Syntax:** $\textbf{nil}, \alpha.P, P+Q, P|Q, P \setminus L, A$.
-**Iteration:** Via recursion (`rec x. P` or definitions $A \stackrel{\text{def}}{=} \dots$).
-[[#5. Concurrency (CCS)|Back to Q]]
+**CCS Syntax**
+$$P ::= \textbf{nil} \mid \mu.P \mid P \setminus L \mid P[f] \mid P_1 + P_2 \mid P_1 \mid P_2 \mid K$$
+* $\mu$: Action ($\alpha$ input, $\bar{\alpha}$ output, or $\tau$ internal).
+* $\setminus L$: Restriction (hides actions in set $L$).
+* $[f]$: Relabeling.
+* $+$: Non-deterministic choice.
+* $\mid$: Parallel composition.
+[[#Part 5: Concurrency (CCS)|Back to Q]]
 
 ### A5.2
-**LTS:** Small-step.
-**Rules:** `Act` (prefix), `Sum` (choice), `Par` (interleaving), `Com` (sync $\tau$), `Res` (filtering).
-[[#5. Concurrency (CCS)|Back to Q]]
+**LTS Rules**
+Define transitions $P \xrightarrow{\mu} P'$.
+* **Act:** $\mu.P \xrightarrow{\mu} P$
+* **Sum:** If $P_1 \xrightarrow{\mu} P_1'$, then $P_1 + P_2 \xrightarrow{\mu} P_1'$ (Choice is resolved).
+* **Par:** Processes can move independently ($P_1 \mid P_2 \xrightarrow{\mu} P_1' \mid P_2$) or synchronize.
+[[#Part 5: Concurrency (CCS)|Back to Q]]
 
 ### A5.3
-* **Finitely Branching:** Finite number of immediate transitions.
-* **Guarded:** Recursive calls occur under a prefix (avoids $\tau$-loops/infinite branching).
-[[#5. Concurrency (CCS)|Back to Q]]
+**Communication Rule (Com)**
+Describes the synchronization (handshake) between two parallel processes.
+$$\frac{P_1 \xrightarrow{\alpha} P_1' \quad P_2 \xrightarrow{\bar{\alpha}} P_2'}{P_1 \mid P_2 \xrightarrow{\tau} P_1' \mid P_2'}$$
+*Result:* An internal silent action $\tau$.
+[[#Part 5: Concurrency (CCS)|Back to Q]]
 
 ### A5.4
-* **Iso:** Distinguishes states names (too strict).
-* **Trace:** Ignores branching points (too weak, $a.(b+c) \equiv_{tr} a.b + a.c$).
-[[#5. Concurrency (CCS)|Back to Q]]
+**Strong Bisimulation ($R$)**
+A binary relation $R$ is a strong bisimulation if for all $(P, Q) \in R$:
+1.  If $P \xrightarrow{\mu} P'$, then $\exists Q'$ such that $Q \xrightarrow{\mu} Q'$ and $(P', Q') \in R$.
+2.  If $Q \xrightarrow{\mu} Q'$, then $\exists P'$ such that $P \xrightarrow{\mu} P'$ and $(P', Q') \in R$.
+*Slogan:* "Every move of one must be matched by the other to reach equivalent states."
+[[#Part 5: Concurrency (CCS)|Back to Q]]
 
 ### A5.5
-**Bisimulation:** $P \sim Q$ if every move of $P$ can be matched by $Q$ to an equivalent state (and vice versa).
-**Game:** Attacker moves, Defender matches. Infinite game = Defender wins (Bisimilar).
-[[#5. Concurrency (CCS)|Back to Q]]
+**Strong Bisimilarity ($\sim$)**
+It is the union of all strong bisimulations (the largest bisimulation).
+$$P \sim Q \iff \exists R \text{ bisimulation s.t. } (P, Q) \in R$$
+It is an **equivalence relation**.
+[[#Part 5: Concurrency (CCS)|Back to Q]]
 
 ### A5.6
-Is Equivalence? Yes. Congruence? Yes.
-**Fixpoint:** $\sim = \nu F$ (Greatest Fixpoint of the bisimulation functional).
-[[#5. Concurrency (CCS)|Back to Q]]
+**Bisimulation Game**
+Played by **Attacker** and **Defender** on pair $(P, Q)$.
+1.  Attacker chooses one process (say $P$) and makes a move $P \xrightarrow{\mu} P'$.
+2.  Defender must match with the other process $Q \xrightarrow{\mu} Q'$.
+3.  Game continues from $(P', Q')$.
+*Result:* If Attacker gets stuck (cannot move), Defender wins. If Attacker makes a move Defender cannot match, Attacker wins ($P \not\sim Q$). Infinite game = Defender wins ($P \sim Q$).
+[[#Part 5: Concurrency (CCS)|Back to Q]]
 
 ### A5.7
-**HML:** $\langle \alpha \rangle F$ (Exists move), $[\alpha]F$ (For all moves).
-**Thm:** $P \sim Q \iff (P \models F \iff Q \models F \quad \forall F)$.
-[[#5. Concurrency (CCS)|Back to Q]]
+**Congruence**
+Strong bisimilarity $\sim$ **IS** a congruence with respect to all CCS operators.
+*Meaning:* If $P \sim Q$, then $C[P] \sim C[Q]$ for any context $C$.
+*(Note: This allows substituting equivalent components in modular design).*
+[[#Part 5: Concurrency (CCS)|Back to Q]]
 
-### A6.1
-**Erlang:**
-* `spawn(fun)` returns Pid.
-* `Pid ! Msg` (Send). `receive Pat -> ... end` (Recv).
-* `after T`: Timeout clause in receive.
-[[#6. Real Languages (Go & Erlang)|Back to Q]]
-
-### A6.2
-**Go:**
-* `go f()` (Goroutine).
-* `make(chan int)` (Unbuffered/Sync), `make(chan int, N)` (Buffered/Async).
-* `select`: Non-deterministic choice over channels.
-[[#6. Real Languages (Go & Erlang)|Back to Q]]
-
-### A7.1
-* **Weak Trans:** $\wtrans{\alpha} = \trans{\tau}^*\trans{\alpha}\trans{\tau}^*$.
-* **Weak Bisim:** Matches $\trans{\alpha}$ with $\wtrans{\alpha}$ (ignores internal $\tau$).
-* **Not Congruence:** $P \approx \tau.P$ but $P+Q \not\approx \tau.P+Q$.
-[[#7. Advanced Concurrency|Back to Q]]
-
-### A7.2
-**Obs Congruence:** Weak bisimulation + First step must match strongly (or at least with one $\tau$).
-**Tau Laws:** $\alpha.\tau.P \cong \alpha.P$, $P+\tau.P \cong \tau.P$.
-[[#7. Advanced Concurrency|Back to Q]]
-
-### A7.3
-* **LTL:** Linear time (paths). $G, F, X, U$.
-* **CTL:** Branching time (tree). Path quantifiers $A, E$ + State operators.
-[[#7. Advanced Concurrency|Back to Q]]
-
-### A7.4
-**Mu-Calculus:**
-* Safety: $\nu Z. \Phi$ (Greatest FP, e.g., "Always").
-* Liveness: $\mu Z. \Phi$ (Least FP, e.g., "Eventually").
-[[#7. Advanced Concurrency|Back to Q]]
-```
+### A5.8
+**Proving Bisimilarity**
+To prove $P \sim Q$:
+1.  **Exhibit a relation** $R = \{ (P, Q), \dots \}$.
+2.  Show that $R$ is a bisimulation (Check moves for every pair in $R$).
+    *  (Use diagrams to map states)
+3.  Alternatively, use algebraic laws (e.g., $P + P = P$, $P \mid \textbf{nil} = P$).
+[[#Part 5: Concurrency (CCS)|Back to Q]]
 
 
 <div style="page-break-after: always;"></div>
