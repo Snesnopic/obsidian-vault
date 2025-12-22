@@ -54,7 +54,6 @@
 
 
 <div style="page-break-after: always;"></div>
-
 # Foundations & Preliminaries
 
 This module establishes the rigorous mathematical framework necessary to define, analyze, and compare the semantics of programming languages.
