@@ -84,20 +84,37 @@ jobs:
           for file in *.md; do
             if [[ "$file" == "README.md" ]]; then continue; fi
             
-            echo "Processing $file..."
+            echo "=== Processing $file ==="
+
             base="${file%.md}"
-            
-            # PIPELINE:
-            # 1. Remove conflicting command definitions
-            # 2. Fix Links using Python
-            sed -E '/\\(re)?newcommand\s*\{[^}]+\}/d' "$file" | \
-            sed 's/\\newcommand/\\providecommand/g' | \
-            python3 fix_links.py > "clean_body.md"
-            
-            # Compile
-            pandoc "metadata.yaml" "clean_body.md" -o "output_pdfs/${base}.pdf" --pdf-engine=pdflatex
-            
-            rm "clean_body.md"
+
+            echo "[1] Rimuovo newcommand specifici..."
+            sed -E '/\\(re)?newcommand\s*\{\\(mathbb|nat|trans|wtrans|sem|den|floor)/d' "$file" > step1.md
+
+            echo "[2] Sostituisco newcommand → providecommand..."
+            sed 's/\\newcommand/\\providecommand/g' step1.md > step2.md
+
+            echo "[3] Fix links con Python..."
+            python3 fix_links.py < step2.md > clean_body.md
+
+            echo "Contenuto iniziale di clean_body.md:"
+            head -n 20 clean_body.md
+            echo "-------------------------------------"
+
+            echo "Cerco front-matter YAML sospetto:"
+            grep -n '^---' clean_body.md || echo "Nessun --- trovato"
+            grep -n '^\$\$' clean_body.md || echo "Nessun $$ trovato"
+            grep -n '\\newcommand' clean_body.md || echo "Nessun newcommand residuo"
+
+            echo "[4] Compilo con Pandoc..."
+            pandoc metadata.yaml clean_body.md -o "output_pdfs/${base}.pdf" --pdf-engine=pdflatex || {
+                echo "❌ ERRORE PANDOC su $file"
+                echo "Mostro le prime 40 righe di clean_body.md:"
+                nl -ba clean_body.md | head -n 40
+                exit 1
+            }
+
+            rm step1.md step2.md clean_body.md
           done
           
           rm metadata.yaml fix_links.py
