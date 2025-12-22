@@ -90,7 +90,7 @@ jobs:
             # PIPELINE:
             # 1. Remove conflicting command definitions
             # 2. Fix Links using Python
-            sed -E '/\\(re)?newcommand\s*\{\\(mathbb|nat|trans|wtrans|sem|den|floor)/d' "$file" | \
+            sed -E '/\\(re)?newcommand\s*\{[^}]+\}/d' "$file" | \
             sed 's/\\newcommand/\\providecommand/g' | \
             python3 fix_links.py > "clean_body.md"
             
