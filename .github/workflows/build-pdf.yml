@@ -5,7 +5,6 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-# Permissions for GitHub Pages deployment
 permissions:
   contents: write
   pages: write
@@ -23,16 +22,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pandoc texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-science python3
 
-      # 2. GENERATE MASTER FILES
       - name: Generate Master Files
         run: |
           chmod +x generate-master.sh
           ./generate-master.sh
 
-      # 3. PREPARE ASSETS (Metadata & Link Fixer Script)
       - name: Prepare Build Assets
         run: |
-          # A. Create LaTeX Header
+          # create latex header with math packages only
           cat <<'EOF' > metadata.yaml
           ---
           geometry: margin=1in
@@ -42,23 +39,15 @@ jobs:
               \usepackage{amsmath}
               \usepackage{amssymb}
               \usepackage{stmaryrd}
-              \providecommand{\sem}[1]{ [\![ #1 ]\!] }
-              \providecommand{\den}[1]{\mathcal{#1}}
-              \providecommand{\floor}[1]{\lfloor #1 \rfloor}
-              \providecommand{\trans}[1]{\xrightarrow{#1}}
-              \providecommand{\wtrans}[1]{\stackrel{#1}{\Longrightarrow}}
-              \providecommand{\nat}{\mathbb{N}}
           ---
           EOF
 
-          # B. Create Python Script to fix Obsidian Links
-          # Converts [[#My Header]] -> [My Header](#my-header) for PDF compatibility
+          # create python script to fix obsidian links
           cat <<'EOF' > fix_links.py
           import re
           import sys
 
           def slugify(text):
-              # Mimic Pandoc's header ID generation
               text = text.lower()
               text = re.sub(r'[^a-z0-9\s-]', '', text)
               text = re.sub(r'\s+', '-', text)
@@ -70,12 +59,10 @@ jobs:
               return f"[{content}](#{slug})"
 
           data = sys.stdin.read()
-          # Regex for [[#Header Text]]
           data = re.sub(r'\[\[#([^\]]+)\]\]', replace_link, data)
           sys.stdout.write(data)
           EOF
 
-      # 4. COMPILE PDFs
       - name: Build Root PDFs
         run: |
           mkdir -p output_pdfs
@@ -84,46 +71,28 @@ jobs:
           for file in *.md; do
             if [[ "$file" == "README.md" ]]; then continue; fi
             
-            echo "=== Processing $file ==="
-
+            echo "PROCESSING: $file"
             base="${file%.md}"
 
-            echo "[1] Rimuovo newcommand specifici..."
-            sed -E '/\\(re)?newcommand\s*\{\\(mathbb|nat|trans|wtrans|sem|den|floor)/d' "$file" > step1.md
+            echo "FIXING LINKS..."
+            python3 fix_links.py < "$file" > clean_body.md
 
-            echo "[2] Sostituisco newcommand → providecommand..."
-            sed 's/\\newcommand/\\providecommand/g' step1.md > step2.md
-
-            echo "[3] Fix links con Python..."
-            python3 fix_links.py < step2.md > clean_body.md
-
-            echo "Contenuto iniziale di clean_body.md:"
-            head -n 20 clean_body.md
-            echo "-------------------------------------"
-
-            echo "Cerco front-matter YAML sospetto:"
-            grep -n '^---' clean_body.md || echo "Nessun --- trovato"
-            grep -n '^\$\$' clean_body.md || echo "Nessun $$ trovato"
-            grep -n '\\newcommand' clean_body.md || echo "Nessun newcommand residuo"
-
-            echo "[4] Compilo con Pandoc..."
+            echo "COMPILING PDF..."
             pandoc metadata.yaml clean_body.md -o "output_pdfs/${base}.pdf" --pdf-engine=pdflatex || {
-                echo "❌ ERRORE PANDOC su $file"
-                echo "Mostro le prime 40 righe di clean_body.md:"
+                echo "PANDOC ERROR ON $file"
+                echo "SHOWING FIRST 40 LINES OF clean_body.md:"
                 nl -ba clean_body.md | head -n 40
                 exit 1
             }
 
-            rm step1.md step2.md clean_body.md
+            rm clean_body.md
           done
           
           rm metadata.yaml fix_links.py
 
-      # 5. PUBLISH TO GITHUB PAGES
-      # Creates a 'gh-pages' branch with the PDFs inside
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./output_pdfs
-          enable_jekyll: true # Essential for allowing raw file access
+          enable_jekyll: true
