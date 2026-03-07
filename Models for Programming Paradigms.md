@@ -42,7 +42,7 @@
   **Temporal Logics:** Linear Time (LTL) vs Branching Time (CTL).
   **Mu-Calculus:** Syntax and Fixpoints for Safety ($\nu$) and Liveness ($\mu$) properties.
 
----
+----
 
 ##  Practice & Review
 
@@ -68,7 +68,7 @@ A programming language is defined by four essential components:
 3. **Pragmatics:** Guidelines on the effective use of the language, best practices, and common patterns.
 4. **Semantics:** Assigns an unambiguous meaning to well-typed programs, providing a formal model for programmers and implementers.
 
----
+----
 
 ## 2. Methods of Formal Semantics
 
@@ -107,7 +107,7 @@ Based on Floyd-Hoare Logic. It uses **Hoare Triples**:
 $$\{P\} \ c \ \{Q\}$$
 If the precondition $P$ is true before $c$, then the postcondition $Q$ will be true after the execution of $c$ (assuming termination).
 
----
+----
 
 ## 3. Meta-Language Properties
 
@@ -141,7 +141,7 @@ The proof requires two directions:
 1. **Correctness:** $\langle c, \sigma \rangle \to \sigma' \implies \mathcal{C} [\![ c ]\!] \sigma = \sigma'$
 2. **Completeness:** $\mathcal{C} [\![ c ]\!] \sigma = \sigma' \implies \langle c, \sigma \rangle \to \sigma'$
 
----
+----
 
 ## 4. Logical Tools and Induction
 
@@ -181,7 +181,7 @@ $$
 
 > **Deep Dive:** Structural induction fails on complex recursive constructs (or when syntax is circular). In those cases, rule induction on the derivation of the semantics is strictly necessary.
 
----
+----
 
 ## 5. Functional Preliminaries (HOFL)
 
@@ -211,7 +211,7 @@ pal xs = (xs == reverse xs)
 
 This chapter formalizes the necessary tools to handle recursion, prove properties of infinite systems, and constructively define semantics.
 
----
+----
 
 ## 1. Induction Principles
 
@@ -265,7 +265,7 @@ We apply rule induction:
     By IH on $c_0$: $\sigma'' = \sigma''_2$.
     By IH on $c_1$: since the intermediate state is the same, $\sigma' = \sigma_2$. (OK)
 
----
+----
 
 ## 2. Immediate Consequence Operator (ICO)
 
@@ -315,7 +315,7 @@ We compute the fixpoint (set of theorems) by iterating $\hat{R}$:
     * $S_3 = \{\epsilon, (), (()), ()()\}$.
 5. **Limit:** The union $\bigcup_n S_n$ is the set of all balanced strings.
 
----
+----
 
 ## 3. Partial Orders and CPO
 
@@ -343,7 +343,7 @@ Let $D, E$ be two CPOs. A function $f: D \to E$ can be:
 
 > **Note:** Continuity implies monotonicity.
 
----
+----
 
 ## 4. Kleene's Fixpoint Theorem
 
@@ -366,7 +366,7 @@ Where the approximation chain is: $\perp \sqsubseteq f(\perp) \sqsubseteq f(f(\p
     Continuity allows "moving the limit inside".
 3. **Least:** If $e$ is another fixpoint ($f(e)=e$), prove by induction that $f^n(\perp) \sqsubseteq e$, thus the limit $d \sqsubseteq e$.
 
----
+----
 
 ## 5. Solved Exercises (Domain Theory)
 
@@ -402,7 +402,7 @@ $$f_S\left(\bigcup_{i \in \mathbb{N}} X_i\right) = \bigcup_{i \in \mathbb{N}} f_
 
 > **Note:** The same logic applies to $g_S(X) = X \cup S$ (using associativity/idempotence of union).
 
----
+----
 
 ## 6. Calculus of Relations
 
@@ -568,7 +568,7 @@ This chapter defines the semantics of the **IMP** language, a minimal imperative
 
 
 
----
+----
 
 ## 1. Syntax and States
 
@@ -595,7 +595,7 @@ $$\Sigma \stackrel{\text{def}}{=} \text{Loc} \to \mathbb{Z}$$
 
 * **Update Notation:** $\sigma[n/x]$ denotes a state identical to $\sigma$ except for the variable $x$, which now holds the value $n$.
 
----
+----
 
 ## 2. Operational Semantics (Big-Step)
 
@@ -623,7 +623,7 @@ $$\frac{\langle b, \sigma \rangle \to \textbf{false}}{\langle \textbf{while } b 
 
 > **Note:** The `whtt` rule is the only intrinsically recursive rule (the premise contains the same construct as the conclusion). This makes structural induction insufficient for proving properties about `while`; **rule induction** is required.
 
----
+----
 
 ## 3. Denotational Semantics
 
@@ -657,7 +657,7 @@ Applying Kleene's Theorem:
 $$\text{fix}(\Gamma) = \bigsqcup_{n \in \mathbb{N}} \Gamma^n(\perp)$$
 Where $\Gamma^n(\perp)$ represents the semantics of the loop limited to $n$ iterations.
 
----
+----
 
 ## 4. Equivalence and Consistency
 
@@ -739,7 +739,7 @@ We define the property $P(\text{rule}) \iff \mathcal{C}[\![ c ]\!]\sigma = \sigm
             By mathematical induction hypothesis on $n$: $\langle w, \sigma'' \rangle \to \sigma'$.
             Applying rule `whtt`: $\langle w, \sigma \rangle \to \sigma'$.
 
----
+----
 
 ## 5. Axiomatic Semantics (Hoare Logic)
 
@@ -769,7 +769,7 @@ Defines the meaning of commands via logical assertions.
 6.  **Consequence (Weaken/Strengthen):**
     $$\frac{P \implies P' \quad \{P'\} c \{Q'\} \quad Q' \implies Q}{\{P\} c \{Q\}}$$
 
----
+----
 
 ## 6. Derivation Example (Swap)
 
@@ -803,7 +803,7 @@ $$
     \langle z := x ; (x := y ; y := z), \sigma \rangle \to \sigma_{final}
 } (\text{seq})
 $$
----
+----
 
 ## 7. Solved Exercises (Exam)
 
@@ -869,7 +869,7 @@ We apply **Rule Induction** on the standard semantics:
 
 The other cases (`skip`, `assign`, `if`, `while-false`) are trivial or analogous.
 
----
+----
 ## 8. Relational Semantics & Kleene Algebra with Tests (KAT)
 
 We can abstract the semantics of IMP using **Kleene Algebra with Tests (KAT)**. This algebraic framework combines:
@@ -926,7 +926,7 @@ HOFL (*Higher-Order Functional Language*) introduces functions as "first-class c
 
 
 
----
+----
 
 ## 1. Syntax and Types
 
@@ -959,7 +959,7 @@ A term is **well-typed** ($t : \tau$) if a derivation exists using the following
     \frac{\Gamma, x:\tau \vdash t : \tau}{\Gamma \vdash \text{rec } x. t : \tau}
     $$
 
----
+----
 
 ## 2. Operational Semantics (Lazy)
 
@@ -989,7 +989,7 @@ $$
 $$
 *Note:* The argument $t_0$ is substituted into the function body **without being evaluated**.
 
----
+----
 
 ## 3. Domain Theory
 
@@ -1019,7 +1019,7 @@ $$
     $$
     If $t$ diverges ($\perp$), the whole expression diverges. If $t = \lfloor d \rfloor$, it evaluates $e$ with $x=d$.
 
----
+----
 
 ## 4. Denotational Semantics
 
@@ -1063,7 +1063,7 @@ $$
 $$
 Computes the least fixed point of the function mapping $x$ to the body $t$.
 
----
+----
 
 ## 5. Consistency and Comparison
 
@@ -1096,7 +1096,7 @@ This chapter moves from sequential models to concurrent ones. The focus is no lo
 
 
 
----
+----
 
 ## 1. Language Overview: Erlang vs Go
 
@@ -1109,7 +1109,7 @@ Both use *Message Passing*, but with opposite philosophies regarding memory and 
 | **Philosophy**        | "Let it crash" & Isolation.                                 | "Do not communicate by sharing memory; share memory by communicating."              |
 | **Reception**         | `receive` with Pattern Matching on the mailbox.             | `<- ch` (select for multiple wait).                                                 |
 
----
+----
 
 ## 2. CCS (Calculus of Communicating Systems)
 
@@ -1182,7 +1182,7 @@ $$
 
 > **Note:** Without restriction, the process could also perform $a$ (left only) or $\bar{a}$ (right only). Restriction "forces" synchronization by making individual communication attempts on $a$ invisible.
 
----
+----
 
 ## 3. Bisimulation
 
@@ -1234,7 +1234,7 @@ We prove that $P = a.(b.\textbf{nil} + c.\textbf{nil})$ and $Q = a.b.\textbf{nil
 
 Strong bisimulation is a **congruence**: if $P \sim Q$, then $C[P] \sim C[Q]$ for any context $C$. This allows modular substitution of software components without altering system behavior.
 
----
+----
 
 ## 4. Hennessy-Milner Logic (HML)
 
@@ -1282,7 +1282,7 @@ $$
 Two processes are bisimilar if and only if they satisfy the same logical HML formulas.
 If two processes are not bisimilar, there always exists an HML formula that distinguishes them.
 
----
+----
 
 ## 6. CCS at Work: Modeling Patterns
 
@@ -1368,7 +1368,7 @@ We can define properties using recursive equations (precursor to $\mu$-calculus)
 
 This chapter bridges theoretical models (HOFL, CCS) with real-world programming languages, analyzing how abstract concepts translate into concrete implementations.
 
----
+----
 
 ## 1. Haskell: Pure Functional Programming
 
@@ -1472,7 +1472,7 @@ prime n = factors n == [1, n]
 primes = filter prime [2..] -- Infinite list of primes
 ```
 
----
+----
 
 ## 2. Erlang: Actor Model and Distributed Concurrency
 
@@ -1521,7 +1521,7 @@ loop(Val) ->
 
 > **CCS Mapping:** $C(n) \stackrel{\text{def}}{=} \text{inc}.C(n+1) + \text{val}.\overline{v_n}.C(n)$.
 
----
+----
 
 ## 3. Go: Goroutines and Channels (CSP)
 
@@ -1598,7 +1598,7 @@ This chapter extends the CCS theory to handle abstraction (ignoring internal $\t
 
 
 
----
+----
 
 ## 1. Weak Bisimulation
 
@@ -1670,7 +1670,7 @@ We show that $\mathcal{R} = \{(P + \tau.P, \tau.P) \mid P \in \mathcal{P}\} \cup
 * **Right to Left:**
     * If $\tau.P \xrightarrow{\tau} P$, then $P + \tau.P \xrightarrow{\tau} P$. Pair $(P, P) \in \text{Id}$.
 
----
+----
 
 ## 2. Temporal Logics (LTL & CTL)
 
@@ -1710,7 +1710,7 @@ Every temporal operator must be preceded by a path quantifier.
 * **CTL:** $\mathbf{AGEF} p$ (It is always possible to reset the system and reach $p$).
 * They are incomparable: there are LTL properties not expressible in CTL and vice versa.
 
----
+----
 
 ## 3. The $\mu$-Calculus
 
@@ -1732,7 +1732,7 @@ $$
   * Example: $\nu Z. (p \land [\cdot] Z)$ $\to$ " $p$ holds now AND after every step $Z$ still holds". (Corresponds to $\mathbf{AG} p$).
   * *Intuition:* Allows infinite loops where $p$ is always true.
 
----
+----
 
 ## 4. Formal Semantics of Temporal Logics
 
@@ -2400,7 +2400,7 @@ This file aggregates exercises from all course modules. It covers Domain Theory,
 
 
 
----
+----
 
 ## 1. Domain Theory & Logic
 
@@ -2430,7 +2430,7 @@ Prove that $g(e_0)$ is a fixpoint for $h$.
 
 [[#Sol 1.3|Go to Solution]]
 
----
+----
 
 ## 2. IMP Semantics
 
@@ -2450,7 +2450,7 @@ Using the denotational semantics (Fixpoint of $\Gamma$), prove that $\mathcal{C}
 
 [[#Sol 2.2|Go to Solution]]
 
----
+----
 
 ## 3. HOFL & Haskell
 
@@ -2473,7 +2473,7 @@ Implement the Quicksort algorithm in Haskell using list comprehensions.
 
 [[#Sol 3.3|Go to Solution]]
 
----
+----
 
 ## 4. Concurrency (CCS)
 
@@ -2512,7 +2512,7 @@ Find an HML formula that distinguishes $P$ from $Q$ in Ex 4.2.
 
 [[#Sol 4.5|Go to Solution]]
 
----
+----
 
 ## 5. Real Languages (Go/Erlang)
 
@@ -2531,7 +2531,7 @@ Write a Go function `pairing(in1, in2 chan int) chan [2]int` that reads one inte
 
 [[#Sol 5.2|Go to Solution]]
 
----
+----
 
 # Solutions
 

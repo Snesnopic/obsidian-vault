@@ -3,7 +3,7 @@
 
 This section introduces the foundational concepts of compilation, formal languages, and automata theory, which form the theoretical basis for Lexical Analysis (Scanning).
 
----
+----
 
 ## 1. Overview of Compilers
 
@@ -20,7 +20,7 @@ Modern compilers are typically divided into three main stages (the "Three-Phase 
 3. **Back-End:** Maps the IR to the target machine. Involves Instruction Selection, Register Allocation, and Instruction Scheduling.
     
 
----
+----
 
 ## 2. Formal Languages Preliminaries
 
@@ -59,7 +59,7 @@ Languages are classified by the restrictiveness of their production rules:
 4. **Type 3 (Regular):** Productions $A \to aB$ or $A \to a$. Recognized by Finite Automata (used for Lexical Analysis).
     
 
----
+----
 
 ## 3. Finite Automata
 
@@ -98,7 +98,7 @@ $$\delta: Q \times (\Sigma \cup \{\epsilon\}) \to \mathcal{P}(Q)$$
 
 **$\epsilon$-closure:** The $\epsilon$-closure of a state $q$, denoted $\epsilon\text{-closure}(q)$, is the set of all states reachable from $q$ using only $\epsilon$-transitions, including $q$ itself.
 
----
+----
 
 ## 4. Equivalences and Regular Expressions
 
@@ -130,7 +130,7 @@ Regular expressions are an algebraic way to describe regular languages. The base
 
 **Kleene's Theorem:** A language is regular if and only if it can be described by a regular expression. Therefore, REs $\equiv$ $\epsilon$-NFAs $\equiv$ NFAs $\equiv$ DFAs.
 
----
+----
 
 ## 5. DFA Minimization
 
@@ -151,7 +151,7 @@ Two states $p$ and $q$ are distinguishable if there exists a string $w$ such tha
 4. Unmarked pairs are **equivalent** and can be merged into a single state.
     
 
----
+----
 
 ## 6. Proving Languages are NOT Regular: The Pumping Lemma
 
@@ -187,7 +187,7 @@ The compilation process of a scanner is:
 3. **DFA to Minimized DFA:** Hopcroft's Algorithm (Table-filling).
 4. **DFA to Code:** The minimized DFA is encoded as a transition table (a 2D array mapping `State x Character -> Next State`) driven by a simple `while` loop, yielding an $O(|w|)$ scanning phase.
 
----
+----
 
 ## 2. Context-Free Grammars (CFG)
 
@@ -218,7 +218,7 @@ A grammar is **ambiguous** if it can generate the same string with more than one
 *Ambiguity is fatal for compilers because it implies multiple valid semantic interpretations for the same code.*
 To resolve ambiguity, we typically rewrite the grammar to enforce precedence and associativity rules (e.g., separating expressions into `Expr`, `Term`, and `Factor`).
 
----
+----
 
 ## 3. Pushdown Automata (PDA)
 
@@ -240,7 +240,7 @@ A PDA can accept a string in two equivalent ways:
 1. **Acceptance by Final State:** The automaton consumes all input and ends in a state $q_f \in F$.
 2. **Acceptance by Empty Stack:** The automaton consumes all input and leaves the stack empty (useful for proving equivalence with CFGs).
 
----
+----
 
 ## 4. Properties of Context-Free Languages
 
@@ -273,7 +273,7 @@ This section covers the second fundamental phase of the compiler front-end: Synt
 
 
 
----
+----
 
 ## 1. Introduction to Parsing
 
@@ -281,7 +281,7 @@ There are two primary approaches to building a parse tree:
 1. **Top-Down Parsing:** Builds the tree from the root (start symbol) down to the leaves (the tokens). It attempts to apply productions by expanding the leftmost non-terminal (Leftmost derivation).
 2. **Bottom-Up Parsing:** Builds the tree from the leaves up to the root. It attempts to recognize the right-hand sides of productions and reduce them to the left-hand side (Reverse Rightmost derivation).
 
----
+----
 
 ## 2. Top-Down Parsing and FIRST/FOLLOW Sets
 
@@ -296,7 +296,7 @@ If `\alpha` can derive the empty string, then $\epsilon$ belongs to `FIRST(\alph
 * The end-of-file symbol (e.g., `EOF` or `$`) belongs to `FOLLOW(S)`.
 * It is used to decide what to do when a production derives $\epsilon$ or when the end of a right-hand side rule is reached. If `FIRST(A)` contains $\epsilon$, the parser considers the symbols in `FOLLOW(A)` to expand `A`.
 
----
+----
 
 ## 3. Bottom-Up Parsing (Shift-Reduce)
 
@@ -307,7 +307,7 @@ Bottom-Up parsing (typically LR) is more powerful than Top-Down and can handle a
 
 
 
----
+----
 
 ## 4. Construction of LR(1) Tables
 
@@ -340,7 +340,7 @@ To generate the LR(1) parsing table, it is necessary to build the entire canonic
 
 This section marks the transition from the front-end to the middle-end of the compiler. We are on the cusp of the art, science, and engineering of compilation. While scanning and parsing are direct applications of automata theory, and context-sensitive analysis is mostly software engineering, the design of the Intermediate Representation (IR) dictates the efficiency of the optimization and code generation phases.
 
----
+----
 
 ## 1. Intermediate Representations (IR)
 
@@ -357,7 +357,7 @@ Linear IRs consist of a sequence of instructions executed sequentially, closely 
 * **Three-Address Code (3AC):** Instructions take the form `x = y op z`. Complex expressions are broken down using temporary variables.
 * **Static Single Assignment (SSA):** A strict property applied to linear IRs where every variable is defined exactly once. When control flow paths merge, a $\phi$-function (phi-function) is used to multiplex the values (e.g., `x_3 = phi(x_1, x_2)`). This greatly simplifies data-flow analysis.
 
----
+----
 
 ## 2. The Procedure Abstraction
 
@@ -377,7 +377,7 @@ The protocol for invoking a procedure is split between the caller and the callee
 * **Prologue:** Code executed at the beginning of the callee to set up its frame pointer, allocate local variables, and save necessary registers.
 * **Epilogue:** Code executed at the end of the callee to restore saved registers, place the return value in a standard location, and restore the stack pointer before executing the return jump.
 
----
+----
 
 ## 3. Code Shape
 
@@ -444,7 +444,7 @@ Compilers employ different strategies for `switch` blocks depending on the densi
 
 This section explores the mathematical frameworks and algorithms used in the middle-end of a compiler to gather information about the program's behavior. This information is crucial for performing safe optimizations.
 
----
+----
 
 ## 1. Approaches to Program Analysis
 
@@ -458,7 +458,7 @@ Program analysis can be performed using various techniques, each differing in fo
 Data-flow analysis constructs an equation system in terms of a specific property at the entry and exit of each node in the CFG. The solution to this system of equations is found by computing a fixpoint (either a least fixpoint or a greatest fixpoint, depending on the approximation direction).
 
 
----
+----
 
 ## 2. Theoretical Foundations: Fixpoint Theory
 
@@ -476,7 +476,7 @@ A Complete Partial Order (CPO) ensures that iterative approximation processes wi
 $$x_0 \sqsubseteq x_1 \sqsubseteq x_2 \sqsubseteq \dots \sqsubseteq x_n \sqsubseteq \dots$$
 where each step represents a refined analysis state. The process halts when a fixpoint is reached (i.e., $x_k = x_{k+1}$).
 
----
+----
 
 ## 3. Liveness Analysis (Live Variables)
 
@@ -496,7 +496,7 @@ The sets are computed iteratively until they stabilize:
 In static analysis, "conservative" means erring on the side of safety. In liveness analysis, if $x \in \text{in}[n]$, the variable *could* be live. If $x \notin \text{in}[n]$, it is *definitely dead*. The analysis may erroneously derive that a variable is live, but it is not allowed to erroneously derive that a variable is dead. 
 $$\text{in}[n] \supseteq \text{live-in}[n] \quad \text{and} \quad \text{out}[n] \supseteq \text{live-out}[n]$$
 
----
+----
 
 ## 4. Reaching Definitions
 
@@ -511,7 +511,7 @@ This analysis determines which variable definitions (assignments) can reach a gi
 * For other nodes: `RDentry(p) = U { RDexit(q) | q \in pre[p] }`.
 * Exit state: `RDexit(p) = (RDentry(p) \ killRD[p]) U genRD[p]`.
 
----
+----
 
 ## 5. Available Expressions
 
@@ -533,7 +533,7 @@ Unlike Liveness and Reaching Definitions (which use the Union operator $\cup$), 
 
 This section explores Abstract Interpretation, a generalized mathematical framework for static analysis, and other advanced techniques to approximate program semantics and prove correctness.
 
----
+----
 
 ## 1. Advanced Approaches to Static Analysis
 
@@ -549,7 +549,7 @@ This technique relies on annotated base types and annotated type constructors.
 * Statements are assigned types that represent the type of states.
 * A specification (annotated type system with axioms and rules) is implemented by extracting constraints and computing their least solution.
 
----
+----
 
 ## 2. Abstract Interpretation Framework
 
@@ -570,7 +570,7 @@ The abstract transition rules are synthesized from the original ones:
 $p_i, a \longrightarrow p_j, \alpha(v')$ if $v \in \gamma(a)$ and $p_i, v \longrightarrow p_j, v'$.
 This recipe ensures that every transition in the concrete semantics is safely simulated by one in the abstract semantics.
 
----
+----
 
 ## 3. Abstract Operators and Loss of Information
 
@@ -589,7 +589,7 @@ Because abstract domains approximate sets of values, performing abstract operati
 * **Abstract evaluation:** $(\{+\} + \{+\}) - \{+\} = \{+\} - \{+\} = \top$.
 The result $\top$ is sound (it contains $\{1\}$), but imprecise. Due to this loss of precision, the analysis might fail to decide termination for specific inputs.
 
----
+----
 
 ## 4. Correctness, False Alarms, and Domains
 
@@ -604,7 +604,7 @@ The choice of abstract domain dictates the precision:
 * **Interval Domain:** Approximates variables independently (e.g., $x \in [0, 10]$). It captures rectangular bounding boxes. This can lead to false alarms if the safe region requires relational tracking (green $\cap$ red $\neq \emptyset$).
 * **Polyhedra Domain:** Tracks linear relations between variables (e.g., $x + y \le 4$). It captures polygonal shapes and can prove correctness where the interval domain fails (cyan $\cap$ red = $\emptyset$).
 
----
+----
 
 ## 5. Widening ($\nabla$)
 
@@ -618,7 +618,7 @@ When the analysis detects that bounds keep growing across loop iterations, the w
 
 Register allocation is one of the most critical phases in a compiler's back-end. The objective is to assign a potentially unbounded number of virtual registers (used in the intermediate representation) to a finite set of physical registers provided by the target processor architecture. The efficiency of this phase heavily dictates the performance of the compiled code, especially in low-level languages.
 
----
+----
 
 ## 1. Static Single Assignment (SSA) Form
 

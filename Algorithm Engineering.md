@@ -18,7 +18,7 @@
   - Selection: Randomized Linear Time  
   - External: Multi-way Quicksort & Oversampling  
 
----
+----
 
 ## Part II: Streaming & Sets
 - [[#Random Sampling and Streams]]  
@@ -30,7 +30,7 @@
   - Galloping (Doubling) Search  
   - Interpolation Search ($O(\log \log N)$)  
 
----
+----
 
 ## Part III: Advanced Data Structures
 - [[#Randomized Dictionaries]]  
@@ -45,7 +45,7 @@
   - Tries: TST, Patricia, Front Coding  
   - Two-Level Indexing (Front Coding + Tries)
 
----
+----
 
 ## Part IV: Indexing & Hashing
 - [[#Full Text Indexing]]  
@@ -64,7 +64,7 @@
   - Bloom Filters: False positive derivation  
   - Spectral Bloom Filters  
 
----
+----
 
 ## Part V: Compression
 - [[#Data Compression]]
@@ -123,7 +123,7 @@ Modern architectures violate the RAM assumptions due to the **Memory Hierarchy**
 
 Because of this disparity, the number of CPU instructions executed is often less relevant than the number of times data is moved between disk and memory. We need a model that counts **I/Os** (Input/Output operations).
 
----
+----
 
 ## 2. The Two-Level Memory Model
 
@@ -148,7 +148,7 @@ We define the system using three fundamental parameters:
     * CPU time is considered free (or secondary).
     * We assume $1 \ll B \le M < N$.
 
----
+----
 
 ## 3. Basic I/O Analysis
 
@@ -193,7 +193,7 @@ $$
 * **Case 1 ($s \le B/b$):** We skip small amounts. We still benefit partially from the block read, but we waste bandwidth. Cost $\approx s \cdot (N/B)$.
 * **Case 2 ($s > B/b$):** We jump so far that every access requires a new block fetch. Cost $\approx N/b$ (effectively random access behavior).
 
----
+----
 
 ### 3.2 Searching: Binary Search vs. B-Trees
 
@@ -242,7 +242,7 @@ $$
 Since $B$ is typically large (e.g., $B=4096$ bytes $\approx 1000$ integers), $\log_2 B \approx 10$.
 **B-Trees are a factor of $\log_2 B$ faster than Binary Search on disk.**
 
----
+----
 
 ## 4. Virtual Memory: A Probabilistic Analysis
 
@@ -324,7 +324,7 @@ We can reduce the permuting problem to sorting to achieve the lower I/O cost. Gi
 
 **Total Cost:** 4 Scans + 2 Sorts $\approx O(\text{Sort}(N))$.
 
----
+----
 
 ## 2. MergeSort Analysis
 
@@ -372,7 +372,7 @@ To optimize, we maximize the number of streams we merge simultaneously.
 > **Why Base $M/B$?**
 > The base $M/B$ represents the **fan-in** of the merge process. We leverage the entire memory $M$ to buffer blocks $B$. This is significantly faster than binary merge ($\log_2$ vs $\log_{M/B}$).
 
----
+----
 
 ## 3. Run Generation: The "Snow Plow"
 
@@ -401,7 +401,7 @@ Initially, $H$ is full (size $M$), $U$ is empty.
 * **Result:** Average run length = **$2M$**.
 * *Benefit:* Halves the number of initial runs, saving 1 merge pass in some cases.
 
----
+----
 
 ## 4. Disk Striping ($D$ Disks)
 
@@ -431,7 +431,7 @@ $$
 $$
 * **Interpretation:** Disk Striping is asymptotically slower, but as $M \to \infty$, the ratio approaches 1. It is efficient enough for practical purposes.
 
----
+----
 
 ## 5. Lower Bounds
 
@@ -553,7 +553,7 @@ Summation:
 $$
 E[C] = \sum_{u=1}^{N-1} \sum_{v=u+1}^{N} \frac{2}{v - u + 1} \le \sum_{u=1}^{N} 2 \sum_{k=1}^{N} \frac{1}{k} \approx 2 N \ln N
 $$
------
+------
 
 ## 2. The Selection Problem **Problem:**
 
@@ -600,7 +600,7 @@ $$
 
 * **I/O Complexity:** Since partitioning is a scan, $\text{Cost} = O(N/B)$ I/Os.
 
----
+----
 
 ## 3. Multi-way Quicksort (External Memory)
 
@@ -661,7 +661,7 @@ $$This matches the sorting lower bound.
 
 Sampling is fundamental when datasets are too massive to process entirely. We analyze two scenarios: one where the dataset size $N$ is known and stored on disk, and one where data arrives as a **Stream** of unknown length.
 
----
+----
 
 ## 1. Disk Sampling (Known Length $N$)
 
@@ -710,7 +710,7 @@ If we need to sample $m$ items where $m \ll N$, and we have random access:
 * Cost: $O(m \log m)$ insertions into Dictionary (BST).
 * I/O: $O(m)$ random accesses.
 
----
+----
 
 ## 2. Streaming Model & Reservoir Sampling (Unknown Length)
 
@@ -791,7 +791,7 @@ After step $t$, every item has probability $s/t$ of being in the reservoir.
 The "Intersection Problem" is a canonical operation in Search Engines (handling "AND" queries between inverted lists).
 **Problem:** Given two sorted lists $L_1$ (length $n$) and $L_2$ (length $m$), with $n \le m$, return $L_1 \cap L_2$.
 
----
+----
 
 ## 1. Basic Approaches
 
@@ -813,7 +813,7 @@ We iterate through the short list $L_1$ and, for every element $x \in L_1$, perf
 * **Complexity:** $O(n \log m)$.
 * **Comparison:** Better than Merge if $n \log m < m$.
 
----
+----
 
 ## 2. Advanced Intersections
 
@@ -874,7 +874,7 @@ $$
 * $n/L$: Scanning the meta-array.
 * $m \cdot L$: Worst case, every item in $B$ falls into a different block of $A$, forcing us to scan a full block of size $L$ for each item.
 
----
+----
 
 ## 3. Interpolation Search
 
@@ -915,7 +915,7 @@ Interpolation Search is terrible for external memory.
 
 In this chapter, we explore dictionary data structures that rely on **randomization** to achieve balance, rather than complex deterministic rebalancing rules (like AVL or Red-Black trees).
 
----
+----
 
 ## 1. Skip Lists
 
@@ -978,7 +978,7 @@ Skip Lists are **not** I/O efficient compared to B-Trees.
   * Compare to B-Trees: $O(\log_B N)$.
   * Since $B \approx 1000$, $\log_B N$ is vastly smaller than $\log_2 N$.
 
----
+----
 
 ## 2. Treaps (Tree + Heap)
 
@@ -1047,7 +1047,7 @@ Deletion is the inverse of insertion.
 
 * **Complexity:** $O(\log N + K)$ where $K$ is the number of reported items.
 
----
+----
 
 ## 3. Proof of Average Depth
 
@@ -1099,7 +1099,7 @@ $$
 
 Sorting strings differs fundamentally from sorting atomic keys (like integers) because strings have variable lengths, and comparisons depend on prefixes.
 
----
+----
 
 ## 1. String Sorting
 
@@ -1151,7 +1151,7 @@ Sorts from the first character to the last (recursive buckets).
 * **Variable Lengths:** Shorter strings are conceptually padded with a sentinel character (smaller than any alphabet char) to ensure they end up in the correct bucket.
 * **Complexity:** $O(N)$ in practice, but overhead of recursion is high for small buckets.
 
----
+----
 
 ## 2. Trie-based Structures
 
@@ -1228,7 +1228,7 @@ To handle massive dictionaries on disk, we combine **Front Coding** (disk) wit
 Full Text Indexing solves the problem of finding a pattern $P$ in a text $T$ efficiently.
 While Suffix Trees are powerful, they are space-heavy. **Suffix Arrays (SA)** combined with the **LCP Array** offer a space-efficient alternative that supports similar operations.
 
----
+----
 
 ## 1. Suffix Array (SA)
 
@@ -1270,7 +1270,7 @@ A naive approach to build the SA is using a standard sort (like `qsort`).
 * **Total Complexity:** $O(N^2 \log N)$ on average, or $O(N^3)$ worst case.
 * **Critique:** This is unacceptably slow for large texts. Advanced algorithms (like DC3 or IS) can do this in $O(N)$, and Kasai computes LCP in $O(N)$.
 
----
+----
 
 ## 2. LCP Array Construction (Kasai's Algorithm)
 
@@ -1322,7 +1322,7 @@ $$
 * **Decrements:** In every step $i \to i+1$, $H$ decreases by at most 1. Total decrements $\le N$.
 * **Total:** Time is proportional to increments + decrements = $O(N)$.
 
----
+----
 
 ## 3. Suffix Trees from SA + LCP
 
@@ -1336,7 +1336,7 @@ A Suffix Tree can be viewed as the **Cartesian Tree** of the LCP array.
 3.  All operations are amortized $O(1)$ (similar to the "Rightmost path" logic in Cartesian tree building).
 4.  **Total Time:** $O(N)$.
 
----
+----
 
 ## 4. Text Mining with SA
 
@@ -1369,7 +1369,7 @@ $O(N)$ (Build SA) + $O(|P|\log N + |Q|\log N)$ (Search) + $O(\text{occ} \log \te
 
 This chapter covers advanced hashing techniques that provide probabilistic guarantees on performance, moving beyond simple heuristics.
 
----
+----
 
 ## 1. Universal Hashing
 
@@ -1397,7 +1397,7 @@ $$
 * **Randomization:** At program start, we pick random integers $a$ and $b$.
 * **Why it works:** The map $x \to (ax+b) \mod p$ is a bijection on the field $\mathbb{Z}_p$. It "scrambles" the input uniformly before mapping to $m$ buckets.
 
----
+----
 
 ## 2. The Power of Two Choices
 
@@ -1413,7 +1413,7 @@ In standard chaining, even with a perfect hash function, the maximum chain lengt
     $$
 * **Impact:** This is an exponential improvement. For $N=10^6$, the max load drops from $\approx 9$ to $\approx 3$.
 
----
+----
 
 ## 3. Cuckoo Hashing
 
@@ -1479,7 +1479,7 @@ $$ P(\text{path } L) \le \sum_{z} P(\text{path } i \to z \text{ len } L-1) \cdot
 
 This chapter focuses on space-efficient structures for set membership and static dictionary problems.
 
----
+----
 
 ## 1. Minimal Ordered Perfect Hashing (MOPHF)
 
@@ -1506,7 +1506,7 @@ We use a 2-level construction involving random hypergraphs.
   * **Time:** $O(N)$ expected construction, $O(1)$ worst-case query.
   * **Space:** $O(N)$ bits (storing the $g$ array).
 
----
+----
 
 ## 2. Bloom Filters
 
@@ -1565,7 +1565,7 @@ $$
 * Expected False Positives $\approx |B \setminus A| \times f$.
 * To improve accuracy, $B$ can send the "suspected" intersection back to $A$ for exact verification (2-round protocol).
 
----
+----
 
 ## 3. Spectral Bloom Filters (SBF)
 
@@ -1595,7 +1595,7 @@ We focus on **lossless** statistical compression. The goal is to represent a mes
 2.  **Semi-Dynamic:** Two-pass. Pass 1 counts frequencies and builds the model (stored in header). Pass 2 encodes data. Good compression, slower.
 3.  **Dynamic:** One-pass. The model is updated on the fly as symbols are read. Decoder mirrors the updates.
 
----
+----
 
 ## 2. Information Theory Basics
 
@@ -1614,7 +1614,7 @@ $$
 $$
 * **Why?** This condition ensures that the codewords can be mapped to the leaves of a binary tree, which guarantees unique decodability without lookahead.
 
----
+----
 
 ## 3. Huffman Coding
 
@@ -1653,7 +1653,7 @@ Standard Huffman has an overhead of $+1$ bit per symbol in the worst case ($H \l
     $$
 * **Trade-off:** The tree size grows exponentially with $k$.
 
----
+----
 
 ## 4. Arithmetic Coding
 
@@ -1687,7 +1687,7 @@ Consider a symbol with $P(A) = 0.99$.
 * **Arithmetic:** The interval shrinks by factor $0.99$. After 100 'A's, size is $0.99^{100} \approx 0.36$. We still barely need 1-2 bits to encode 100 symbols.
 * **Theorem:** Arithmetic coding uses at most $n H_0 + 2$ bits total. The overhead is negligible for large $n$.
 
----
+----
 
 ## 5. Dictionary-Based Compression (LZ77)
 
@@ -1743,7 +1743,7 @@ LZ77 always emits a triple, even if no match is found (overhead). **LZSS** use
     This removes the "next char" redundancy and improves compression for random data.
     
 
----
+----
 
 ## 6. Integer Coding
 
@@ -1960,7 +1960,7 @@ Let $m$ be the number of 1s in $B$.
     * Rank: $O(1)$.
     * Select: $O(\log n)$ (Binary Search).
 
----
+----
 
 ## 2. Succinct Solution ($n + o(n)$ bits)
 We keep the original bitvector $B$ ($n$ bits) and add auxiliary structures taking sub-linear space $o(n)$ to support $O(1)$ operations.
@@ -2018,7 +2018,7 @@ $B = [010111010101110001]$. $n=18$.
     * Bits in block: `101`?
     * **Total:** $4 + 1 + 1 = 6$.
 
----
+----
 
 ## 3. Compressed Solution (Elias-Fano)
 If the bitvector is sparse (few 1s), we can do better than $n$ bits.
@@ -2045,7 +2045,7 @@ Elias-Fano itself relies on a bitvector $H$ (unary high parts). To allow $O(1)$ 
 
 This document collects past exam questions, transcribed from handwritten notes and PDF archives.
 
----
+----
 
 ## Exam: 23 June 2025
 
@@ -2107,7 +2107,7 @@ $$B[1, 24] = 01\ 11\ 10\ 01\ 01\ 01\ 11\ 11\ 00\ 11\ 00\ 11$$
     * $35$ falls in range of $B_3$ ($20 \le 35$). Check $B_3$. $(20,35,40) \cap \{35\} \to$ **Found 35**.
 [[#Q1: List Intersection|Back to Question]]
 
----
+----
 
 ### Sol 23/06/25 Q2
 **Analysis of H/L:**
@@ -2148,7 +2148,7 @@ $$B[1, 24] = 01\ 11\ 10\ 01\ 01\ 01\ 11\ 11\ 00\ 11\ 00\ 11$$
 * Found item 31? Yes, matches.
 [[#Q2: Elias-Fano Operations|Back to Question]]
 
----
+----
 
 ### Sol 23/06/25 Q3
 **Structure Construction:**
@@ -2178,7 +2178,7 @@ $$B[1, 24] = 01\ 11\ 10\ 01\ 01\ 01\ 11\ 11\ 00\ 11\ 00\ 11$$
     * *Handwritten note says 10?* Ah, `11` at pos 13,14. Rank at 12 is 7. 13(1), 14(1). Rank(14)=9.
 [[#Q3: Rank Data Structure|Back to Question]]
 
----
+----
 
 ### Sol 23/06/25 Q4
 **Algorithm:**
@@ -2245,7 +2245,7 @@ $$B[1,24] = 01\ 11\ 00\ 01\ 01\ 00\ 11\ 11\ 00\ 11\ 00\ 11$$
 2.  Verify algorithmically if the path $[a, g]$ exists.
 [[#Sol 10/01/25 Q5|See Solution]]
 
----
+----
 
 ## Exam: 10 February 2023
 
@@ -2305,7 +2305,7 @@ $$\langle E,1 \rangle, \langle C,14 \rangle, \langle M,5 \rangle, \langle A,12 \
 * **Result:** `fab`.
 [[#Q1: Canonical Huffman|Back to Question]]
 
----
+----
 
 ### Sol 10/01/25 Q2
 **1. Indexing Scheme:**
@@ -2327,7 +2327,7 @@ $$\langle E,1 \rangle, \langle C,14 \rangle, \langle M,5 \rangle, \langle A,12 \
 * Retrieve and scan $B_2, B_3$.
 [[#Q2: Two-Level String Indexing|Back to Question]]
 
----
+----
 
 ### Sol 10/01/25 Q3
 **1. (s,c)-dense code ($s=1, c=3$):**
@@ -2361,7 +2361,7 @@ $$\langle E,1 \rangle, \langle C,14 \rangle, \langle M,5 \rangle, \langle A,12 \
     * Code: `100`.
 [[#Q3: Integer Compression|Back to Question]]
 
----
+----
 
 ## Solutions: 10 February 2023
 
@@ -2468,7 +2468,7 @@ return len;
     
     [[#Q4: Arithmetic Decoding|Back to Question]]
 
----
+----
 
 ## Exam: 06 November 2023 (Midterm)
 
@@ -2496,7 +2496,7 @@ Construct a **Minimal Ordered Perfect Hash Function** (MOPHF).
 * **Target:** $h(k) = (g(h_1(k)) + g(h_2(k))) \pmod 4$.
 [[#Sol 06/11/23 Q3|See Solution]]
 
----
+----
 
 ## Exam: 15 January 2024
 
@@ -2545,7 +2545,7 @@ Apply the pipeline: **BWT** $\to$ **MTF** $\to$ **RLE0** (Wheeler) $\to$ **Arith
     * **End of Run 2:** `1, 1, 2, 3, 4`.
 [[#Q1: Snow Plow Simulation|Back to Question]]
 
----
+----
 
 ### Sol 06/11/23 Q2
 **Insertions (Min-Heap Priority):** 
@@ -2570,7 +2570,7 @@ Apply the pipeline: **BWT** $\to$ **MTF** $\to$ **RLE0** (Wheeler) $\to$ **Arith
 * Right: **F (6)** $\to$ Right: **G (9)**.
 [[#Q2: Treap Construction|Back to Question]]
 
----
+----
 
 ### Sol 06/11/23 Q3
 **Hash Values:** 
@@ -2584,7 +2584,7 @@ Apply the pipeline: **BWT** $\to$ **MTF** $\to$ **RLE0** (Wheeler) $\to$ **Arith
     * **Result:** Impossible to build.
 [[#Q3: MOPH Construction|Back to Question]]
 
----
+----
 
 ## Solutions: 15 January 2024
 
@@ -2615,7 +2615,7 @@ Apply the pipeline: **BWT** $\to$ **MTF** $\to$ **RLE0** (Wheeler) $\to$ **Arith
 * Result: Spans from $B_2$ to $B_3$. Return all strings in these blocks that match prefix.
 [[#Q1: Two-Level String Indexing|Back to Question]]
 
----
+----
 
 ### Sol 15/01/24 Q2
 **Trace:** 
@@ -2638,7 +2638,7 @@ Sequence: `BACAB, ABB, BBC, DD, DF`.
 **Final Order:** `ABB, BACAB, BBC, DD, DF`.
 [[#Q2: Multi-key Quicksort Trace|Back to Question]]
 
----
+----
 
 ### Sol 15/01/24 Q3
 **Pipeline:** 
@@ -2666,7 +2666,7 @@ $T = \text{ABRABRA}$.
 4.  **Arithmetic:** Encode first 3 numbers.
 [[#Q3: Compression Pipeline|Back to Question]]
 
----
+----
 
 ## Exam: 11 July 2024
 
@@ -2700,7 +2700,7 @@ Show the content of the Reservoir $R$ at each step.
 * **Hint:** Work with **dyadic fractions** (e.g., $3/4, 9/16$), do not convert to decimals.
 [[#Sol 11/07/24 Q4|See Solution]]
 
----
+----
 
 ## Exam: 4 February 2025
 
@@ -2731,7 +2731,7 @@ $$S = \{ \text{AADD, BB, AADFA, AADB, AAAA, AAAB, AADA} \}$$
 * **Task:** Decompress the first **two symbols**.
 [[#Sol 04/02/25 Q4|See Solution]]
 
----
+----
 
 ## Exam: 9 December 2024
 
@@ -2839,7 +2839,7 @@ $m=3, n=9$.
 **Final:** Any value in $[36/64, 45/64)$. Example midpoint.
 [[#Q4: Arithmetic Coding (Dyadic)|Back to Question]]
 
----
+----
 
 ## Solutions: 04 February 2025
 
@@ -2858,7 +2858,7 @@ $m=3, n=9$.
     * **Run 2:** `1, 2, 3, 5`.
 [[#Q1: Snow Plow Simulation|Back to Question]]
 
----
+----
 
 ### Sol 04/02/25 Q2
 **Multi-key Quicksort:** 
@@ -2880,7 +2880,7 @@ Pivot: `AADD`. Char 0: 'A'.
 **Final Order:** `AAAA, AAAB, AADA, AADB, AADC?, AADD, AADFA, BB`.
 [[#Q2: Multi-key Quicksort|Back to Question]]
 
----
+----
 
 ### Sol 04/02/25 Q3
 **1. Elias-Fano Stats:** 
@@ -2913,7 +2913,7 @@ Pivot: `AADD`. Char 0: 'A'.
 * First item $\ge 9$ is 10. Return 10.
 [[#Q3: Elias-Fano Compression|Back to Question]]
 
----
+----
 
 ### Sol 04/02/25 Q4
 **Arithmetic Decoding:** 
@@ -2941,7 +2941,7 @@ Pivot: `AADD`. Char 0: 'A'.
 * **Result:** `db`.
 [[#Q4: Arithmetic Decoding|Back to Question]]
 
----
+----
 
 ## Solutions: 09 December 2024
 
@@ -2981,7 +2981,7 @@ $S = (3, 4, 5, 6, 9, 10, 16)$. Range indices $[1, 7]$. $Low=3, High=16$.
     * Code: `010`.
 [[#Q1: Integer Coding Variety|Back to Question]]
 
----
+----
 
 ## Exam: 12 December 2023 (Final Term)
 
@@ -3018,7 +3018,7 @@ Show its **succinct encoding** (Binary array $B$ and Labels $L$).
 Apply **BWT** $\to$ **MTF** $\to$ **RLE0** (Wheeler) $\to$ **Arithmetic** (first 3 numbers).
 [[#Sol 12/12/23 Q5|See Solution]]
 
----
+----
 
 ## Exam: 16 January 2023
 
@@ -3045,7 +3045,7 @@ Construct the MOPHF.
 Pipeline: **BWT** $\to$ **MTF** $\to$ **RLE0** (Wheeler) $\to$ **Huffman**.
 [[#Sol 16/01/23 Q4|See Solution]]
 
----
+----
 
 ## Exam: 02 February 2022
 
@@ -3165,7 +3165,7 @@ Seq $S = (2, 3, 4, 5, 6, 10, 11)$. Range $n=7$.
 * Combine.
 [[#Q4: Elias-Fano Decoding|Back to Question]]
 
----
+----
 
 ## Solutions: 16 January 2023
 
@@ -3216,7 +3216,7 @@ Seq $S = (2, 3, 4, 5, 6, 10, 11)$. Range $n=7$.
     * Eq(AA): $2+g[3] = 0 \pmod 4 \to g[3]=2$.
 [[#Q3: Minimal Ordered Perfect Hash|Back to Question]]
 
----
+----
 
 ## Solutions: 02 February 2022
 
@@ -3275,7 +3275,7 @@ Seq $S = (2, 3, 4, 5, 6, 10, 11)$. Range $n=7$.
     * $18$ fits $B_3$. Scan. Found 18.
 [[#Q3: Intersection Algorithms|Back to Question]]
 
----
+----
 
 ## Exam: 04 July 2022
 
@@ -3306,7 +3306,7 @@ Seq $S = (2, 3, 4, 5, 6, 10, 11)$. Range $n=7$.
 2.  Show the steps to search for key $y=31$.
 [[#Sol 04/07/22 Q4|See Solution]]
 
----
+----
 
 ## Exam: 05 June 2023
 
@@ -3328,7 +3328,7 @@ Apply **BWT** $\to$ **MTF** $\to$ **RLE0** (Wheeler) $\to$ **Huffman**.
 3.  Show the result of **Merge**($T_1, T_2$).
 [[#Sol 05/06/23 Q3|See Solution]]
 
----
+----
 
 ## Exam: 07 September 2023
 
@@ -3444,7 +3444,7 @@ Build the **Rank** data structure ($O(1)$) assuming:
     * Binary search in Bucket 10.
 [[#Q4: Interpolation Search|Back to Question]]
 
----
+----
 
 ## Solutions: 05 June 2023
 
@@ -3504,7 +3504,7 @@ Build the **Rank** data structure ($O(1)$) assuming:
 * Sink $+\infty$ down.
 [[#Q3: Treap Merge|Back to Question]]
 
----
+----
 
 ## Solutions: 07 September 2023
 
@@ -3545,7 +3545,7 @@ Build the **Rank** data structure ($O(1)$) assuming:
 
 This document contains exercises derived from the course lectures and notes, organized by topic. Each exercise links to its detailed solution at the end of the file.
 
----
+----
 
 ## Part I: Sorting & I/O
 
@@ -3556,7 +3556,7 @@ This document contains exercises derived from the course lectures and notes, org
 Show the content of the Heap, the Unsorted buffer, and the Output Runs step-by-step.
 [[#Sol 1.1 (Snow Plow)|See Solution]]
 
----
+----
 
 ## Part II: Sets & Search
 
@@ -3568,7 +3568,7 @@ $$X = [1, 2, 3, 8, 9, 17, 19, 20, 28, 30, 32, 36]$$
 3. Define the ID array $I$ (start/end positions).
 [[#Sol 2.1 (Interpolation Buckets)|See Solution]]
 
----
+----
 
 ## Part III: Advanced Data Structures
 
@@ -3579,7 +3579,7 @@ $$X = [1, 2, 3, 8, 9, 17, 19, 20, 28, 30, 32, 36]$$
 2. Perform a **Split** operation on the resulting tree using key $k = F$.
 [[#Sol 3.1 (Treaps)|See Solution]]
 
----
+----
 
 ## Part IV: Indexing & Hashing
 
@@ -3597,7 +3597,7 @@ $$S = \{\text{"cat", "abi", "cast", "car", "at"}\}$$
 Show the state of the tables and indicate if a Rehash is required.
 [[#Sol 4.2 (Cuckoo Hashing)|See Solution]]
 
----
+----
 
 ## Part V: Data Compression
 
@@ -3652,7 +3652,7 @@ Use `111` as the Escape symbol. Show the bitstream and the Exception Array.
 **Final Runs:** `[1, 5, 7]` and `[2, 3]`.
 [[#Ex 1.1: Snow Plow Trace|Back to Question]]
 
----
+----
 
 ### Sol 2.1 (Interpolation Buckets)
 1.  **Bucket Size:** $b = \frac{X_n - X_1 + 1}{n} = \frac{36 - 1 + 1}{12} = \frac{36}{12} = 3$.
@@ -3674,7 +3674,7 @@ Use `111` as the Escape symbol. Show the bitstream and the Exception Array.
     * Others: $\langle -1, -1 \rangle$
 [[#Ex 2.1: Interpolation Search Buckets|Back to Question]]
 
----
+----
 
 ### Sol 3.1 (Treaps)
 **1. Construction:**
@@ -3718,7 +3718,7 @@ graph TD
         [[#Ex 3.1: Treap Construction and Split|Back to Question]]
         
 
----
+----
 
 ### Sol 4.1 (Multi-key Quicksort)
 
@@ -3763,7 +3763,7 @@ graph TD
     [[#Ex 4.1: Multi-key Quicksort Trace|Back to Question]]
     
 
----
+----
 
 ### Sol 4.2 (Cuckoo Hashing)
 
@@ -3808,7 +3808,7 @@ graph TD
         [[#Ex 4.2: Cuckoo Hashing Insertion|Back to Question]]
         
 
----
+----
 
 ### Sol 5.1 (Integer Encoding)
 
@@ -3841,7 +3841,7 @@ graph TD
         [[#Ex 5.1: Integer Encoding|Back to Question]]
         
 
----
+----
 
 ### Sol 5.2 (PForDelta)
 
@@ -3868,7 +3868,7 @@ Exception Array: [9]
 
 [[#Ex 5.2: PForDelta Encoding|Back to Question]]
 
----
+----
 
 ### Sol 5.3 (Decoding)
 
@@ -3927,7 +3927,7 @@ _Alternative parsing (Start with `00110...`)_:
     [[#Ex 5.3: Integer Decoding|Back to Question]]
     
 
----
+----
 
 ### Sol 5.4 (LZ77 vs LZSS)
 

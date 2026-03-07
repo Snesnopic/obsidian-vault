@@ -186,7 +186,7 @@ The Whitespace compiler demonstrates a full pipeline for a stack-based language:
     * *Mapping:* `PUSH n` $\to$ `ldc.i4 n`; `ADD` $\to$ `add`.
     * *Abstract Interpretation:* The compiler tracks stack height statically to detect underflows (popping from an empty stack) at compile-time.
     
----
+----
 
 ## 2. Grammars and Syntax in Practice
 
@@ -248,7 +248,7 @@ Ambiguity occurs when a string has multiple valid parse trees.
     * Interpretation B: `9 - (5 + 2) = 2` (Right-associative).
 * *Resolution:* Languages define **Precedence** (multiplication before addition) and **Associativity** to resolve these conflicts deterministically.
 
----
+----
 
 ## 3. Parsing Algorithms and Code
 
@@ -337,7 +337,7 @@ Grammar:
 |7|$\$ E + T$|`$`|**REDUCE (1)**|Handle is $E + T$. Reduce $E \to E + T$.|
 |8|$\$ E$|`$`|**ACCEPT**|Start symbol $E$ obtained.|
 
----
+----
 
 ## 4. Formal Definitions and Compiler Impact
 
@@ -452,7 +452,7 @@ In languages with **nested subroutines** (Pascal, Ada, ML, Scheme), the runtim
 
 $$\text{Address}(var) = \text{Display}[\text{level}(var)] + \text{offset}(var)$$
 
----
+----
 
 ## 2. Scoping Disciplines
 
@@ -498,7 +498,7 @@ This distinction applies when passing **procedures as parameters**.
 
 - **Shallow Binding (Dynamic Scope):** The environment is bound at the moment the procedure is **called**.
 
----
+----
 
 ## 3. Lexical Closures and the "Funarg" Problem
 
@@ -530,7 +530,7 @@ typedef struct {
 
 When the closure is invoked, the `env` pointer is passed as a hidden argument (often in a specific register), allowing the function to access its non-local variables even after the defining scope has exited.
 
----
+----
 
 ## 4. Heap Management Algorithms
 
@@ -658,7 +658,7 @@ Data races occur when:
 
 Rust's borrowing rules **[B1]** and **[B2]** structurally eliminate condition (1) + (2). If you have a `&mut T` (writer), no other reference (`&T` or `&mut T`) can exist, rendering data races impossible in Safe Rust.
 
----
+----
 
 ## 2. Smart Pointers Under the Hood
 
@@ -689,7 +689,7 @@ These pointers enable **Multiple Ownership** via reference counting.
 |**Overhead**|Low (standard arithmetic).|High (atomic CPU instructions, cache locking).|
 |**Traits**|`!Send`, `!Sync`|`Send`, `Sync`|
 
----
+----
 
 ## 3. Interior Mutability
 
@@ -719,7 +719,7 @@ These pointers enable **Multiple Ownership** via reference counting.
 |`RefCell<T>`|**Runtime (Panic)**|**No**|
 |`Mutex<T>`|**Runtime (Block)**|**Yes**|
 
----
+----
 
 ## 4. The `unsafe` Keyword
 
@@ -798,7 +798,7 @@ The Java Stream API separates operations into a pipeline: **Source $\to$ Inte
 
 - **Spliterator:** The underlying mechanism is the `Spliterator` interface, which supports both sequential traversal and partitioning for parallel execution.
 
----
+----
 
 ## 2. Monads in Practice
 
@@ -840,7 +840,7 @@ public <U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper) {
 
 _Significance:_ This replaces nested `if (x != null)` blocks with a linear chain of operations.
 
----
+----
 
 ## 3. Metaprogramming and Reflection
 
@@ -893,7 +893,7 @@ my_func = my_decorator(my_func)
 
 The `my_decorator` function takes the original function object, wraps it (often defining an inner `wrapper` function using `*args` and `**kwargs`), and returns the new callable.
 
----
+----
 
 ## 4. Dynamic Object Models (Python)
 
@@ -1002,7 +1002,7 @@ void addNumbers(List<? super Integer> list) {
     // Integer n = list.get(0); // Error: Could be Object
 }
 ```
----
+----
 ## 6. Asynchronous Programming Paradigms
 
 Traditional threading models (one thread per task) scale poorly for I/O-bound operations (e.g., waiting for a DB query blocks an expensive OS thread). Asynchronous programming decouples the **waiting** from the **thread** .
@@ -1081,7 +1081,7 @@ Runtimes rely on IRs to decouple source languages from target architectures.
 * **CIL (.NET):** Designed for multi-language interoperability (C#, F#, VB).
 * **LLVM IR:** A modern, SSA-based (Static Single Assignment) representation designed for optimization. It bridges the gap between high-level syntax and machine code, powering languages like Rust, Swift, and Clang/C++.
 
----
+----
 
 ## 2. Concurrency Models and Hardware Reality
 
@@ -1118,7 +1118,7 @@ $$
 \text{Race Condition} \iff \exists \text{ threads } T_1, T_2 : \text{access}(T_1, x) \cap \text{access}(T_2, x) \neq \emptyset \land \exists \text{write}
 $$
 
----
+----
 
 ## 3. Case Study: The Python Global Interpreter Lock (GIL)
 
@@ -1133,7 +1133,7 @@ The **Global Interpreter Lock (GIL)** in CPython is a mutex that enforces a crit
 
 *(Note: Experimental removal of the GIL is a recent development in Python 3.13 to improve CPU-bound performance, requiring a redesign of internal locking ).*
 
----
+----
 
 ## 4. Interoperability and Marshalling
 
@@ -1239,7 +1239,7 @@ Modern systems rarely follow a linear execution flow starting from `main`.
 
   - **AI Agents:** Deploy AI agents (e.g., using shell commands like `grep` or `sed`) to perform rapid structural analysis across massive file sets.
 
----
+----
 
 ## 2. AI-Assisted Development Workflow
 

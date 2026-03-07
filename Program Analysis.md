@@ -1,7 +1,7 @@
 
 This chapter introduces the fundamental concepts of program analysis, exploring how we can mathematically assign meaning to syntax and systematically reason about program behaviors.
 
----
+----
 
 ## 1. Overview and Motivation
 
@@ -27,7 +27,7 @@ Because we cannot have a tool that is simultaneously automatic, universal, and e
 - **Conservative Static Analysis:** Automatic and sound, but incomplete (relies on over-approximation).
     
 
----
+----
 
 ## 2. Formal Semantics and State
 
@@ -56,7 +56,7 @@ To consider all possible execution trajectories simultaneously (especially usefu
 - Defined as: $[[c]]P = \bigcup_{\sigma \in P} [[c]]\sigma$.
     
 
----
+----
 
 ## 3. Approximations
 
@@ -75,7 +75,7 @@ Since exact analysis is impossible due to undecidability, we use approximations.
     - _Con:_ Can miss actual bugs (False Negatives).
         
 
----
+----
 
 ## 4. Denotational Semantics of IMP
 
@@ -109,7 +109,7 @@ $$[[\mathtt{while\ b\ do\ c}]]P \triangleq [[\neg b]] \bigcup_{k=0}^\infty ([[c]
 
 This represents finding the Least Fixed Point of the semantic function mapping states through iterations of the loop.
 
----
+----
 
 ## 5. Correctness and Preconditions
 
@@ -143,7 +143,7 @@ Conveniently, this maps directly to the backward semantics: $wpp(c, Q) = [[c]]_{
 
 This chapter formalizes how to assign mathematical meaning to programs, mapping syntax to its computed function. It focuses on collecting semantics, which is the foundation for defining approximations in static analysis.
 
----
+----
 
 ## 1. Preliminaries and State
 
@@ -158,7 +158,7 @@ Semantics assigns meaning to syntax. Given a program written in a specific synta
 - **Concrete Domain:** In program analysis, we often work with sets of states. The concrete domain is the powerset of $\Sigma$, denoted as $\wp(\Sigma) \triangleq \{P \mid P \subseteq \Sigma\}$.
     
 
----
+----
 
 ## 2. Semantics of Expressions
 
@@ -190,7 +190,7 @@ In collecting semantics, a boolean expression is treated as a filter over a set 
 
 _Note:_ $[[b]]P \subseteq P$ always holds.
 
----
+----
 
 ## 3. Regular Commands and Collecting Semantics
 
@@ -233,7 +233,7 @@ Standard control flow constructs are encoded using regular commands:
     - Semantics: $[[\mathtt{while\ b\ do\ c}]]P \triangleq [[\neg b]] \left( \bigcup_{k=0}^\infty ([[c]] \circ [[b]])^k P \right)$
         
 
----
+----
 
 ## 4. Partial Correctness and Preconditions
 

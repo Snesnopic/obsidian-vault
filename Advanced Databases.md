@@ -90,7 +90,7 @@
     **Models:** Key-Value, Document, Column-Family, Graph, MapReduce.
     
 
----
+----
 
 ## Practice & Review
 
@@ -141,7 +141,7 @@ The Storage Engine handles the physical storage, retrieval, and management of da
 - **Transaction & Concurrency Managers:** Guarantee ACID properties, handling locks, logging, and crash recovery.
     
 
----
+----
 
 ## 2. Permanent Memory Manager (PMM)
 
@@ -174,7 +174,7 @@ $$C = t_s + t_r + k \cdot t_b$$
 
 Because $t_s$ and $t_r$ are orders of magnitude larger than $t_b$, sequential reads are vastly more efficient than random access reads.
 
----
+----
 
 ## 3. Buffer Management
 
@@ -225,7 +225,7 @@ When a process finishes using a page, it calls `UnpinPage(P)`, which decrements 
 # 02. Primary Storage Organizations
 This chapter covers the fundamental primary organizations used by the Storage Structures Manager to store records in permanent memory. A primary organization dictates the physical placement of new records on disk. 
 
----
+----
 
 ## 1. Records and Pages
 
@@ -241,7 +241,7 @@ The performance of data organizations is evaluated primarily by the number of I/
 * **$sf$**: Selectivity factor, defined as $\frac{k_2 - k_1}{k_{max} - k_{min}}$ for range queries.
 * **$C_s$**: Base cost of a search operation.
 
----
+----
 
 ## 2. Heap Organization
 
@@ -254,7 +254,7 @@ The most basic storage method. Records are appended strictly in their order of i
 * **Range Search:** Unsorted data forces a full scan. Cost: **$N_{pag}$**.
 * **Deletion/Update:** First, locate the record ($C_s$), then write the modified page to disk. Cost: **$C_s + 1$**.
 
----
+----
 
 ## 3. Sequential Organization
 
@@ -265,7 +265,7 @@ Records are physically stored in sequential order based on a specific attribute 
 * **Insertion:** This is the major drawback. Inserting a record in the middle of a full page causes a cascading shift of records across subsequent pages. Cost: Worst case **$C_s + N_{pag} + 1$**.
 * **External Sorting:** To initially build or reorganize a sequential file, the DBMS uses External Merge Sort. The cost of sorting a file is approximately **$2 \cdot N_{pag} \cdot (\text{Number of Merge Phases} + 1)$**.
 
----
+----
 
 ## 4. Hashing Organizations
 
@@ -284,7 +284,7 @@ Addresses the static hashing limitations by allowing the hash space to grow grac
 * **Extensible Hashing:** Utilizes an auxiliary structure called a *Directory* (of size $2^p$, where $p$ is the prefix length of the hash used). When a page overflows, only that specific page is split, and the directory may double to accommodate the new pointers.
 * **Linear Hashing:** The hash table grows linearly (one bucket at a time) rather than doubling. An overflow pointer $P$ tracks which bucket is next to split, regardless of where the collision actually happened. A secondary hash function $H_1(k) = k \bmod 2M$ is used for the split buckets.
 
----
+----
 
 ## 5. Tree Primary Organizations
 
@@ -314,7 +314,7 @@ This chapter focuses on Secondary Access Organizations, commonly referred to as 
 
 An index is essentially a set of entries. An entry typically binds a search key value to the physical location of the corresponding record(s): `(Value, RID)`. Secondary indexes are predominantly implemented using B+ Trees or Hash tables.
 
----
+----
 
 ## 1. Clustered vs. Unclustered Indexes
 
@@ -332,7 +332,7 @@ An index is **unclustered** if the physical order of the data records does not m
 * **Performance:** Good for exact match (equality) queries returning very few records. Extremely expensive for range queries or low-selectivity queries, as every RID pointer might lead to a different random disk page access.
 * **Cost (Range Search):** Search the index ($h$ accesses) + random data page accesses. In the worst case, every matching record requires a separate I/O operation: $h + \lceil sf \times N_{rec} \rceil$.
 
----
+----
 
 ## 2. Inverted Indexes
 
@@ -344,7 +344,7 @@ To optimize this, DBMSs use **Inverted Indexes**.
 * **RID-List management:** If the RID-list is small, it can be stored inside the index leaf node. If it is large, the leaf node stores a pointer to a separate chain of overflow pages containing the RID-list.
 * **Evaluation:** This drastically reduces the size of the index and speeds up the traversal. When executing a query, the system retrieves the entire RID-list for the requested value and then fetches the data pages.
 
----
+----
 
 ## 3. Bitmap Indexes
 
@@ -356,7 +356,7 @@ For attributes with very **low cardinality** (a small number of distinct values,
     * Highly compressed storage (especially with run-length encoding).
     * Extremely fast multi-condition query evaluation. Complex `WHERE` clauses combining `AND`, `OR`, and `NOT` can be resolved directly at the CPU level using bitwise logical operations on the bitmaps before ever touching the data pages.
 
----
+----
 
 ## 4. Multi-Attribute Indexes
 
@@ -374,7 +374,7 @@ The order of attributes in the definition is crucial. The index sorts the entrie
 
 This chapter describes how logical relational algebra expressions are translated into physical execution plans. A physical plan is a tree of **physical operators** provided by the Storage Engine.
 
----
+----
 
 ## 1. The Iterator Model
 
@@ -389,7 +389,7 @@ To evaluate a query plan, DBMSs typically use a demand-driven pipeline model kno
 The Query Optimizer needs to estimate the execution cost $C$ (in terms of page I/O) and the expected number of resulting records $E_{rec}$ for each physical operator. 
 The estimation relies heavily on the **Selectivity Factor** ($sf$), which represents the probability that a record satisfies a given condition $\psi$.
 
----
+----
 
 ## 3. Physical Operators for Selection ($\sigma$)
 
@@ -414,7 +414,7 @@ Uses a clustered (index sequential) index $I$ on relation $R$. Extremely efficie
 Evaluates the query using *only* the index leaves, without ever accessing the actual data pages. Applicable when all attributes needed by the query (both for filtering and output) are present in the index key.
 * **Cost:** $C_{s} + \lceil sf(\psi) \times N_{leaf}(I) \rceil$
 
----
+----
 
 ## 4. Physical Operators for Join ($\bowtie$)
 
@@ -439,7 +439,7 @@ Requires both $O_E$ and $O_I$ to be **sorted** on the join attributes. It scans 
 * **Cost:** $C = C(O_E) + C(O_I)$ 
 *(Note: If the inputs are not already sorted, the cost of the `Sort` operator must be added).*
 
----
+----
 
 ## 5. Grouping ($\gamma$) and Duplicate Elimination ($\delta$)
 
@@ -452,7 +452,7 @@ These operators require the input $O$ to be **already sorted** (or at least grou
 If the input is not sorted, a hash table is built in the main memory buffer. If the hash table exceeds the available memory, partitions are written to disk (spilled), causing additional I/O overhead.
 * **Cost:** $C = C(O) + 2 \times N_{pag}(O)$ *(Assuming a single spill-to-disk phase).*
 
----
+----
 
 ## 6. Sorting ($\tau$)
 
@@ -466,7 +466,7 @@ The **Sort** operator physically orders the records. Since relations are general
 
 This chapter explores the Query Optimizer, the component responsible for translating a declarative SQL query into the most efficient physical execution plan possible. The optimization process is typically divided into three main phases: Query Analysis, Query Transformation, and Physical Plan Generation.
 
----
+----
 
 ## 1. Query Processing Phases
 
@@ -474,7 +474,7 @@ This chapter explores the Query Optimizer, the component responsible for transla
 2. **Query Transformation:** The query is translated into an internal relational algebra representation. The optimizer applies equivalence rules to rewrite the logical plan into a more efficient, semantically equivalent form.
 3. **Physical Plan Generation:** The optimizer maps the logical operators to specific physical operators (e.g., choosing `MergeJoin` over `NestedLoop`) and selects the optimal access paths (e.g., index scans vs. full table scans) based on cost estimation.
 
----
+----
 
 ## 2. Relational Algebra Equivalences
 
@@ -492,7 +492,7 @@ The Query Transformation phase relies heavily on equivalence rules to optimize t
     If $\psi_X$ involves attributes of $E_1$ and $\psi_Y$ involves attributes of $E_2$:
     $$\sigma_{\psi_X \wedge \psi_Y}(E_1 \bowtie E_2) \equiv \sigma_{\psi_X}(E_1) \bowtie \sigma_{\psi_Y}(E_2)$$
 
----
+----
 
 ## 3. Functional Dependencies
 
@@ -526,7 +526,7 @@ Instead of repeatedly applying Armstrong's axioms, it is computationally simpler
 
 This chapter covers how the DBMS guarantees the Atomicity and Durability properties of transactions in the presence of concurrent executions and system failures.
 
----
+----
 
 ## 1. Types of Failures
 
@@ -537,7 +537,7 @@ The Recovery Manager must handle two primary categories of failures:
 2. **Media Failures (Disasters):** Physical damage to the storage devices (e.g., disk head crash). These require restoring the database from a remote backup or an archive and applying the log.
     
 
----
+----
 
 ## 2. The Log File and WAL
 
@@ -562,7 +562,7 @@ To ensure that recovery is always possible, the Buffer Manager strictly adheres 
 
 > **WAL Rule:** Before a modified page $P$ (with `dirty == true`) can be flushed from the volatile Buffer Pool to the permanent disk, all log records related to the updates on $P$ must be forced to the permanent log file.
 
----
+----
 
 ## 3. Undo and Redo Operations
 
@@ -573,7 +573,7 @@ Recovery algorithms rely on two fundamental operations applied to the log record
 - **Redo:** Re-applies the effects of a committed transaction that might not have been flushed to disk before the crash. It uses the After Image (AI) and must be performed scanning the log **forwards**.
     
 
----
+----
 
 ## 4. Checkpointing
 
@@ -581,7 +581,7 @@ Scanning the entire log from the beginning during recovery is extremely ineffici
 
 The checkpoint record contains a list of all transactions that are currently active at the moment the checkpoint is taken: `(b-ckp, ActiveTransactionList)`.
 
----
+----
 
 ## 5. The Restart Algorithm
 
@@ -642,7 +642,7 @@ By the end of this process, the database is restored to a consistent state, refl
 
 This chapter focuses on the Concurrency Manager, the module ensuring that the concurrent execution of transactions does not lead to inconsistencies. It introduces the theory of schedules (histories), serializability, and the locking protocols used to enforce it.
 
----
+----
 
 ## 1. Transactions and Histories
 
@@ -660,7 +660,7 @@ Two operations are in **conflict** if:
 ### 1.2 Conflict Equivalence (c-equivalence)
 Two histories $H_1$ and $H_2$ are **c-equivalent** if they are defined on the same set of transactions, have the same operations, and the relative order of all conflicting operations of normally terminated transactions is exactly the same.
 
----
+----
 
 ## 2. Serializability
 
@@ -677,7 +677,7 @@ To determine if a history $H$ is c-serializable, we construct a Serialization Gr
 $H$ is c-serializable **if and only if** its $SG(H)$ is **acyclic**. If the graph is acyclic, any topological sort of the nodes yields a valid equivalent serial history.
 
 
----
+----
 
 ## 3. Locking Protocols
 
@@ -694,7 +694,7 @@ The 2PL protocol dictates that a transaction cannot request any new locks once i
 Standard 2PL can lead to *cascading aborts* if a transaction reads uncommitted data from a transaction that later aborts. 
 **Strict 2PL** prevents this by enforcing that a transaction must hold all its exclusive (write) locks until it either commits or aborts.
 
----
+----
 
 ## 4. Deadlock Management
 
@@ -705,7 +705,7 @@ Two common prevention strategies are:
 * **Wait-Die:** Non-preemptive. If an older $T_i$ requests a lock held by a younger $T_j$, $T_i$ is allowed to wait. If a younger $T_i$ requests a lock held by an older $T_j$, $T_i$ "dies" (is aborted).
 * **Wound-Wait:** Preemptive. If an older $T_i$ requests a lock held by a younger $T_j$, $T_i$ "wounds" $T_j$ (forces $T_j$ to abort). If a younger $T_i$ requests a lock held by an older $T_j$, $T_i$ is allowed to wait.
 
----
+----
 
 ## 5. Snapshot Isolation (SI)
 
@@ -721,7 +721,7 @@ Snapshot Isolation is a concurrency control strategy commonly used to increase r
 
 This chapter covers the methodology used to select the optimal set of physical access structures (primarily indexes) for a given database workload, aiming to minimize the overall execution cost of queries and updates.
 
----
+----
 
 ## 1. The Index Selection Process
 
@@ -733,7 +733,7 @@ Choosing the right indexes requires balancing the read performance benefits agai
 4. **Merge indexes where possible:** Instead of having one index on $A$ and another on $B$, consider a single combined index on $(A, B)$ or $(B, A)$ to save space and update overhead, depending on the combined selectivity.
 5. **Evaluate benefit/cost ratio:** For the remaining candidate indexes, calculate the mathematical cost of executing the workload with and without the index, factoring in the frequency of the queries versus the frequency of updates.
 
----
+----
 
 ## 2. Review of Index Types for Design
 
@@ -743,7 +743,7 @@ When designing the physical layout, the DBA must choose between different index 
 * **Non-Clustered (Secondary) Index:** Provides pointers to physically scattered data. Good for exact match queries on highly selective attributes (e.g., `EmployeeID = 12345`).
 * **Bitmap Index:** Extremely efficient for attributes with very low cardinality (e.g., `Country`, `Gender`, `Status`).  It allows the DBMS to resolve complex boolean conditions (`AND`, `OR`, `NOT`) directly using bitwise operations before fetching the actual data records.
 
----
+----
 
 ## 3. Database Tuning and Query Rewriting
 
@@ -769,7 +769,7 @@ GROUP BY FkDepartment;
 
 _(Note: If `FkDepartment` was not in the `SELECT` clause, the `GROUP BY` would become entirely useless and could be removed)_.
 
----
+----
 
 ## 4. Selectivity Factor ($sf$) Formulas for Cost Evaluation
 
@@ -794,14 +794,14 @@ To correctly evaluate the benefit of an index in Step 5, you must estimate the S
 
 This chapter introduces Decision Support Systems and Data Warehousing, shifting the focus from traditional operational databases (OLTP) to systems designed for data analysis and business intelligence (OLAP).
 
----
+----
 
 ## 1. OLTP vs. OLAP
 
 * **OLTP (On-Line Transaction Processing):** Optimized for high-speed, concurrent transactions (inserts, updates, deletes). Focuses on current, detailed data and strict ACID properties.
 * **OLAP (On-Line Analytical Processing):** Optimized for complex read-only queries (scans, aggregations). Operates on historical, consolidated data to support strategic decision-making.
 
----
+----
 
 ## 2. The Multidimensional Conceptual Model
 
@@ -824,7 +824,7 @@ Measures are the numerical properties of a fact that can be aggregated and analy
 2. **Semi-additive:** Can be summed across *some* dimensions, but not all. Typically, they cannot be summed across the Time dimension. (e.g., `Inventory Level`, `Account Balance`).
 3. **Non-additive:** Cannot be summed across *any* dimension. (e.g., `Percentages`, `Temperatures`, `Unit Price`).
 
----
+----
 
 ## 3. Logical Design: Star and Snowflake Schemas
 
@@ -843,7 +843,7 @@ A variation of the Star Schema where the dimension tables are **normalized**.
 * **Pros:** Saves storage space by eliminating redundancy.
 * **Cons:** Queries require more complex and expensive joins, degrading performance.
 
----
+----
 
 ## 4. Analytic SQL
 
@@ -858,7 +858,7 @@ Standard SQL is extended with analytic operators to easily compute subtotals and
 
 This chapter explores Column-Oriented Databases (e.g., MonetDB, C-Store), an architectural paradigm shift designed primarily for OLAP and read-heavy workloads. Unlike traditional Row-Oriented DBMSs that store entire records contiguously, column stores write data to disk and memory one column at a time.
 
----
+----
 
 ## 1. Architecture and Low-Level Efficiency
 
@@ -868,7 +868,7 @@ In a column-store, each attribute of a table is stored in a separate file or mem
 * **CPU Cache & Vectorization:** Since data in a single column is entirely homogeneous (e.g., an array of contiguous 32-bit integers), the architecture highly exploits CPU caches and hardware prefetching. It allows for vectorized query execution, where low-level SIMD (Single Instruction, Multiple Data) instructions can process multiple values in a single CPU cycle.
 * **Compression:** Homogeneous data compresses much better than heterogenous row data. Techniques like Run-Length Encoding (RLE) can represent consecutive identical values with a single `(value, count)` pair, allowing the execution engine to operate directly on compressed data.
 
----
+----
 
 ## 2. Tuple Reconstruction
 
@@ -882,7 +882,7 @@ Modern column stores keep the data in separate columns for as long as possible d
 * **Advantage:** Intermediate results are highly compressed bitmaps or lists of integers.
 * **Execution:** Attributes are only fetched and stitched together at the very top of the query plan, right before returning the result to the user.
 
----
+----
 
 ## 3. Column Algebra (MAL)
 
@@ -905,7 +905,7 @@ A typical query plan using MAL performs selections to generate lists of qualifyi
 
 This chapter introduces the transition from centralized relational databases to distributed architectures and NoSQL systems, highlighting the trade-offs between consistency, availability, and scalability.
 
----
+----
 
 ## 1. Parallel vs. Distributed Systems
 
@@ -913,7 +913,7 @@ A frequent exam topic is the distinction between parallel and distributed archit
 * **Parallel Systems:** Tightly coupled components operating within the same physical environment or high-speed local network. They often share resources like memory (Shared-Memory) or disk (Shared-Disk) to accelerate the execution of a single complex query.
 * **Distributed Systems:** Loosely coupled independent nodes connected via a network (Shared-Nothing architecture). Each node has its own memory and disk. The primary goals are horizontal scalability, high availability, and fault tolerance across different geographical locations.
 
----
+----
 
 ## 2. Distribution Models
 
@@ -929,7 +929,7 @@ Copies of the same data are stored on multiple nodes to ensure fault tolerance a
 * **Master-Slave Replication:** One node (Master) handles all writes and synchronizes data to multiple Slaves. Slaves handle read requests. Good for read-heavy workloads but introduces a single point of failure for writes.
 * **Peer-to-Peer Replication:** All nodes are equal and can accept both reads and writes. Eliminates the single point of failure but drastically increases the complexity of resolving write conflicts.
 
----
+----
 
 ## 3. Consistency and The CAP Theorem
 
@@ -949,7 +949,7 @@ Strong consistency is guaranteed if:
 $$R + W > N$$
 This ensures that the sets of nodes written to and read from always overlap.
 
----
+----
 
 ## 4. NoSQL Data Models
 
@@ -960,7 +960,7 @@ NoSQL databases deviate from the tabular relational model. They are typically ch
 3. **Column-Family Stores:** Data is stored in column families (rows that have many, varying columns). Highly optimized for massive write volumes and reading specific columns across many rows.
 4. **Graph Databases:** Data is modeled as Nodes, Edges (relationships), and Properties. Unlike other NoSQL models, they prioritize relationship traversal (e.g., finding the shortest path or friends-of-friends) over horizontal scalability.
 
----
+----
 
 ## 5. MapReduce
 
