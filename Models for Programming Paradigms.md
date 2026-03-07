@@ -211,7 +211,7 @@ pal xs = (xs == reverse xs)
 
 This chapter formalizes the necessary tools to handle recursion, prove properties of infinite systems, and constructively define semantics.
 
-----
+---
 
 ## 1. Induction Principles
 
@@ -265,7 +265,7 @@ We apply rule induction:
     By IH on $c_0$: $\sigma'' = \sigma''_2$.
     By IH on $c_1$: since the intermediate state is the same, $\sigma' = \sigma_2$. (OK)
 
-----
+---
 
 ## 2. Immediate Consequence Operator (ICO)
 
@@ -315,7 +315,7 @@ We compute the fixpoint (set of theorems) by iterating $\hat{R}$:
     * $S_3 = \{\epsilon, (), (()), ()()\}$.
 5. **Limit:** The union $\bigcup_n S_n$ is the set of all balanced strings.
 
-----
+---
 
 ## 3. Partial Orders and CPO
 
@@ -343,7 +343,7 @@ Let $D, E$ be two CPOs. A function $f: D \to E$ can be:
 
 > **Note:** Continuity implies monotonicity.
 
-----
+---
 
 ## 4. Kleene's Fixpoint Theorem
 
@@ -366,7 +366,7 @@ Where the approximation chain is: $\perp \sqsubseteq f(\perp) \sqsubseteq f(f(\p
     Continuity allows "moving the limit inside".
 3. **Least:** If $e$ is another fixpoint ($f(e)=e$), prove by induction that $f^n(\perp) \sqsubseteq e$, thus the limit $d \sqsubseteq e$.
 
-----
+---
 
 ## 5. Solved Exercises (Domain Theory)
 
@@ -402,7 +402,7 @@ $$f_S\left(\bigcup_{i \in \mathbb{N}} X_i\right) = \bigcup_{i \in \mathbb{N}} f_
 
 > **Note:** The same logic applies to $g_S(X) = X \cup S$ (using associativity/idempotence of union).
 
-----
+---
 
 ## 6. Calculus of Relations
 

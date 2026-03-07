@@ -1301,16 +1301,19 @@ $$
 **Proof:**
 1.  Let suffix $j$ be the immediate predecessor of suffix $i$ in the SA. ($rank[j] = rank[i] - 1$).
 2.  They share a prefix of length $H$.
-    $$
-    suff_i = c \cdot \alpha \dots
-    
-    suff_j = c \cdot \alpha \dots
-    $$
+	$$
+	\begin{aligned}
+	suff_i &= c \cdot \alpha \dots \\
+	suff_j &= c \cdot \alpha \dots
+	\end{aligned}
+	$$
 3.  Now consider $suff_{i+1}$ and $suff_{j+1}$. They are obtained by dropping the first char $c$.
     $$
-    suff_{i+1} = \alpha \dots
+    \begin{aligned}
+    suff_{i+1} = \alpha \dots \\
     
     suff_{j+1} = \alpha \dots
+    \end{aligned}
     $$
     They clearly share a prefix of length $H-1$.
 4.  $suff_{j+1}$ appears somewhere before $suff_{i+1}$ in the SA (lexicographical order is usually preserved unless the first char differed).
@@ -1468,9 +1471,8 @@ $$ P(\exists k : h_1(k)=i \land h_2(k)=j) \le \sum_{k} \frac{1}{m^2} = \frac{n}{
 $$
 2. **Step:** A path of length $L$ implies a path of length $L-1$ to some node $z$, and an edge from $z$ to $j$. 
 $$ P(\text{path } L) \le \sum_{z} P(\text{path } i \to z \text{ len } L-1) \cdot P(\text{edge } z \to j) 
- \le m \cdot \left( \frac{1}{m c^{L-1}} \right) \cdot \frac{1}{cm} = \frac{1}{m c^L} 
-3. $$ 
-**Conclusion:** The probability of a path decreases exponentially with length. The probability of a cycle (path from $i$ to $i$) is very low, and a double cycle ("Bicycle") is $O(1/N^2)$.
+ \le m \cdot \left( \frac{1}{m c^{L-1}} \right) \cdot \frac{1}{cm} = \frac{1}{m c^L} $$
+ 3.  **Conclusion:** The probability of a path decreases exponentially with length. The probability of a cycle (path from $i$ to $i$) is very low, and a double cycle ("Bicycle") is $O(1/N^2)$.
 
 <div style="page-break-after: always;"></div>
 
