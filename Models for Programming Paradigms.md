@@ -14,7 +14,7 @@
 3. [[# Imp Semantics]]
   **IMP Language:** Syntax and States ($\Sigma$).
   **Operational Semantics:** Inference rules for `Aexp`, `Bexp`, `Com`.
-  **Denotational Semantics:** Functions $\mathcal{C}\sem{c}$, handling *Lifting*, and `while` denotation.
+  **Denotational Semantics:** Functions $\mathcal{C}[\![c]\!]$, handling *Lifting*, and `while` denotation.
   **Axiomatic Semantics:** Hoare Logic rules.
   **Equivalence:** Consistency Theorem between OS and DS.
 
@@ -2221,7 +2221,7 @@ Order: $\perp_{new} \sqsubseteq x$ for all $x$, and elements of $D$ keep their o
 42. **Operational Semantics:** What are the rules for the Lazy Operational Semantics of HOFL? [[#A4.5|Answer]]
 43. **Evaluation Strategy:** What is the difference between Lazy (Call-by-Name) and Eager (Call-by-Value)? [[#A4.6|Answer]]
 44. **Domains:** How are the semantic domains for types ($D_\tau$) defined? [[#A4.7|Answer]]
-45. **Denotational Semantics:** How is the interpretation function $\sem{t}_\rho$ defined? [[#A4.8|Answer]]
+45. **Denotational Semantics:** How is the interpretation function $[\![t]\!]_\rho$ defined? [[#A4.8|Answer]]
 46. **Substitution Lemma:** **What is the Substitution Lemma?** (Crucial for consistency) [[#A4.9|Answer]]
 47. **Consistency:** What is the relation between Operational and Denotational semantics? [[#A4.10|Answer]]
 
@@ -2287,25 +2287,25 @@ Defined inductively on types to handle partiality (lifting).
 [[#Part 4: HOFL & Denotational Semantics|Back to Q]]
 
 ### A4.8
-**Denotational Semantics ($\sem{t}_\rho$)**
+**Denotational Semantics ($[\![t]\!]_\rho$)**
 Maps a term $t$ and an environment $\rho$ to an element in $D_\tau$.
-* $\sem{n}_\rho = \lfloor n \rfloor$ (Lifted value).
-* $\sem{\lambda x. t}_\rho = \lfloor \boldsymbol{\lambda} d. \sem{t}_{\rho[d/x]} \rfloor$ (Returns a lifted continuous function).
-* $\sem{t_1 t_2}_\rho = \text{Let } \varphi \Leftarrow \sem{t_1}_\rho \text{ in } \varphi(\sem{t_2}_\rho)$ (Monadic bind: if $t_1$ diverges, result is $\perp$).
-* $\sem{\textbf{rec } x. t}_\rho = \text{fix}(\boldsymbol{\lambda} d. \sem{t}_{\rho[d/x]})$.
+* $[\![n]\!]_\rho = \lfloor n \rfloor$ (Lifted value).
+* $[\![\lambda x. t]\!]_\rho = \lfloor \boldsymbol{\lambda} d. [\![t]\!]_{\rho[d/x]} \rfloor$ (Returns a lifted continuous function).
+* $[\![t_1 t_2]\!]\rho = \text{Let } \varphi \Leftarrow [\![t_1]\!]\rho \text{ in } \varphi([\![t_2]\!]\rho)$ (Monadic bind: if $t_1$ diverges, result is $\perp$).
+* $[\![\textbf{rec } x. t]\!]_\rho = \text{fix}(\boldsymbol{\lambda} d. [\![t]\!]_{\rho[d/x]})$.
 [[#Part 4: HOFL & Denotational Semantics|Back to Q]]
 
 ### A4.9
 **Substitution Lemma**
 The denotation of a term with a substitution is equal to the denotation of the term in an updated environment.
-$$\sem{t[t'/x]}_\rho = \sem{t}_{\rho[\sem{t'}_\rho/x]}$$
+$$[\![t[t'/x]]\!]_\rho = [\![t]\!]_{\rho[[\![t']\!]_\rho/x]}$$
 *Importance:* It is the key step to prove that the operational rule for application (which uses substitution) matches the denotational definition (which uses environment update).
 [[#Part 4: HOFL & Denotational Semantics|Back to Q]]
 
 ### A4.10
 **Consistency**
 **Theorem:** For any closed term $t$ and canonical form $c$:
-$$t \downarrow c \implies \sem{t} = \sem{c}$$
+$$t \downarrow c \implies [\![t]\!] = [\![c]\!]$$
 *Interpretation:* The Operational semantics is **correct** with respect to Denotational semantics.
 *Note:* The converse (Completeness) does NOT hold in the standard model (due to the "Parallel OR" problem, although for HOFL/PC it's more about full abstraction issues).
 [[#Part 4: HOFL & Denotational Semantics|Back to Q]]
