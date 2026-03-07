@@ -1573,7 +1573,7 @@ default:
 
 |**Type**|**Syntax**|**Corresponding CCS Semantics**|
 |---|---|---|
-|**Unbuffered**|`make(chan T)`|**Synchronous** (Handshake). $\alpha.\textbf{nil} \mid \bar{\alpha}.\textbf{nil} \trans{\tau} \textbf{nil}$. Sender and receiver must synchronize (Rendezvous).|
+|**Unbuffered**|`make(chan T)`|**Synchronous** (Handshake). $\alpha.\textbf{nil} \mid \bar{\alpha}.\textbf{nil} \xrightarrow{\tau} \textbf{nil}$. Sender and receiver must synchronize (Rendezvous).|
 |**Buffered**|`make(chan T, N)`|**Asynchronous** (up to N). The sender does not block until the buffer is full.|
 
 ### 3.4 Example: Deadlock in Go (vs CCS)
