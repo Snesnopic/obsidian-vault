@@ -91,11 +91,7 @@
 
 # IO Model and Basics
 
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 
 ## 1. The Need for a New Model
 
@@ -148,7 +144,7 @@ We define the system using three fundamental parameters:
 
 1. Computation can only happen on data present in **Internal Memory**.
 2. Data is transferred between Internal and External memory in **blocks** of size $B$.
-3. **Cost Function:** The complexity of an algorithm is the total number of **I/O operations** (or "page faults") performed. We denote this as $\den{C}_{IO}$.
+3. **Cost Function:** The complexity of an algorithm is the total number of **I/O operations** (or "page faults") performed. We denote this as $\mathcal{C}_{IO}$.
     * CPU time is considered free (or secondary).
     * We assume $1 \ll B \le M < N$.
 
@@ -291,11 +287,7 @@ This mathematical derivation confirms that minimizing $p(\epsilon)$—by designi
 <div style="page-break-after: always;"></div>
 
 # External Sorting and Permuting
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 
 ## 1. Sorting vs. Permuting in the I/O Model
 
@@ -467,11 +459,7 @@ $$
 
 # Quicksort and Selection
 
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 
 ## 1. In-Memory Quicksort Variants
 
@@ -670,11 +658,7 @@ $$This matches the sorting lower bound.
 
 # Random Sampling and Streams
 
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 Sampling is fundamental when datasets are too massive to process entirely. We analyze two scenarios: one where the dataset size $N$ is known and stored on disk, and one where data arrives as a **Stream** of unknown length.
 
 ---
@@ -802,11 +786,7 @@ After step $t$, every item has probability $s/t$ of being in the reservoir.
 
 # Intersection Algorithms
 
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 
 The "Intersection Problem" is a canonical operation in Search Engines (handling "AND" queries between inverted lists).
 **Problem:** Given two sorted lists $L_1$ (length $n$) and $L_2$ (length $m$), with $n \le m$, return $L_1 \cap L_2$.
@@ -904,7 +884,7 @@ Standard Binary Search blindly cuts the array in half ($mid = (low+high)/2$). **
 
 We estimate the position of target $x$ using the formula:
 $$
-next = low + \floor{ \frac{x - A[low]}{A[high] - A[low]} \times (high - low) }
+next = low + \lfloor  \frac{x - A[low]}{A[high] - A[low]} \times (high - low)  \rfloor
 $$
 
 * **Logic:** It assumes a linear relation between the value of keys and their array indices.
@@ -932,11 +912,7 @@ Interpolation Search is terrible for external memory.
 
 # Randomized Dictionaries
 
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 In this chapter, we explore dictionary data structures that rely on **randomization** to achieve balance, rather than complex deterministic rebalancing rules (like AVL or Red-Black trees).
 
 ---
@@ -1119,11 +1095,7 @@ $$
 
 # String Sorting and Tries
 
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 
 Sorting strings differs fundamentally from sorting atomic keys (like integers) because strings have variable lengths, and comparisons depend on prefixes.
 
@@ -1251,11 +1223,7 @@ To handle massive dictionaries on disk, we combine **Front Coding** (disk) wit
 <div style="page-break-after: always;"></div>
 
 # Full Text Indexing
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 
 Full Text Indexing solves the problem of finding a pattern $P$ in a text $T$ efficiently.
 While Suffix Trees are powerful, they are space-heavy. **Suffix Arrays (SA)** combined with the **LCP Array** offer a space-efficient alternative that supports similar operations.
@@ -1335,15 +1303,13 @@ $$
 2.  They share a prefix of length $H$.
     $$
     suff_i = c \cdot \alpha \dots
-    $$
-    $$
+    
     suff_j = c \cdot \alpha \dots
     $$
 3.  Now consider $suff_{i+1}$ and $suff_{j+1}$. They are obtained by dropping the first char $c$.
     $$
     suff_{i+1} = \alpha \dots
-    $$
-    $$
+    
     suff_{j+1} = \alpha \dots
     $$
     They clearly share a prefix of length $H-1$.
@@ -1400,11 +1366,7 @@ $O(N)$ (Build SA) + $O(|P|\log N + |Q|\log N)$ (Search) + $O(\text{occ} \log \te
 
 # Hashing Protocols
 
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 This chapter covers advanced hashing techniques that provide probabilistic guarantees on performance, moving beyond simple heuristics.
 
 ---
@@ -1506,7 +1468,7 @@ $$ P(\exists k : h_1(k)=i \land h_2(k)=j) \le \sum_{k} \frac{1}{m^2} = \frac{n}{
 $$
 2. **Step:** A path of length $L$ implies a path of length $L-1$ to some node $z$, and an edge from $z$ to $j$. 
 $$ P(\text{path } L) \le \sum_{z} P(\text{path } i \to z \text{ len } L-1) \cdot P(\text{edge } z \to j) 
-$$ $$ \le m \cdot \left( \frac{1}{m c^{L-1}} \right) \cdot \frac{1}{cm} = \frac{1}{m c^L} 
+ \le m \cdot \left( \frac{1}{m c^{L-1}} \right) \cdot \frac{1}{cm} = \frac{1}{m c^L} 
 3. $$ 
 **Conclusion:** The probability of a path decreases exponentially with length. The probability of a cycle (path from $i$ to $i$) is very low, and a double cycle ("Bicycle") is $O(1/N^2)$.
 
@@ -1514,11 +1476,7 @@ $$ $$ \le m \cdot \left( \frac{1}{m c^{L-1}} \right) \cdot \frac{1}{cm} = \frac{
 
 # Filters and Perfect Hashing
 
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 This chapter focuses on space-efficient structures for set membership and static dictionary problems.
 
 ---
@@ -1629,11 +1587,7 @@ Replace the bit array $B$ with an array of **counters** $C$.
 <div style="page-break-after: always;"></div>
 
 # Data Compression
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 We focus on **lossless** statistical compression. The goal is to represent a message $S$ of length $n$ using the minimum number of bits possible, bounded by the entropy of the source.
 
 ### 1.1 Compression Models
@@ -1684,7 +1638,7 @@ Standard Huffman trees are hard to store (need pointers). **Canonical Huffman** 
     * Start from max length: $fc[max\_len] = 0$.
     * Iterate backwards from $i = max-1$ down to 1:
         $$
-        fc[i] = \floor{ \frac{fc[i+1] + num[i+1]}{2} }
+        fc[i] = \lfloor  \frac{fc[i+1] + num[i+1]}{2}  \rfloor
         $$
     * *Logic:* This formula effectively performs a right shift. We take the "next available" integer at level $i+1$ and shift it right to find the prefix at level $i$.
 3.  **Assign:** For length $L$, the $k$-th symbol in `symb[L]` gets code $fc[L] + k$.
@@ -1984,11 +1938,7 @@ Given a sorted sequence $S = s_1, \dots, s_n$ with max value $u = s_n + 1$:
 <div style="page-break-after: always;"></div>
 
 # Rank and Select
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 
 Succinct data structures aim to store data using space close to the information-theoretic lower bound while supporting operations efficiently. The fundamental building blocks are **Rank** and **Select** on bitvectors.
 
@@ -2091,11 +2041,7 @@ Elias-Fano itself relies on a bitvector $H$ (unary high parts). To allow $O(1)$ 
 <div style="page-break-after: always;"></div>
 
 # Exam Questions
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 
 This document collects past exam questions, transcribed from handwritten notes and PDF archives.
 
@@ -2105,8 +2051,7 @@ This document collects past exam questions, transcribed from handwritten notes a
 
 ### Q1: List Intersection
 **Problem:** Compute the intersection between the two lists:
-$$L_1 = (1, 2, 3, 8, 9, 15, 20, 35, 40)$$
-$$L_2 = (2, 5, 35)$$
+$$L_1 = (1, 2, 3, 8, 9, 15, 20, 35, 40)L_2 = (2, 5, 35)$$
 Perform the intersection using:
 1.  **Mutual Partitioning** algorithm.
 2.  **Two-level approach** with block size $b=3$ (for the longer list).
@@ -3597,11 +3542,7 @@ Build the **Rank** data structure ($O(1)$) assuming:
 <div style="page-break-after: always;"></div>
 
 # Exercises
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-$$
+
 This document contains exercises derived from the course lectures and notes, organized by topic. Each exercise links to its detailed solution at the end of the file.
 
 ---

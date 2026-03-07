@@ -30,12 +30,7 @@
 
 # Language Processing
 
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-\newcommand{\trans}[1]{\xrightarrow{#1}}
-$$
+
 
 ## 1. Implementation of Lexical Analysis (Scanning)
 
@@ -393,12 +388,7 @@ Language processing is structured into two main phases: **Analysis** (breaking d
 
 # Memory Semantics
 
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-\newcommand{\trans}[1]{\xrightarrow{#1}}
-$$
+
 
 ## 1. The Activation Record (Stack Frame)
 
@@ -614,12 +604,7 @@ This is a **Tracing GC** that handles cycles. It requires identifying **Roots
 
 # Rust Systems Programming
 
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-\newcommand{\trans}[1]{\xrightarrow{#1}}
-$$
+
 
 ## 1. Ownership and Borrowing Mechanics
 
@@ -765,12 +750,7 @@ It only permits the specific operations above. The borrow checker still runs on 
 
 # Advanced Paradigms
 
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-\newcommand{\trans}[1]{\xrightarrow{#1}}
-$$
+
 
 ## 1. Functional Constructs Implementation
 
@@ -1097,12 +1077,7 @@ Languages like C# (and modern JS/Python) provide `async`/`await` syntactic sugar
 <div style="page-break-after: always;"></div>
 
 # Runtime Environments
-$$
-\newcommand{\sem}[1]{ [\![ #1 ]\!] }
-\newcommand{\den}[1]{\mathcal{#1}}
-\newcommand{\floor}[1]{\lfloor #1 \rfloor}
-\newcommand{\trans}[1]{\xrightarrow{#1}}
-$$
+
 
 ## 1. Anatomy of a Managed Runtime (JVM/CLR)
 
