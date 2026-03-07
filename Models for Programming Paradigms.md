@@ -2,55 +2,55 @@
 # Models for Programming Paradigms
 
 1. [[# Foundations & Preliminaries]]
-* **Key Concepts:** Syntax vs Semantics vs Pragmatics.
-* **Methods:** Operational Semantics (SOS), Denotational, Axiomatic.
-* **Properties:** Termination, Determinacy, Compositionality.
+  **Key Concepts:** Syntax vs Semantics vs Pragmatics.
+  **Methods:** Operational Semantics (SOS), Denotational, Axiomatic.
+  **Properties:** Termination, Determinacy, Compositionality.
 
 2. [[#Math & Logic]]
-* **Induction:** Mathematical, Structural, Well-Founded, and Rule Induction.
-* **Domain Theory:** Partial Orders (PO), CPO, Monotone and Continuous Functions.
-* **Fixpoint:** Kleene's Theorem ($\text{fix}(f) = \bigsqcup f^n(\perp)$) and the Immediate Consequence Operator (ICO).
+  **Induction:** Mathematical, Structural, Well-Founded, and Rule Induction.
+  **Domain Theory:** Partial Orders (PO), CPO, Monotone and Continuous Functions.
+  **Fixpoint:** Kleene's Theorem ($\text{fix}(f) = \bigsqcup f^n(\perp)$) and the Immediate Consequence Operator (ICO).
 
 3. [[# Imp Semantics]]
-* **IMP Language:** Syntax and States ($\Sigma$).
-* **Operational Semantics:** Inference rules for `Aexp`, `Bexp`, `Com`.
-* **Denotational Semantics:** Functions $\mathcal{C}[\![ c ]\!]$, handling *Lifting*, and `while` denotation.
-* **Axiomatic Semantics:** Hoare Logic rules.
-* **Equivalence:** Consistency Theorem between OS and DS.
+  **IMP Language:** Syntax and States ($\Sigma$).
+  **Operational Semantics:** Inference rules for `Aexp`, `Bexp`, `Com`.
+  **Denotational Semantics:** Functions $\mathcal{C}\sem{c}$, handling *Lifting*, and `while` denotation.
+  **Axiomatic Semantics:** Hoare Logic rules.
+  **Equivalence:** Consistency Theorem between OS and DS.
 
 4. [[# HOFL]]
-* **Higher-Order Functional Language:** Syntax, Types, and Inference Rules.
-* **Evaluation:** Canonical Forms, Lazy (Call-by-Name) vs Eager (Call-by-Value).
-* **Semantic Domains:** Continuous function spaces, semantics of $\lambda$-abstractions and recursion.
-* **Haskell:** Conceptual mapping (lists, lazy evaluation).
+  **Higher-Order Functional Language:** Syntax, Types, and Inference Rules.
+  **Evaluation:** Canonical Forms, Lazy (Call-by-Name) vs Eager (Call-by-Value).
+  **Semantic Domains:** Continuous function spaces, semantics of $\lambda$-abstractions and recursion.
+  **Haskell:** Conceptual mapping (lists, lazy evaluation).
 
 5. [[#Concurrency]]
-* **Paradigms:** Message Passing (Erlang) vs Shared Memory/Channels (Go).
-* **CCS:** Syntax, LTS, and transition rules ($\tau$).
-* **Bisimulation:** Definition of Strong Bisimulation, Attacker/Defender game.
-* **Logic:** HML (Hennessy-Milner Logic) and Characterization Theorem.
-* **Case Studies:** Modeling Buffers and Mutual Exclusion (Peterson).
+  **Paradigms:** Message Passing (Erlang) vs Shared Memory/Channels (Go).
+  **CCS:** Syntax, LTS, and transition rules ($\tau$).
+  **Bisimulation:** Definition of Strong Bisimulation, Attacker/Defender game.
+  **Logic:** HML (Hennessy-Milner Logic) and Characterization Theorem.
+  **Case Studies:** Modeling Buffers and Mutual Exclusion (Peterson).
 
 6. [[#Real Languages]]
-* **Haskell:** Functional patterns (Guards, Data types), Type Classes, Lazy Evaluation.
-* **Erlang:** Actor Model, Asynchronous Message Passing, `receive` with timeout.
-* **Go:** Goroutines, Buffered vs Unbuffered Channels, `select` non-determinism.
+  **Haskell:** Functional patterns (Guards, Data types), Type Classes, Lazy Evaluation.
+  **Erlang:** Actor Model, Asynchronous Message Passing, `receive` with timeout.
+  **Go:** Goroutines, Buffered vs Unbuffered Channels, `select` non-determinism.
 
-7. [[# Advanced Concurrency]]
-* **Weak Bisimulation:** Abstraction from internal actions ($\tau$), Weak Transition ($\stackrel{\alpha}{\Longrightarrow}$).
-* **Congruence:** Observational Congruence and Milner's $\tau$-laws.
-* **Temporal Logics:** Linear Time (LTL) vs Branching Time (CTL).
-* **Mu-Calculus:** Syntax and Fixpoints for Safety ($\nu$) and Liveness ($\mu$) properties.
+7. [[#Advanced Concurrency]]
+  **Weak Bisimulation:** Abstraction from internal actions ($\tau$), Weak Transition (${\alpha}{\Longrightarrow}$).
+  **Congruence:** Observational Congruence and Milner's $\tau$-laws.
+  **Temporal Logics:** Linear Time (LTL) vs Branching Time (CTL).
+  **Mu-Calculus:** Syntax and Fixpoints for Safety ($\nu$) and Liveness ($\mu$) properties.
 
 ---
 
 ##  Practice & Review
 
 1. [[#Exam Questions]]
-* A comprehensive list of past exam questions mapped to specific answers.
+   A comprehensive list of past exam questions mapped to specific answers.
 
 2. [[#Exercises]]
-* Collection of solved exercises on Domains, IMP, HOFL, CCS, and Real Languages.
+   Collection of solved exercises on Domains, IMP, HOFL, CCS, and Real Languages.
 
 
 <div style="page-break-after: always;"></div>
@@ -1573,7 +1573,7 @@ default:
 
 |**Type**|**Syntax**|**Corresponding CCS Semantics**|
 |---|---|---|
-|**Unbuffered**|`make(chan T)`|**Synchronous** (Handshake). $\alpha.\textbf{nil} \mid \bar{\alpha}.\textbf{nil} \xrightarrow{\tau} \textbf{nil}$. Sender and receiver must synchronize (Rendezvous).|
+|**Unbuffered**|`make(chan T)`|**Synchronous** (Handshake). $\alpha.\textbf{nil} \mid \bar{\alpha}.\textbf{nil} \trans{\tau} \textbf{nil}$. Sender and receiver must synchronize (Rendezvous).|
 |**Buffered**|`make(chan T, N)`|**Asynchronous** (up to N). The sender does not block until the buffer is full.|
 
 ### 3.4 Example: Deadlock in Go (vs CCS)
@@ -2221,7 +2221,7 @@ Order: $\perp_{new} \sqsubseteq x$ for all $x$, and elements of $D$ keep their o
 42. **Operational Semantics:** What are the rules for the Lazy Operational Semantics of HOFL? [[#A4.5|Answer]]
 43. **Evaluation Strategy:** What is the difference between Lazy (Call-by-Name) and Eager (Call-by-Value)? [[#A4.6|Answer]]
 44. **Domains:** How are the semantic domains for types ($D_\tau$) defined? [[#A4.7|Answer]]
-45. **Denotational Semantics:** How is the interpretation function $[\![ t ]\!]_\rho$ defined? [[#A4.8|Answer]]
+45. **Denotational Semantics:** How is the interpretation function $\sem{t}_\rho$ defined? [[#A4.8|Answer]]
 46. **Substitution Lemma:** **What is the Substitution Lemma?** (Crucial for consistency) [[#A4.9|Answer]]
 47. **Consistency:** What is the relation between Operational and Denotational semantics? [[#A4.10|Answer]]
 
@@ -2287,25 +2287,25 @@ Defined inductively on types to handle partiality (lifting).
 [[#Part 4: HOFL & Denotational Semantics|Back to Q]]
 
 ### A4.8
-**Denotational Semantics ($[\![ t ]\!]_\rho$)**
+**Denotational Semantics ($\sem{t}_\rho$)**
 Maps a term $t$ and an environment $\rho$ to an element in $D_\tau$.
-* $[\![ n ]\!]_\rho = \lfloor n \rfloor$ (Lifted value).
-* $[\![ \lambda x. t ]\!]_\rho = \lfloor \boldsymbol{\lambda} d. [\![ t ]\!]_{\rho[d/x]} \rfloor$ (Returns a lifted continuous function).
-* $[\![ t_1 t_2 ]\!]_\rho = \text{Let } \varphi \Leftarrow [\![ t_1 ]\!]_\rho \text{ in } \varphi([\![ t_2 ]\!]_\rho)$ (Monadic bind: if $t_1$ diverges, result is $\perp$).
-* $[\![ \textbf{rec } x. t ]\!]_\rho = \text{fix}(\boldsymbol{\lambda} d. [\![ t ]\!]_{\rho[d/x]})$.
+* $\sem{n}_\rho = \lfloor n \rfloor$ (Lifted value).
+* $\sem{\lambda x. t}_\rho = \lfloor \boldsymbol{\lambda} d. \sem{t}_{\rho[d/x]} \rfloor$ (Returns a lifted continuous function).
+* $\sem{t_1 t_2}_\rho = \text{Let } \varphi \Leftarrow \sem{t_1}_\rho \text{ in } \varphi(\sem{t_2}_\rho)$ (Monadic bind: if $t_1$ diverges, result is $\perp$).
+* $\sem{\textbf{rec } x. t}_\rho = \text{fix}(\boldsymbol{\lambda} d. \sem{t}_{\rho[d/x]})$.
 [[#Part 4: HOFL & Denotational Semantics|Back to Q]]
 
 ### A4.9
 **Substitution Lemma**
 The denotation of a term with a substitution is equal to the denotation of the term in an updated environment.
-$$[\![ t[t'/x] ]\!]_\rho = [\![ t ]\!]_{\rho[[\![ t' ]\!]_\rho/x]}$$
+$$\sem{t[t'/x]}_\rho = \sem{t}_{\rho[\sem{t'}_\rho/x]}$$
 *Importance:* It is the key step to prove that the operational rule for application (which uses substitution) matches the denotational definition (which uses environment update).
 [[#Part 4: HOFL & Denotational Semantics|Back to Q]]
 
 ### A4.10
 **Consistency**
 **Theorem:** For any closed term $t$ and canonical form $c$:
-$$t \downarrow c \implies [\![ t ]\!] = [\![ c ]\!]$$
+$$t \downarrow c \implies \sem{t} = \sem{c}$$
 *Interpretation:* The Operational semantics is **correct** with respect to Denotational semantics.
 *Note:* The converse (Completeness) does NOT hold in the standard model (due to the "Parallel OR" problem, although for HOFL/PC it's more about full abstraction issues).
 [[#Part 4: HOFL & Denotational Semantics|Back to Q]]
@@ -2566,7 +2566,7 @@ We need to prove $h(g(e_0)) = g(e_0)$.
 ### Sol 2.1
 **Rules:**
 $$\frac{\langle a, \sigma \rangle \to N \quad N \le 0}{\langle \textbf{for } a \textbf{ do } c, \sigma \rangle \to \sigma} \quad \frac{\langle a, \sigma \rangle \to N \quad N > 0 \quad \langle c; \textbf{for } (N-1) \textbf{ do } c, \sigma \rangle \to \sigma'}{\langle \textbf{for } a \textbf{ do } c, \sigma \rangle \to \sigma'}$$
-**Termination:** Proved by mathematical induction on the value $N = \mathcal{A}[\![ a ]\!]\sigma$. Base case ($N \le 0$) terminates immediately (skip). Step ($N$) reduces to execution of $c$ (terminates by hypothesis) followed by `for` on $N-1$, which terminates by Inductive Hypothesis.
+**Termination:** Proved by mathematical induction on the value $N = \mathcal{C}[\![ a ]\!]\sigma$. Base case ($N \le 0$) terminates immediately (skip). Step ($N$) reduces to execution of $c$ (terminates by hypothesis) followed by `for` on $N-1$, which terminates by Inductive Hypothesis.
 
 [[#Ex 2.1: Operational Semantics of for loops|Back to Exercise]]
 

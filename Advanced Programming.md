@@ -640,7 +640,7 @@ This effectively implements a compile-time **Readers-Writer Lock**:
 
 ### 1.3 Lifetimes and Dangling Pointers
 
-**Lifetimes** are distinct code regions where a reference is valid. The compiler verifies that the **Lifetime of the Owner**strictly encloses the **Lifetime of the Borrower**.
+**Lifetimes** are distinct code regions where a reference is valid. The compiler verifies that the **Lifetime of the Owner** strictly encloses the **Lifetime of the Borrower**.
 
 - **Mechanism:** If a reference lives longer than the data it points to, the compiler rejects the code with "borrowed value does not live long enough".
 
@@ -1003,68 +1003,27 @@ void addNumbers(List<? super Integer> list) {
 }
 ```
 ---
-
 ## 6. Asynchronous Programming Paradigms
-
-Traditional threading models (one thread per task) scale poorly for I/O-bound operations (e.g., waiting for a DB query blocks an expensive OS thread). Asynchronous programming decouples the **waiting** from the **thread**.
-
-### 6.1 The AJAX Pattern & Callback Hell
-Historically popularized by the `XMLHttpRequest` object in browsers.
-* **Mechanism:** Initiate a request and register a **Callback function** to be invoked when the state changes (e.g., `onreadystatechange`).
-* **The Problem (Callback Hell):** Chaining sequential operations (read A, then read B) leads to deeply nested callbacks, making code unreadable and hard to debug.
-
-### 6.2 Functional Programming & Concurrency
-Functional Programming (FP) naturally aids concurrency due to **Immutability**.
-* If functions are pure (no side effects) and data is immutable, there is no shared mutable state.
-* **No Race Conditions:** Multiple threads can read/compute on the same data without locks.
-
-### 6.3 Continuation-Passing Style (CPS)
-CPS is the theoretical foundation for modern async features (Promises, Futures, `async/await`).
-* **Concept:** Instead of a function returning a value, it takes an extra argument (a "continuation" function) representing "what to do next".
-* **Control Flow:** The function "returns" by calling the continuation with the result.
-* **Relevance:** This allows a computation to be **suspended** (saving the continuation) and **resumed** later (invoking the continuation), potentially on a different thread, without blocking the original caller.
-
-## 7. Asynchronous Programming Paradigms
-
-Traditional threading models (one thread per task) scale poorly for I/O-bound operations (e.g., waiting for a DB query blocks an expensive OS thread). Asynchronous programming decouples the **waiting** from the **thread**.
-
-### 7.1 The AJAX Pattern & Callback Hell
-Historically popularized by the `XMLHttpRequest` object in browsers (originally an Microsoft ActiveX component, then standardized).
-* **Mechanism:** Initiate a request and register a **Callback function** to be invoked when the state changes (e.g., `onreadystatechange`).
-* **The Problem (Callback Hell):** Chaining sequential operations (e.g., *fetch A*, then *fetch B* using A's result) leads to deeply nested callbacks, making the control flow difficult to read and debug compared to linear imperative code.
-
-### 7.2 Functional Programming & Concurrency
-Functional Programming (FP) naturally aids concurrency due to **Immutability**.
-* **Statelessness:** If functions are pure (no side effects) and data is immutable, there is no shared mutable state to protect.
-* **No Race Conditions:** Multiple threads can read/compute on the same data without locks. The trade-off is often higher memory usage due to data copying rather than in-place modification.
-
-### 7.3 Continuation-Passing Style (CPS)
-CPS is the theoretical foundation for modern async features (like JavaScript **Promises** or C# **Tasks**).
-* **Concept:** Instead of a function returning a value to the caller, it takes an extra argument (a "continuation" function) representing "what to do next".
-* **Control Flow:** The function "returns" by invoking the continuation with the result.
-* **Suspension & Resumption:** This style allows a computation to be **suspended** (saving the continuation/closure) and **resumed** later (invoking the continuation), potentially on a different thread, without blocking the original thread during the wait.
-
-## 7. Asynchronous Programming Paradigms
 
 Traditional threading models (one thread per task) scale poorly for I/O-bound operations (e.g., waiting for a DB query blocks an expensive OS thread). Asynchronous programming decouples the **waiting** from the **thread** .
 
-### 7.1 The AJAX Pattern & Callback Hell
+### 6.1 The AJAX Pattern & Callback Hell
 Historically popularized by the `XMLHttpRequest` object in browsers (originally a Microsoft ActiveX component, then standardized) .
 * **Mechanism:** Initiate a request and register a **Callback function** to be invoked when the state changes (e.g., `onreadystatechange`).
 * **The Problem (Callback Hell):** Chaining sequential operations (e.g., *fetch A*, then *fetch B* using A's result) leads to deeply nested callbacks, making the control flow difficult to read and debug compared to linear imperative code.
 
-### 7.2 Functional Programming & Concurrency
+### 6.2 Functional Programming & Concurrency
 Functional Programming (FP) naturally aids concurrency due to **Immutability** .
 * **Statelessness:** If functions are pure (no side effects) and data is immutable, there is no shared mutable state to protect.
 * **No Race Conditions:** Multiple threads can read/compute on the same data without locks. The trade-off is often higher memory usage due to data copying rather than in-place modification.
 
-### 7.3 Continuation-Passing Style (CPS)
+### 6.3 Continuation-Passing Style (CPS)
 CPS is the theoretical foundation for modern async features (like JavaScript **Promises** or C# **Tasks**) .
 * **Concept:** Instead of a function returning a value to the caller, it takes an extra argument (a "continuation" function) representing "what to do next".
 * **Control Flow:** The function "returns" by invoking the continuation with the result.
 * **Suspension & Resumption:** This style allows a computation to be **suspended** (saving the continuation/closure) and **resumed** later (invoking the continuation), potentially on a different thread, without blocking the original thread during the wait.
 
-### 7.4 Async/Await Implementation (State Machines)
+### 6.4 Async/Await Implementation (State Machines)
 Languages like C# (and modern JS/Python) provide `async`/`await` syntactic sugar to write asynchronous code that *looks* synchronous.
 * **Desugaring:** The compiler transforms `async` methods into a **Finite State Machine (FSM)** .
 * **Mechanism:**
@@ -1126,23 +1085,23 @@ Runtimes rely on IRs to decouple source languages from target architectures.
 
 ## 2. Concurrency Models and Hardware Reality
 
-Concurrency is not just a language abstraction; it is strictly bound to the underlying hardware and Operating System capabilities .
+Concurrency is not just a language abstraction; it is strictly bound to the underlying hardware and Operating System capabilities.
 
 ### 2.1 The Hardware Constraints
 Modern execution is dictated by the CPU architecture (e.g., x86, ARM, RISC-V).
-* **Core Complexity:** CPUs are not abstract mathematical entities. They include branch predictors, multiple levels of Caches (L1, L2, L3), and interconnects (Mesh) between tiles .
-* **Memory Wall:** Accessing RAM is slow. Multiple cores contend for memory access. High Bandwidth Memory (HBM) is introduced to mitigate this, but data locality remains crucial for performance .
-* **Atomicity:** The CPU does not operate on references directly but copies data to registers. Read-Modify-Write operations are **not atomic** by default, leading to **Race Conditions** where updates can be lost if not synchronized .
+* **Core Complexity:** CPUs are not abstract mathematical entities. They include branch predictors, multiple levels of Caches (L1, L2, L3), and interconnects (Mesh) between tiles.
+* **Memory Wall:** Accessing RAM is slow. Multiple cores contend for memory access. High Bandwidth Memory (HBM) is introduced to mitigate this, but data locality remains crucial for performance.
+* **Atomicity:** The CPU does not operate on references directly but copies data to registers. Read-Modify-Write operations are **not atomic** by default, leading to **Race Conditions** where updates can be lost if not synchronized.
 
 ### 2.2 Evolution of Concurrency Abstractions
 1.  **Processes:** The original unit of concurrency. They provide strong isolation (memory, security) but have high context-switch overhead .
 2.  **Threads:** Lighter execution units sharing the same process memory space.
-    * *Pros:* Lower overhead than processes .
-    * *Cons:* Shared state leads to race conditions; creating/destroying threads is still expensive (OS resources limit scaling) .
-3.  **Collaborative Concurrency (Fibers):** Software-scheduled execution without OS preemption. Relies on the code spontaneously yielding control. Efficient but risky (a stuck fiber blocks everything) .
+    * *Pros:* Lower overhead than processes.
+    * *Cons:* Shared state leads to race conditions; creating/destroying threads is still expensive (OS resources limit scaling).
+3.  **Collaborative Concurrency (Fibers):** Software-scheduled execution without OS preemption. Relies on the code spontaneously yielding control. Efficient but risky (a stuck fiber blocks everything).
 
 ### 2.3 The Thread Pool Pattern
-To mitigate the cost of thread allocation, Runtimes (CLR/JVM) implement **Thread Pools** .
+To mitigate the cost of thread allocation, Runtimes (CLR/JVM) implement **Thread Pools**.
 * **Mechanism:** A collection of pre-allocated worker threads consumes tasks from a blocking queue.
 * **Workflow:**
     1.  Application submits a "Task" (e.g., `Action` or `Runnable`) to the queue.
@@ -1245,8 +1204,8 @@ To optimize distribution, modern builds use **Multi-Stage** Dockerfiles. This se
 
 ### 6.4 Composition and Orchestration
 Real-world systems are collections of cooperating services (Frontend, Backend, Database).
-* **Docker Compose:** A YAML-based tool to define multi-container applications, managing networking (internal DNS) and volume mapping (persistence) between them .
-* **Kubernetes:** An orchestrator for managing clusters of containers, handling scaling, failover, and deployment across multiple physical servers .
+* **Docker Compose:** A YAML-based tool to define multi-container applications, managing networking (internal DNS) and volume mapping (persistence) between them.
+* **Kubernetes:** An orchestrator for managing clusters of containers, handling scaling, failover, and deployment across multiple physical servers.
 
 <div style="page-break-after: always;"></div>
 
