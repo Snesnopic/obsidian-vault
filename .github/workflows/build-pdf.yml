@@ -29,20 +29,12 @@ jobs:
 
       - name: Prepare Build Assets
         run: |
-          # create latex header with math packages only
-          cat <<'EOF' > metadata.yaml
-          ---
-          geometry: margin=1in
-          colorlinks: true
-          header-includes:
-            - |
-              \usepackage{amsmath}
-              \usepackage{amssymb}
-              \usepackage{stmaryrd}
-          ---
+          cat <<'EOF' > header.tex
+          \usepackage{amsmath}
+          \usepackage{amssymb}
+          \usepackage{stmaryrd}
           EOF
 
-          # create python script to fix obsidian links
           cat <<'EOF' > fix_links.py
           import re
           import sys
@@ -78,7 +70,12 @@ jobs:
             python3 fix_links.py < "$file" > clean_body.md
 
             echo "COMPILING PDF..."
-            pandoc metadata.yaml clean_body.md -o "output_pdfs/${base}.pdf" --pdf-engine=pdflatex || {
+            # Use command line flags instead of a YAML metadata block
+            pandoc clean_body.md -o "output_pdfs/${base}.pdf" \
+              -V geometry:margin=1in \
+              -V colorlinks:true \
+              --include-in-header=header.tex \
+              --pdf-engine=pdflatex || {
                 echo "PANDOC ERROR ON $file"
                 echo "SHOWING FIRST 40 LINES OF clean_body.md:"
                 nl -ba clean_body.md | head -n 40
@@ -88,7 +85,7 @@ jobs:
             rm clean_body.md
           done
           
-          rm metadata.yaml fix_links.py
+          rm header.tex fix_links.py
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
