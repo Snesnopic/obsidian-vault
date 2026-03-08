@@ -1002,6 +1002,7 @@ void addNumbers(List<? super Integer> list) {
     // Integer n = list.get(0); // Error: Could be Object
 }
 ```
+
 ----
 ## 6. Asynchronous Programming Paradigms
 

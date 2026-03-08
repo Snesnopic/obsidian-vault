@@ -671,3 +671,80 @@ void color_graph(std::vector<live_range>& ranges, int num_physical_regs) {
 
 <div style="page-break-after: always;"></div>
 
+# 08. Laboratory (MiniImp & MiniFun)
+
+This section outlines the laboratory project, which involves implementing the semantics, analysis, and optimization of two simple programming languages: MiniImp (imperative) and MiniFun (functional).
+
+----
+
+## 1. Project Overview
+
+The project is divided into two main parts:
+1. A minimal imperative language (MiniImp) with analysis and optimization.
+2. A minimal functional language (MiniFun) with a type system.
+
+The final submission requires two artifacts: clean, commented code and a report. The report must contain a guide on how to run the code and detailed motivations behind implementation choices and problem resolutions.
+
+----
+
+## 2. MiniImp: Imperative Language
+
+MiniImp operates by reading and updating a memory $\sigma$.
+
+### 2.1 Syntax
+A program is defined by the following grammar:
+* `prog ::= def main with input <var> output <var> as <cmd>` 
+* `cmd ::= skip | <var> := <expr> | <cmd>; <cmd> | if <bexp> then <cmd> else <cmd> | while <bexp> do <cmd>` 
+* `expr ::= <var> | <num> | <expr> + <expr> | <expr> - <expr> | <expr> * <expr>` 
+* `bexp ::= true | false | <bexp> and <bexp> | not <bexp> | <expr> < <expr>` 
+
+### 2.2 Semantics and Memory
+Abstractly, a memory associates locations (variables) to values (integers). Because some variables can be undefined, a memory is modeled as a partial function $\sigma: X \rightharpoonup Z$. The semantics are given by deduction rules (reductions):
+* Arithmetical expressions: $\langle \sigma, e \rangle \to_e n$ 
+* Boolean expressions: $\langle \sigma, b \rangle \to_b n$ 
+* Commands: $\langle \sigma, c \rangle \to_c \sigma'$ 
+* Programs: $\langle p, n \rangle \to_p n'$ 
+
+For instance, the sequential execution of commands updates the memory step by step:
+$$\frac{\langle \sigma, c_1 \rangle \to_c \sigma_1 \quad \langle \sigma_1, c_2 \rangle \to_c \sigma_2}{\langle \sigma, c_1; c_2 \rangle \to_c \sigma_2}$$ 
+
+### 2.3 Pitfalls: Deadlocks and Non-termination
+* **Deadlocks:** A program may fail and reach an erroneous state where the semantics is undefined. In MiniImp, a deadlock occurs specifically when a variable is undefined during evaluation.
+* **Non-termination:** Constructs like the `while` loop can cause non-termination (e.g., executing `while true do x := 1` yields an infinite derivation tree).
+
+----
+
+## 3. MiniFun: Functional Language
+
+MiniFun introduces functional programming paradigms, requiring the management of environments, closures, and type inference.
+
+### 3.1 Closures and Environments
+When evaluating a function, the semantics must capture the environment at the time of evaluation.
+* For a standard abstraction `fun x => t`, the resulting closure is `(x, t, \rho)`.
+* For recursive functions defined via `letfun f x = t`, the closure also stores the function's own name: `(f, x, t, \rho)`.
+
+### 3.2 Static Analysis and Type System
+Static analysis aims to prove properties about the program's behavior without executing it, avoiding run-time errors such as undefined variables or applying addition between booleans and integers. 
+
+Type checking involves propagating constraining information across the Abstract Syntax Tree. The typechecking implementation requires defining data structures for monotypes, polytypes, and substitutions, as well as implementing `inst`, `gener`, and `unify` functions. 
+
+**Algorithm W Step-by-Step for `if-then-else` (ITE):**
+1. Check the first argument.
+2. Update the context with the substitution and check the second argument.
+3. Update the context with the substitution and check the third argument.
+4. Unify the first argument with `bool`.
+5. Unify the second and third arguments.
+
+```cpp
+// type structures and environment map
+struct type { /* ... */ };
+using substitution = std::map<std::string, type>;
+
+// algorithm w unification step
+substitution unify(const type& t1, const type& t2) {
+    // perform standard unification 
+    return {};
+}
+
+<div style="page-break-after: always;"></div>
+
