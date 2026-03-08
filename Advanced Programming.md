@@ -1004,6 +1004,7 @@ void addNumbers(List<? super Integer> list) {
 ```
 
 ----
+
 ## 6. Asynchronous Programming Paradigms
 
 Traditional threading models (one thread per task) scale poorly for I/O-bound operations (e.g., waiting for a DB query blocks an expensive OS thread). Asynchronous programming decouples the **waiting** from the **thread** .
