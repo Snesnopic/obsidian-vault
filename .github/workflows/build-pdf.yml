@@ -86,6 +86,11 @@ jobs:
           done
           
           rm header.tex fix_links.py
+      - name: Inject web assets
+        run: |
+          # copy web files to the publish directory
+          cp -a web/. output_pdfs/
+          echo "WEB ASSETS COPIED TO OUTPUT"
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
