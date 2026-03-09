@@ -89,7 +89,7 @@ jobs:
       - name: Inject web assets
         run: |
           # copy web files to the publish directory
-          cp -a web/. output_pdfs/
+          cp -a docs/. output_pdfs/
           echo "WEB ASSETS COPIED TO OUTPUT"
 
       - name: Deploy to GitHub Pages
