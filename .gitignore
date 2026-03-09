@@ -22,5 +22,5 @@ Thumbs.db
 
 *.pdf
 *.html
-!web/index.html
+!docs/index.html
 
