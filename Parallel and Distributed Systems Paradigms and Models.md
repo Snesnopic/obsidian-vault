@@ -1,4 +1,69 @@
 
+# 00. Table of Contents
+
+This document provides a comprehensive overview of the course sections and subsections, mapping the theoretical foundations to low-level implementations in C++, FastFlow, MPI, and CUDA.
+
+1. [[#Foundations of Parallel Computing & Performance Measures]]
+   **Metrics:** Latency ($L$), Service Time ($T_s$), Completion Time ($T_c$), Speedup ($S_p$), Efficiency ($E$).
+   **Laws:** Amdahl's Law, Gustafson's Law.
+   **Patterns:** Pipeline, Farm (Master-Worker).
+
+2. [[#Structured Parallel Programming & Algorithmic Skeletons]]
+   **Framework:** Separation of concerns, Cole's Algorithmic Skeletons.
+   **Stream Parallel:** `pipe`, `farm`.
+   **Data Parallel:** `map`, `reduce`.
+
+3. [[#Shared Memory & Low-Level Concurrency]]
+   **Architecture:** Cache Coherence (MESI), Synchronization, Branch Divergence (Predication).
+   **C++ Implementation:** `std::thread`, data races, OpenMP directives.
+
+4. [[#Thread Affinity & Memory Consistency]]
+   **Hardware Interaction:** Thread migration penalties, NUMA, enforing affinity (`sched_setaffinity`).
+   **Memory Models:** Sequential Consistency, Relaxed models, C++11 `std::atomic` and memory ordering.
+   **Optimization:** Mitigating false sharing via memory alignment.
+
+5. [[#Distributed Systems & Message Passing]]
+   **Paradigm:** Isolated memory spaces, synchronous vs asynchronous communication.
+   **MPI:** `MPI_Comm_world`, Ranks, Point-to-Point (`MPI_Send`, `MPI_Irecv`), Collective operations (`MPI_Bcast`, `MPI_Reduce`).
+
+6. [[#FastFlow Framework & Stream Processing]]
+   **Design:** Lock-free/wait-free queues (SPSC), zero-copy routing.
+   **Components:** `ff_node`, `svc` method, EOS/GO_ON tokens.
+   **C++ Skeletons:** `ff_Pipe`, `ff_Farm`.
+
+7. [[#Data Parallelism & GPU Concurrency]]
+   **FastFlow:** `ff::ParallelFor`, `ff::ParallelForReduce`.
+   **GPU Basics:** SIMT execution, Threads/Blocks/Grids hierarchy.
+   **CUDA:** `__global__` kernels, Global/Shared/Register memory, `cudaMemcpy`.
+
+8. [[#Advanced GPU Concurrency & CUDA Optimizations]]
+   **Execution:** Warp divergence, Global Memory Coalescing (AoS vs SoA).
+   **Optimization:** Tiling with `__shared__` memory, `__syncthreads()`.
+   **Latency Hiding:** Asynchronous execution with CUDA Streams.
+
+9. [[#Communication Cost Models & Macro-Dataflow]]
+   **Analytical Models:** $T_{comm}(L) = t_{setup} + \frac{L}{B_w}$, impact on scalability.
+   **MDF Architecture:** Instruction Pool, Matching Store, Ready Queue, Critical Path weighting.
+
+10. [[#Distributed Skeletons Implementation]]
+    **MPI Pipeline:** Static mapping, data batching.
+    **MPI Farm:** Master-Worker architecture, static vs on-demand dynamic load balancing.
+
+11. [[#Advanced Patterns & Stateful Skeletons]]
+    **Patterns:** Divide & Conquer (Thread pools, cut-off depth), Stencil (Ghost cells, Halo exchange).
+    **State Management:** Key-based routing for stateful farm workers.
+
+12. [[#Formal Semantics of Parallel Constructs]]
+    **Methods:** Labeled Transition Systems (LTS), Operational Semantics for streams.
+    **Equivalence:** Normal Form rewriting rules, Bisimulation for non-deterministic behavior.
+
+13. [[#Autonomic Computing & Quality of Service (QoS)]]
+    **Adaptability:** Under/Over-provisioning.
+    **Control Loop:** MAPE (Monitor, Analyze, Plan, Execute).
+    **Implementation:** Dynamic thread pools, hysteresis, `ff_aFarm`.
+
+<div style="page-break-after: always;"></div>
+
 # 01. Foundations of Parallel Computing & Performance Measures
 
 This chapter introduces the fundamental concepts, performance metrics, and basic patterns (skeletons) used in parallel computing to evaluate and structure concurrent execution.
@@ -1367,6 +1432,222 @@ struct stateful_worker : ff_node_t<int> {
 
 <div style="page-break-after: always;"></div>
 
+# 12. Formal Semantics of Parallel Constructs
+
+This chapter introduces the formal mathematical models used to describe the behavior of parallel skeletons. By defining a rigorous Operational Semantics, we can prove properties such as deadlock freedom, determinacy, and semantic equivalence between different parallel structures.
+
+## 1. Labeled Transition Systems (LTS)
+
+To model parallel execution, we use Transition Systems. A Transition System is a tuple $\langle S, T, \rightarrow \rangle$ where:
+* $S$ is the set of possible states (configurations of our parallel program).
+* $T$ is the set of terminal states.
+* $\rightarrow \subseteq S \times S$ is the transition relation, denoting a single computational step.
+
+For parallel skeletons, the state often includes the current active processes and the streams of data they are operating on.
+
+## 2. Semantics of Stream Parallel Skeletons
+
+We model data streams as lists. Let $\langle x, \tau \rangle$ denote a stream where $x$ is the head (current token) and $\tau$ is the tail (the rest of the stream). Let $::$ denote the concatenation operator.
+
+### 2.1 The `seq` Skeleton
+The sequential skeleton applies a purely functional transformation $f$ to a stream.
+
+$$\langle \text{seq } f, \langle x, \tau \rangle \rangle \rightarrow \langle f(x) \rangle :: \langle \text{seq } f, \langle \tau \rangle \rangle$$
+
+This rule states that the `seq` construct processes the head $x$, emits $f(x)$ to the output stream, and recursively applies itself to the tail $\tau$.
+
+### 2.2 The `pipe` Skeleton
+A pipeline connects two skeletons $\Delta_1$ and $\Delta_2$. The output stream of $\Delta_1$ becomes the input stream of $\Delta_2$.
+
+$$\frac{\langle \Delta_1, I \rangle \rightarrow O_{partial} :: \langle \Delta_1', I' \rangle \quad \langle \Delta_2, O_{partial} \rangle \rightarrow O_{final} :: \langle \Delta_2', O'_{partial} \rangle}{\langle \text{pipe}(\Delta_1, \Delta_2), I \rangle \rightarrow O_{final} :: \langle \text{pipe}(\Delta_1', \Delta_2'), I' \rangle}$$
+
+This inference rule specifies that a pipeline step is valid if the first stage processes the input to produce intermediate data, and the second stage processes that intermediate data to produce the final output.
+
+### 2.3 The `farm` Skeleton
+A farm replicates a skeleton $\Delta$ over multiple parallel workers. The state of a farm must keep track of the available workers and the scheduler (Emitter/Collector).
+
+Let $W_1 \dots W_n$ be instances of the worker $\Delta$. A simplified transition for dispatching a task $x$ to an idle worker $W_k$ is:
+
+$$\langle \text{farm}(\Delta), \langle x, \tau \rangle \rangle \rightarrow \langle W_k(x) \parallel \text{farm}(\Delta), \langle \tau \rangle \rangle$$
+
+*(Note: $\parallel$ denotes concurrent execution. A formal LTS would include specific rules for the Collector gathering the results non-deterministically or in-order).*
+
+## 3. Semantic Equivalence and Rewriting Rules
+
+By having a formal semantics, we can prove that two different skeleton compositions produce the exact same output stream for the same input stream. This is called **Semantic Equivalence** ($\equiv$).
+
+### 3.1 Normal Form
+Every skeleton composition can be rewritten into a **Normal Form**, typically a single Farm wrapping a sequential composition. This is useful for compilers to optimize the execution graph.
+
+* **Rule 1 (Pipeline of Sequential nodes):**
+    Two sequential nodes in a pipeline are semantically equivalent to a single sequential node applying the composition of the two functions.
+    $$\text{pipe}(\text{seq } f, \text{seq } g) \equiv \text{seq } (g \circ f)$$
+
+* **Rule 2 (Farm of Farms):**
+    A farm whose workers are farms is equivalent to a single farm with a flattened worker pool.
+    $$\text{farm}(\text{farm}(\Delta)) \equiv \text{farm}(\Delta)$$
+
+* **Rule 3 (Farm Expansion):**
+    A sequential node can always be trivially parallelized by a farm (assuming stateless functional behavior).
+    $$\text{seq } f \equiv \text{farm}(\text{seq } f)$$
+
+## 4. Bisimulation
+
+When dealing with non-determinism (e.g., in the `farm` Collector), basic equivalence is not enough. We use **Bisimulation** to prove that two concurrent systems exhibit the same observable behavior step-by-step.
+
+Two systems $P$ and $Q$ are bisimilar if:
+1. Every observable transition $P \xrightarrow{\alpha} P'$ can be matched by $Q \xrightarrow{\alpha} Q'$, such that $P'$ and $Q'$ are still bisimilar.
+2. Vice versa.
+
+This ensures that rewriting a `pipe` into a `farm` (or vice-versa, when optimizing) does not introduce deadlocks or alter the sequence of observable outputs, preserving the strict semantics required by the foundations of software.
+
+<div style="page-break-after: always;"></div>
+
+# 13. Autonomic Computing & Quality of Service (QoS)
+
+This chapter addresses the dynamic nature of modern execution environments. Workloads are rarely perfectly uniform, and underlying hardware resources can fluctuate (e.g., due to thermal throttling or competing processes). Autonomic Computing introduces self-managing characteristics to parallel skeletons to maintain a target Quality of Service (QoS).
+
+## 1. The Need for Dynamic Adaptability
+
+Standard algorithmic skeletons (like a basic `ff_Farm`) are usually instantiated with a static parallelism degree (a fixed number of workers $n$). 
+If the workload is irregular, a statically configured farm suffers from two potential issues:
+1. **Under-provisioning:** If the task difficulty increases, the Service Time ($T_s$) degrades, violating the desired QoS (e.g., frames per second in a video processing pipeline).
+2. **Over-provisioning:** If the task difficulty decreases, workers finish quickly and idle, wasting CPU cycles and power.
+
+To solve this, the framework must adjust the parallelism degree $n$ at runtime.
+
+----
+
+## 2. The MAPE Control Loop
+
+
+
+Autonomic systems are governed by a continuous feedback loop known as the **MAPE** loop:
+
+* **Monitor:** Sensors collect low-level metrics from the system without introducing significant overhead. In a Farm, the Emitter can monitor the inter-arrival time of tasks and the actual Service Time $T_s$.
+* **Analyze:** The system compares the monitored metrics against the target QoS constraint (e.g., "maintain $T_s < 10$ ms").
+* **Plan:** A heuristic or analytical model calculates the optimal system configuration. If $T_s$ is too high, the model calculates the necessary number of additional workers. 
+* **Execute:** The runtime dynamically reconfigures the graph. It spawns new threads to increase $n$, or sends termination signals to existing workers to decrease $n$.
+
+----
+
+## 3. Analytical Modeling for the Planning Phase
+
+The Planning phase relies on performance models to make correct decisions without oscillating or guessing.
+
+Let the target service time be $T_{ideal}$. 
+The current service time is measured as $T_{curr}$, and the current number of workers is $n_{curr}$.
+Assuming the Emitter and Collector are not the bottleneck, the worker service time is $T_W \approx T_{curr} \times n_{curr}$.
+
+To find the new optimal number of workers $n_{opt}$ required to achieve $T_{ideal}$:
+$$n_{opt} = \left\lceil \frac{T_W}{T_{ideal}} \right\rceil = \left\lceil \frac{T_{curr} \times n_{curr}}{T_{ideal}} \right\rceil$$
+
+### 3.1 Avoiding Thrashing
+Dynamically adding and removing threads has a cost (OS context allocation, cache warming). The Autonomic Manager must use a threshold (hysteresis) to avoid rapidly adding and removing workers for minor, transient fluctuations in workload.
+
+----
+
+## 4. C++ Implementation: Dynamic Worker Pool
+
+Implementing a dynamic farm requires a carefully designed execution loop where workers can be cleanly retired or injected on the fly.
+
+```cpp
+#ifndef AUTONOMIC_FARM_H
+#define AUTONOMIC_FARM_H
+
+// created by user
+
+#include <iostream>
+#include <vector>
+#include <thread>
+#include <atomic>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+
+struct task_t {
+    int id;
+    long complexity;
+};
+
+class dynamic_pool {
+    std::vector<std::thread> workers;
+    std::queue<task_t> tasks;
+    std::mutex mtx;
+    std::condition_variable cv;
+    
+    std::atomic<bool> stop_flag{false};
+    std::atomic<int> active_workers{0};
+    std::atomic<int> target_workers{0};
+
+    // worker main loop
+    void worker_loop() {
+        while (true) {
+            task_t current_task;
+            {
+                std::unique_lock<std::mutex> lock(mtx);
+                cv.wait(lock, [this] { 
+                    return !tasks.empty() || stop_flag || active_workers > target_workers; 
+                });
+
+                // graceful self-termination if the pool is scaling down
+                if (active_workers > target_workers) {
+                    active_workers--;
+                    std::cout << "WORKER SCALING DOWN. THREAD EXITING.\n";
+                    return;
+                }
+
+                if (stop_flag && tasks.empty()) return;
+
+                current_task = tasks.front();
+                tasks.pop();
+            }
+
+            // execute business logic
+            // ... computation here ...
+        }
+    }
+
+public:
+    dynamic_pool(int initial_size) {
+        set_parallelism_degree(initial_size);
+    }
+
+    // interface for the autonomic manager to adjust size at runtime
+    void set_parallelism_degree(int n) {
+        target_workers = n;
+        std::lock_guard<std::mutex> lock(mtx);
+        
+        // scale up
+        while (active_workers < target_workers) {
+            active_workers++;
+            workers.emplace_back(&dynamic_pool::worker_loop, this);
+            std::cout << "WORKER SCALING UP. NEW THREAD SPAWNED.\n";
+        }
+        
+        // notify all in case some need to scale down
+        cv.notify_all();
+    }
+
+    void submit(task_t t) {
+        std::lock_guard<std::mutex> lock(mtx);
+        tasks.push(t);
+        cv.notify_one();
+    }
+
+    void shutdown() {
+        stop_flag = true;
+        cv.notify_all();
+        for (auto& w : workers) {
+            if (w.joinable()) w.join();
+        }
+    }
+};
+
+#endif // AUTONOMIC_FARM_H
+````
+
+Advanced frameworks like FastFlow provide built-in autonomic nodes (`ff_aFarm`) that encapsulate the MAPE loop, abstracting away the thread orchestration and relying strictly on lock-free queues even during dynamic resizing.
 
 
 <div style="page-break-after: always;"></div>
