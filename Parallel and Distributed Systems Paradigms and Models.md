@@ -18,7 +18,7 @@ This document provides a comprehensive overview of the course sections and subse
    **C++ Implementation:** `std::thread`, data races, OpenMP directives.
 
 4. [[#Thread Affinity & Memory Consistency]]
-   **Hardware Interaction:** Thread migration penalties, NUMA, enforing affinity (`sched_setaffinity`).
+   **Hardware Interaction:** Thread migration penalties, NUMA, enforcing affinity (`sched_setaffinity`).
    **Memory Models:** Sequential Consistency, Relaxed models, C++11 `std::atomic` and memory ordering.
    **Optimization:** Mitigating false sharing via memory alignment.
 
