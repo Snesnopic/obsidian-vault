@@ -93,3 +93,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./output_pdfs
           enable_jekyll: true
+          keep_files: true

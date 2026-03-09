@@ -1,7 +1,7 @@
 #!/bin/bash
 
 for dir in */; do
-  if [ "$dir" == ".git/" ]; then
+  if [[ "$dir" == ".git/" || "$dir" == ".github/" || "$dir" == "web/" || "$dir" == "output_pdfs/" ]]; then
     continue
   fi
 
