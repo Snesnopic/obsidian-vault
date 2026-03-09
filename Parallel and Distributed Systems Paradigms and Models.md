@@ -832,3 +832,542 @@ To measure execution time accurately or ensure data is ready before subsequent C
 
 <div style="page-break-after: always;"></div>
 
+# 08. Advanced GPU Concurrency & CUDA Optimizations
+
+Building upon the basic SIMT (Single Instruction, Multiple Threads) execution model, this chapter explores the hardware-specific details necessary to achieve peak performance on GPUs. We focus on memory access patterns, the explicit management of the memory hierarchy, and the overlapping of computation with data transfers.
+
+## 1. The Warp Execution Model
+
+While we program CUDA using a hierarchy of Grids and Blocks, the actual hardware execution on a Streaming Multiprocessor (SM) is managed in units called **Warps**.
+* A warp consists of 32 contiguous threads from the same block.
+* All threads in a warp execute the exact same instruction at the same time.
+* **Warp Divergence:** If threads within a warp take different control-flow paths (e.g., due to an `if-else` statement), the SM must serialize the execution of the divergent paths. It executes the `true` path while masking the inactive threads, then executes the `false` path. This drastically reduces instruction throughput.
+
+## 2. Global Memory Coalescing
+
+The bandwidth to global memory (VRAM) is a primary bottleneck in GPU computing. To maximize it, we must ensure **coalesced memory accesses**.
+
+When threads in a warp issue a memory load or store, the hardware attempts to group (coalesce) these requests into as few memory transactions as possible (typically 32, 64, or 128 bytes). 
+* **Coalesced Access:** Thread $i$ accesses memory address $X + i$. The entire warp requests a contiguous block of memory, which can be fetched in a single transaction.
+* **Uncoalesced Access:** Threads access scattered, non-contiguous addresses. The hardware must issue multiple memory transactions, wasting bandwidth.
+
+### 2.1 Data Layout: AoS vs SoA
+To promote coalesced accesses, data structures should often be refactored.
+* **Array of Structures (AoS):** `struct { float x, y, z; } array[N];` 
+  Adjacent threads accessing `array[i].x` will fetch data spaced by the size of the struct, leading to uncoalesced accesses.
+* **Structure of Arrays (SoA):** `struct { float x[N], y[N], z[N]; };` 
+  Adjacent threads accessing `x[i]` will fetch contiguous memory, achieving perfect coalescing.
+
+----
+
+## 3. Shared Memory and Tiling
+
+Shared memory is a programmable L1 cache local to each SM. It is orders of magnitude faster than global memory but limited in size (e.g., 48KB or 96KB per block).
+
+We use shared memory to hold frequently accessed data. A common pattern is **Tiling**:
+1. Threads in a block cooperatively load a "tile" of data from global memory into shared memory.
+2. The block synchronizes to ensure all data is loaded.
+3. Threads perform multiple computations using the fast shared memory.
+4. The block synchronizes again, writes results to global memory, and moves to the next tile.
+
+### 3.1 Tiling Implementation
+
+```cpp
+#ifndef CUDA_MATRIX_MUL_TILED_H
+#define CUDA_MATRIX_MUL_TILED_H
+
+// Created by user
+
+#include <iostream>
+#include <cuda_runtime.h>
+
+#define TILE_WIDTH 16
+
+__global__ void matrix_mul_tiled(float* d_a, float* d_b, float* d_c, int width) {
+    // allocate shared memory for tiles
+    __shared__ float tile_a[TILE_WIDTH][TILE_WIDTH];
+    __shared__ float tile_b[TILE_WIDTH][TILE_WIDTH];
+
+    int bx = blockIdx.x; int by = blockIdx.y;
+    int tx = threadIdx.x; int ty = threadIdx.y;
+
+    // identify the row and column of the output element to compute
+    int row = by * TILE_WIDTH + ty;
+    int col = bx * TILE_WIDTH + tx;
+
+    float p_value = 0.0f;
+
+    // loop over tiles
+    for (int m = 0; m < width / TILE_WIDTH; ++m) {
+        // load data into shared memory
+        tile_a[ty][tx] = d_a[row * width + (m * TILE_WIDTH + tx)];
+        tile_b[ty][tx] = d_b[(m * TILE_WIDTH + ty) * width + col];
+
+        // sync threads to ensure tile is fully loaded
+        __syncthreads();
+
+        // compute partial dot product
+        for (int k = 0; k < TILE_WIDTH; ++k) {
+            p_value += tile_a[ty][k] * tile_b[k][tx];
+        }
+
+        // sync to prevent overwriting tiles in the next iteration
+        __syncthreads();
+    }
+
+    d_c[row * width + col] = p_value;
+}
+
+#endif // CUDA_MATRIX_MUL_TILED_H
+````
+
+----
+
+## 4. Asynchronous Execution and CUDA Streams
+
+To fully utilize both the CPU and the GPU, as well as the PCIe bus connecting them, we must overlap data transfers with kernel execution. This is achieved using **CUDA Streams**.
+
+A stream is a sequence of commands (memory copies, kernel launches) that execute in order. Commands in different streams can execute concurrently.
+
+### 4.1 Hiding PCIe Latency
+
+By dividing the workload into chunks and assigning each chunk to a separate stream, the hardware can perform a `cudaMemcpyAsync` for chunk $i+1$ while the GPU is executing the kernel for chunk $i$.
+
+```cpp
+#ifndef CUDA_STREAMS_EXAMPLE_H
+#define CUDA_STREAMS_EXAMPLE_H
+
+// Created by user
+
+#include <iostream>
+#include <vector>
+#include <cuda_runtime.h>
+
+void run_with_streams(float* h_in, float* h_out, int n) {
+    const int num_streams = 4;
+    cudaStream_t streams[num_streams];
+    
+    // initialize streams
+    for (int i = 0; i < num_streams; ++i) {
+        cudaStreamCreate(&streams[i]);
+    }
+    
+    int chunk_size = n / num_streams;
+    size_t bytes = chunk_size * sizeof(float);
+    
+    float *d_in, *d_out;
+    cudaMalloc(&d_in, n * sizeof(float));
+    cudaMalloc(&d_out, n * sizeof(float));
+
+    // queue operations asynchronously per stream
+    for (int i = 0; i < num_streams; ++i) {
+        int offset = i * chunk_size;
+        
+        // async copy host to device
+        cudaMemcpyAsync(&d_in[offset], &h_in[offset], bytes, cudaMemcpyHostToDevice, streams[i]);
+        
+        // launch kernel on the specific stream
+        // (assuming vector_add kernel exists)
+        int threads = 256;
+        int blocks = (chunk_size + threads - 1) / threads;
+        // vector_add<<<blocks, threads, 0, streams[i]>>>(&d_in[offset], &d_out[offset], chunk_size);
+        
+        // async copy device to host
+        cudaMemcpyAsync(&h_out[offset], &d_out[offset], bytes, cudaMemcpyDeviceToHost, streams[i]);
+    }
+    
+    // wait for all streams to finish
+    cudaDeviceSynchronize();
+    
+    std::cout << "ALL STREAMS EXECUTED SUCCESSFULLY. OVERLAPPING COMPLETE.\n";
+    
+    // clean up
+    for (int i = 0; i < num_streams; ++i) {
+        cudaStreamDestroy(streams[i]);
+    }
+    cudaFree(d_in); 
+    cudaFree(d_out);
+}
+
+#endif // CUDA_STREAMS_EXAMPLE_H
+```
+
+_Note: To fully utilize `cudaMemcpyAsync`, host memory must be page-locked (pinned memory) using `cudaMallocHost` rather than standard `malloc` or `std::vector` allocations._
+
+<div style="page-break-after: always;"></div>
+
+# 09. Communication Cost Models & Macro-Dataflow
+
+This chapter formalizes the overhead of data movement in parallel architectures and introduces the Macro-Dataflow (MDF) execution model, a data-driven approach used to implement complex, irregular parallel graphs beyond simple algorithmic skeletons.
+
+## 1. Communication Cost Models
+
+When dealing with distributed memory (like MPI) or even complex cache-coherency traffic, communication time cannot be considered negligible. The time required to transmit a message of length $L$ over a network or bus is typically modeled linearly:
+
+$$T_{comm}(L) = t_{setup} + \frac{L}{B_w}$$
+
+* **$t_{setup}$ (Latency/Setup Time):** The constant overhead required to initiate the communication (e.g., protocol stack execution, network routing). It is independent of the message size.
+* **$B_w$ (Bandwidth):** The transmission rate of the channel (e.g., bytes per second).
+* **$L$ (Length):** The size of the payload being transmitted.
+
+### 1.1 Impact on Farm Scalability
+
+Recall the Farm skeleton service time $T_s = \max \left\{ T_E, \frac{T_W}{n}, T_C \right\}$. 
+With the communication cost model, the Emitter's execution time $T_E$ is strictly bounded by the time it takes to send tasks to workers.
+
+If the Emitter sends tasks of size $L_{in}$, its service time is at least the setup and transmission time:
+$T_E = t_{setup} + \frac{L_{in}}{B_w}$
+
+Consequently, the maximum number of useful workers $n_{max}$ is bottlenecked by the network:
+$$n_{max} = \frac{T_W}{T_E} = \frac{T_W}{t_{setup} + \frac{L_{in}}{B_w}}$$
+
+To increase $n_{max}$, we must either increase $T_W$ (coarser grain size) or decrease communication overhead (e.g., sending pointers via shared memory as FastFlow does, where $L$ is just 8 bytes and $t_{setup}$ is an atomic queue insertion).
+
+----
+
+## 2. The Macro-Dataflow Execution Model
+
+Traditional control-flow architectures rely on a Program Counter to fetch instructions sequentially. In a **Dataflow** architecture, there is no Program Counter; an instruction executes strictly when its input operands are available.
+
+**Macro-Dataflow (MDF)** elevates this concept from the hardware instruction level to the function/task level. It allows the expression of generic Directed Acyclic Graphs (DAGs) of computation, where nodes are sequential functions and edges are data dependencies.
+
+
+
+### 2.1 MDF Architecture Components
+
+A typical runtime system supporting MDF consists of three main structures:
+
+1.  **Instruction Pool (or Program Memory):** Stores the static DAG. Each instruction knows its operation, its required number of input tokens, and the destination nodes for its output tokens.
+2.  **Matching Store:** A highly concurrent data structure that acts as a staging area. It collects incoming tokens and matches them to their destination instructions.
+3.  **Ready Queue:** When an instruction in the Matching Store receives all its required input tokens, it becomes "fireable" (ready) and is moved to the Ready Queue.
+4.  **Execution Units (Workers):** A pool of autonomous threads that constantly pull from the Ready Queue, execute the instruction, and push the resulting tokens back into the Matching Store.
+
+### 2.2 Analytical Modeling of MDF
+
+The performance of an MDF graph is determined by its **Critical Path**, which is the longest weighted path from the input nodes to the output nodes in the DAG.
+* **Parallelism Degree:** The average number of instructions that can be executed concurrently.
+* **Execution Time:** Lower bounded by the critical path weight $W_{CP}$ (sum of $T_w$ of nodes on the path) plus the communication costs along that path.
+
+----
+
+## 3. C++ Implementation Concepts
+
+Implementing an efficient MDF runtime requires minimizing the contention on the Matching Store, which is heavily hit by concurrent workers.
+
+```cpp
+#include <vector>
+#include <atomic>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+
+// forward declarations
+struct token_t;
+struct instruction_t;
+
+// thread-safe ready queue
+class ready_queue {
+    std::queue<instruction_t*> q;
+    std::mutex m;
+    std::condition_variable cv;
+public:
+    void push(instruction_t* inst) {
+        std::lock_guard<std::mutex> lk(m);
+        q.push(inst);
+        cv.notify_one();
+    }
+
+    instruction_t* pop() {
+        std::unique_lock<std::mutex> lk(m);
+        cv.wait(lk, [this]{ return !q.empty(); });
+        auto inst = q.front();
+        q.pop();
+        return inst;
+    }
+};
+
+struct instruction_t {
+    int id;
+    int expected_tokens;
+    std::atomic<int> received_tokens{0};
+    std::vector<int> dependent_ids;
+
+    // pure business logic execution
+    token_t* execute(std::vector<token_t*>& inputs);
+};
+
+// macro-dataflow worker loop
+void mdf_worker(ready_queue& rq, class matching_store& ms) {
+    while (true) {
+        // fetch ready instruction (blocking)
+        instruction_t* inst = rq.pop();
+        if (!inst) break; 
+        
+        // execute business logic (abstracted)
+        std::vector<token_t*> inputs; 
+        token_t* result = inst->execute(inputs);
+        
+        // forward results to dependent instructions
+        for (auto target_id : inst->dependent_ids) {
+            // deliver_token handles the atomic increment and returns true 
+            // if the target instruction just reached its expected_tokens count
+            if (ms.deliver_token(target_id, result)) {
+                rq.push(ms.get_instruction(target_id));
+            }
+        }
+    }
+}
+````
+
+In advanced frameworks (like FastFlow's `ff_mdf` or Intel TBB's `flow::graph`), the Matching Store is often decentralized or implemented using lock-free data structures to prevent it from becoming the central bottleneck, thus preserving the theoretical parallel speedup of the DAG.
+
+
+<div style="page-break-after: always;"></div>
+
+# 10. Distributed Skeletons Implementation
+
+This chapter explores how to translate the high-level algorithmic skeletons (Pipeline and Farm) into functional distributed systems using the Message Passing Interface (MPI). In a distributed memory environment, the abstractions of shared queues and pointers are replaced by explicit network communications, requiring careful orchestration to avoid deadlocks and ensure load balancing.
+
+## 1. Challenges in Distributed Skeletons
+
+Implementing skeletons over MPI introduces complexities that are hidden in shared-memory frameworks like FastFlow:
+* **No Shared Pointers:** Data must be serialized and physically copied over the network. You cannot simply pass a pointer to a dynamically allocated object.
+* **Explicit Buffer Management:** The programmer must allocate memory for sending and receiving messages.
+* **Deadlocks:** Cyclic dependencies in communication or mismatched send/receive pairs will cause the entire distributed application to hang permanently.
+* **Static Process Topology:** MPI requires launching a fixed number of processes at startup (`mpirun -np N`). Skeletons must be mapped onto these ranks statically.
+
+----
+
+## 2. Distributed Pipeline
+
+A distributed pipeline maps each stage of the computation to one or more MPI ranks. 
+
+### 2.1 Static Mapping
+If we have a 3-stage pipeline and 3 MPI ranks:
+* Rank 0 executes Stage 1.
+* Rank 1 executes Stage 2.
+* Rank 2 executes Stage 3.
+
+Communication flows strictly from Rank $i$ to Rank $i+1$. 
+* Rank 0 uses `MPI_Send` to Rank 1.
+* Rank 1 uses `MPI_Recv` from Rank 0, computes, and `MPI_Send` to Rank 2.
+* Rank 2 uses `MPI_Recv` from Rank 1.
+
+### 2.2 Granularity and Bandwidth Optimization
+To amortize the $t_{setup}$ network latency, a distributed pipeline rarely sends individual small tokens. Instead, it aggregates data into larger chunks (batching). Rank 0 will pack multiple tasks into a single contiguous array and transmit it via a single `MPI_Send`.
+
+----
+
+## 3. Distributed Farm (Master-Worker)
+
+The Farm pattern on distributed memory is universally known as the **Master-Worker** architecture. It is the most robust way to handle embarrassingly parallel workloads over a cluster.
+
+### 3.1 Architecture
+* **Master (Rank 0):** Acts as both Emitter and Collector. It maintains the global queue of tasks, dispatches them to available workers, and gathers the results.
+* **Workers (Ranks 1 to N-1):** Infinite loops that wait for a message from the Master, execute the business logic, and send the result back.
+
+### 3.2 Load Balancing Strategies
+If tasks have highly variable execution times (irregular workload), a static distribution (e.g., using `MPI_Scatter` to give each worker $K$ tasks upfront) leads to severe load imbalance. Some workers will finish early and sit idle while others are still computing.
+
+**On-Demand Scheduling (Dynamic Load Balancing):**
+The Master sends exactly one task to each worker initially. Then, it waits for *any* worker to reply with a result. When a result is received, the Master immediately sends a new task to that specific worker. This inherently balances the load: faster nodes will automatically request and process more tasks than slower ones.
+
+----
+
+## 4. C++ Implementation of a Distributed Farm
+
+Below is a complete implementation of a dynamically load-balanced Master-Worker architecture using MPI point-to-point communication.
+
+```cpp
+#ifndef DISTRIBUTED_FARM_MPI_H
+#define DISTRIBUTED_FARM_MPI_H
+
+// Created by user
+
+#include <iostream>
+#include <vector>
+#include <mpi.h>
+
+// message tags for routing logic
+#define TAG_TASK 1
+#define TAG_RESULT 2
+#define TAG_TERMINATE 3
+
+void run_master(int num_workers, int total_tasks) {
+    int tasks_sent = 0;
+    int results_received = 0;
+    
+    // phase 1: initial distribution to fill the pipeline
+    for (int i = 1; i <= num_workers && tasks_sent < total_tasks; ++i) {
+        int task_data = tasks_sent++;
+        MPI_Send(&task_data, 1, MPI_INT, i, TAG_TASK, MPI_COMM_WORLD);
+        std::cout << "MASTER SENT TASK " << task_data << " TO WORKER " << i << "\n";
+    }
+    
+    // phase 2: dynamic on-demand scheduling
+    while (results_received < total_tasks) {
+        int result;
+        MPI_Status status;
+        
+        // wait for a result from any worker
+        MPI_Recv(&result, 1, MPI_INT, MPI_ANY_SOURCE, TAG_RESULT, MPI_COMM_WORLD, &status);
+        results_received++;
+        
+        std::cout << "MASTER RECEIVED RESULT " << result << " FROM WORKER " << status.MPI_SOURCE << "\n";
+        
+        // if there are tasks left, send a new one to the worker that just finished
+        if (tasks_sent < total_tasks) {
+            int task_data = tasks_sent++;
+            MPI_Send(&task_data, 1, MPI_INT, status.MPI_SOURCE, TAG_TASK, MPI_COMM_WORLD);
+        }
+    }
+    
+    // phase 3: broadcast termination signals
+    for (int i = 1; i <= num_workers; ++i) {
+        int dummy = 0;
+        MPI_Send(&dummy, 1, MPI_INT, i, TAG_TERMINATE, MPI_COMM_WORLD);
+    }
+    std::cout << "MASTER SHUTTING DOWN SYSTEM\n";
+}
+
+void run_worker(int rank) {
+    while (true) {
+        int task_data;
+        MPI_Status status;
+        
+        // block until a message arrives (either task or termination)
+        MPI_Recv(&task_data, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+        
+        // break the infinite loop if master says we are done
+        if (status.MPI_TAG == TAG_TERMINATE) {
+            std::cout << "WORKER " << rank << " TERMINATING\n";
+            break;
+        }
+        
+        // execute workload
+        int result = task_data * task_data; 
+        
+        // send result back to master
+        MPI_Send(&result, 1, MPI_INT, 0, TAG_RESULT, MPI_COMM_WORLD);
+    }
+}
+
+// this would be called inside main() after MPI_Init
+void mpi_farm_main() {
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    int num_workers = size - 1;
+    int total_tasks = 20;
+
+    if (num_workers == 0) {
+        std::cerr << "CRITICAL: NEED AT LEAST 2 PROCESSES FOR MASTER-WORKER\n";
+        return;
+    }
+
+    if (rank == 0) {
+        run_master(num_workers, total_tasks);
+    } else {
+        run_worker(rank);
+    }
+}
+
+#endif // DISTRIBUTED_FARM_MPI_H
+````
+
+### 4.1 Optimization: Non-Blocking Master
+
+In the basic implementation above, the Master is sequential and completely blocked during `MPI_Recv`. In a highly optimized system, the Master would use `MPI_Irecv` and `MPI_Isend` to manage thousands of workers concurrently without stalling, actively polling requests and processing other logic (like disk I/O) while waiting for network packets.
+
+
+<div style="page-break-after: always;"></div>
+
+# 11. Advanced Patterns & Stateful Skeletons
+
+This chapter explores complex parallel paradigms that go beyond basic stream processing and map-reduce data parallelism. We analyze patterns with internal dependencies, recursive structures, and stateful components, focusing on their theoretical models and implementation challenges.
+
+## 1. Divide & Conquer
+
+The Divide & Conquer (D&C) pattern models recursive algorithms where a problem is split into smaller sub-problems, solved independently, and then merged to form the final solution (e.g., MergeSort, QuickSort).
+
+### 1.1 Structural Components
+A D&C skeleton typically requires four functional parameters:
+* `is_base_case(x)`: Evaluates if the problem $x$ is small enough to be solved sequentially.
+* `solve(x)`: The sequential solver for the base case.
+* `divide(x)`: Splits the problem into a set of sub-problems $\{x_1, x_2, \dots, x_k\}$.
+* `merge(y_1, y_2, \dots, y_k)`: Combines the partial results into a final result.
+
+### 1.2 Implementation Challenges
+Naively spawning a new OS thread for every recursive `divide` call leads to exponential thread creation, crashing the system or destroying performance due to context-switching overhead. 
+
+* **Thread Pool & Task Stealing:** Modern runtimes (like Intel TBB or FastFlow's macro-dataflow engine) implement D&C by pushing the `divide` tasks into a shared pool. A fixed number of worker threads pull tasks from this pool. 
+* **Cut-off Depth:** To amortize the overhead of task creation, the recursion tree is truncated before reaching the absolute base case. When the depth reaches a certain threshold, the sub-tree is executed purely sequentially.
+
+## 2. Stencil Pattern
+
+The Stencil pattern is a data-parallel skeleton heavily used in scientific computing (e.g., Cellular Automata, Jacobi iteration for solving differential equations). 
+
+It operates on an $N$-dimensional grid. The value of a cell at time $t+1$ depends on its own value at time $t$ and the values of its spatial neighbors at time $t$.
+
+### 2.1 Ghost Cells and Halo Exchange
+In a distributed memory architecture (e.g., using MPI), the global grid is partitioned into local sub-grids assigned to different nodes. However, computing the boundary cells of a local sub-grid requires data from the adjacent sub-grid on a different node.
+
+* **Ghost Cells (Halos):** Each local grid is artificially expanded by adding a boundary layer (ghost cells). 
+* **Halo Exchange:** Before computing step $t+1$, neighboring nodes exchange their boundary data to update the ghost cells. This enforces a strict synchronization barrier and introduces communication overhead $T_{comm}$ at every iteration.
+
+## 3. Stateful Skeletons
+
+Standard algorithmic skeletons assume functional purity: workers in a Farm or stages in a Pipeline operate exclusively on their current input token, without memory of past tokens. 
+
+However, many real-world applications require **Stateful Skeletons**, where a worker maintains an internal state updated by the stream of incoming data (e.g., accumulating statistics, maintaining a sliding window of network packets).
+
+### 3.1 Concurrency Issues with State
+If a Farm worker holds state, data routing becomes critical.
+* **Stateless Farm:** The Emitter can use a simple Round-Robin or On-Demand policy. Any task can go to any worker.
+* **Stateful Farm:** If the state is tied to a specific key in the data, the Emitter must implement a **Key-Based Routing** (or Hash-based routing) policy. All tokens with the same key must be deterministically routed to the exact same worker to ensure they interact with the correct internal state without requiring distributed locks.
+
+----
+
+## 4. C++ Implementation of a Stateful Node
+
+Using the FastFlow framework, implementing a stateful stage in a pipeline or farm requires defining member variables inside the `ff_node_t` derived struct. 
+
+```cpp
+#ifndef STATEFUL_SKELETON_H
+#define STATEFUL_SKELETON_H
+
+// Created by user
+
+#include <iostream>
+#include <ff/ff.hpp>
+#include <ff/pipeline.hpp>
+
+using namespace ff;
+
+// worker that maintains an internal state across multiple stream tokens
+struct stateful_worker : ff_node_t<int> {
+    int accumulator = 0;
+
+    int* svc(int* task) override {
+        // update the state safely since each worker thread has its own instance
+        accumulator += *task;
+        
+        std::cout << "UPDATED INTERNAL STATE. CURRENT ACCUMULATOR: " << accumulator << "\n";
+        
+        // forward the updated state
+        int* result = new int(accumulator);
+        delete task;
+        return result;
+    }
+};
+
+#endif // STATEFUL_SKELETON_H
+
+
+<div style="page-break-after: always;"></div>
+
+
+
+<div style="page-break-after: always;"></div>
+
