@@ -420,3 +420,415 @@ By manually orchestrating memory alignment and thread placement, the abstraction
 
 <div style="page-break-after: always;"></div>
 
+# 05. Distributed Systems & Message Passing
+
+This chapter shifts the focus from shared memory systems to distributed memory architectures, exploring how isolated processes communicate and synchronize over a network using the Message Passing paradigm, with a deep dive into the MPI standard.
+
+## 1. Distributed Memory Architectures
+
+Unlike shared memory systems where all cores access a single global address space, distributed systems consist of independent processing nodes. Each node has its own local memory, CPU, and operating system instance. 
+
+* **No Cache Coherence Issues:** Since memory is isolated, there is no hardware-level cache coherence protocol spanning across nodes. False sharing is strictly a local, intra-node issue.
+* **Communication via Network:** Nodes communicate explicitly by sending and receiving messages over an interconnection network (e.g., Ethernet, InfiniBand).
+* **Latency and Bandwidth:** Network communication is orders of magnitude slower than memory access. Granularity must be coarse; overlapping computation and communication becomes critical to hide network latency.
+
+## 2. The Message Passing Paradigm
+
+In the message passing model, concurrent activities (processes) interact by explicitly exchanging data payloads.
+
+### 2.1 Send and Receive Primitives
+The foundational operations are `send(dest, message)` and `receive(src, message)`. 
+These primitives can be classified based on their synchronization semantics:
+
+* **Synchronous (Blocking):** The sender blocks until the receiver has acknowledged the receipt of the message. This naturally enforces a synchronization barrier between the two processes.
+* **Asynchronous (Non-Blocking):** The sender dispatches the message to a buffer (managed by the OS or network hardware) and immediately resumes execution. The receiver can fetch the message from the buffer later. This allows computation-communication overlap but requires complex buffer management.
+
+## 3. Message Passing Interface (MPI)
+
+MPI is the de-facto standard for High-Performance Computing (HPC) on distributed systems. It defines a rich API for process communication, defining a static set of processes spawned at the beginning of the execution.
+
+
+
+### 3.1 Communicators and Ranks
+* **Communicator (`MPI_Comm`):** A communication universe. `MPI_COMM_WORLD` is the default communicator encompassing all spawned processes.
+* **Rank:** A unique integer identifier assigned to each process within a communicator, ranging from $0$ to $N-1$. Ranks are used to target destinations and identify sources.
+
+### 3.2 Point-to-Point Communication
+Direct communication between two specific ranks.
+* `MPI_Send`: Basic blocking send. Returns when the application buffer can be safely reused.
+* `MPI_Recv`: Basic blocking receive. Waits until a matching message arrives.
+* `MPI_Isend` / `MPI_Irecv`: Non-blocking variants. They return an `MPI_Request` handle that must be explicitly checked or waited upon later (using `MPI_Wait`).
+
+### 3.3 Collective Communication
+Operations that involve all ranks within a communicator simultaneously. They are heavily optimized for the specific network topology (e.g., using hypercube routing or tree-based reductions).
+* **Broadcast (`MPI_Bcast`):** Rank $0$ sends the same data to all other ranks.
+* **Scatter (`MPI_Scatter`):** Rank $0$ splits an array into chunks and sends one chunk to each rank.
+* **Gather (`MPI_Gather`):** All ranks send their local data chunks to Rank $0$, which concatenates them.
+* **Reduce (`MPI_Reduce`):** All ranks provide a value, and an associative operator (like `MPI_SUM`, `MPI_MAX`) aggregates them into a single result at the root rank.
+
+----
+
+## 4. MPI Implementation in C++
+
+Below is an implementation of a standard scatter-compute-gather pattern using MPI primitives.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <mpi.h>
+
+int main(int argc, char** argv) {
+    // initialize mpi environment
+    MPI_Init(&argc, &argv);
+
+    int rank;
+    int size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    const int elements_per_proc = 1000;
+    std::vector<int> local_data(elements_per_proc);
+    std::vector<int> global_data;
+
+    if (rank == 0) {
+        std::cout << "MASTER NODE INITIALIZED WITH " << size << " PROCESSES" << std::endl;
+        global_data.resize(size * elements_per_proc);
+        
+        // initialize dummy workload
+        for (int i = 0; i < size * elements_per_proc; ++i) {
+            global_data[i] = 1;
+        }
+    }
+
+    // scatter data from root to all processes
+    MPI_Scatter(global_data.data(), elements_per_proc, MPI_INT,
+                local_data.data(), elements_per_proc, MPI_INT,
+                0, MPI_COMM_WORLD);
+
+    // compute local workload
+    int local_sum = 0;
+    for (int i = 0; i < elements_per_proc; ++i) {
+        local_sum += local_data[i];
+    }
+
+    // reduce local results to global sum on root
+    int global_sum = 0;
+    MPI_Reduce(&local_sum, &global_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    if (rank == 0) {
+        std::cout << "COMPUTATION FINISHED. GLOBAL SUM: " << global_sum << std::endl;
+    }
+
+    // tear down mpi environment
+    MPI_Finalize();
+    return 0;
+}
+````
+
+### 4.1 Overlapping Computation and Communication
+
+To squeeze maximum performance, advanced MPI code utilizes `MPI_Isend` and `MPI_Irecv`. While the network interface controller (NIC) is transferring the boundary data asynchronously, the CPU computes the inner core of the local dataset. Once the inner core is done, the code waits for the boundary transfers to complete (`MPI_Wait`) before computing the edges. This effectively hides the network latency $L$ behind the computation time.
+
+<div style="page-break-after: always;"></div>
+
+# 06. FastFlow Framework & Stream Processing
+
+This chapter introduces FastFlow, a C++ parallel programming framework developed primarily at the University of Pisa and the University of Torino. It implements algorithmic skeletons with a strong focus on stream processing and multi-core cache-coherent architectures.
+
+## 1. FastFlow Design Philosophy
+
+FastFlow is designed to overcome the performance bottlenecks associated with traditional lock-based synchronization (like `std::mutex` or `pthread_mutex_t`). It achieves high performance through:
+
+* **Lock-Free and Wait-Free Queues:** The core communication mechanism relies on Single-Producer Single-Consumer (SPSC) lock-free queues.
+* **Zero-Copy Routing:** Instead of copying large data payloads between pipeline stages or farm workers, FastFlow streams pointers to memory allocations. 
+* **Cache-Conscious Behavior:** By preventing threads from blocking and keeping them pinned to specific cores, FastFlow maximizes cache hotness and minimizes context-switching overhead.
+
+
+
+----
+
+## 2. Core Abstraction: `ff_node`
+
+The fundamental building block in FastFlow is the node. A node represents an active entity (typically mapped to an OS thread) that executes a specific sequential computation.
+
+### 2.1 The `svc` Method
+To define a custom computation, you create a struct or class that inherits from `ff_node_t<IN, OUT>` (or the generic `ff_node`) and overrides the `svc` (service) method. 
+
+The `svc` method takes a pointer to an input task, processes it, and returns a pointer to the output task.
+* Returning a valid pointer pushes the task to the output queue.
+* Returning `GO_ON` instructs the runtime to fetch the next task without producing output for the current cycle.
+* Returning `EOS` (End Of Stream) signals the termination of the stream.
+
+----
+
+## 3. Implementing Skeletons
+
+FastFlow provides container nodes that implement the standard algorithmic skeletons.
+
+### 3.1 Pipeline (`ff_Pipe`)
+A pipeline connects multiple `ff_node` instances sequentially. The output queue of stage $i$ is exactly the input queue of stage $i+1$. Because these are strictly 1-to-1 connections, the SPSC lock-free queues operate at maximum efficiency without requiring atomic Compare-And-Swap (CAS) operations, relying only on proper memory fences.
+
+### 3.2 Farm (`ff_Farm`)
+A farm distributes tasks among multiple worker nodes.
+* **Emitter:** Pulls from a Single-Producer Single-Consumer queue and pushes to $N$ SPSC queues (one for each worker).
+* **Workers:** An array of `ff_node` instances executing the same `svc` logic.
+* **Collector:** Reads from $N$ SPSC queues and merges the results into a single output stream.
+
+----
+
+## 4. C++ Implementation Example
+
+Below is a complete example of a Pipeline containing a Farm, demonstrating how to set up the nodes and handle stream tokens.
+
+```cpp
+#ifndef FASTFLOW_FARM_EXAMPLE_H
+#define FASTFLOW_FARM_EXAMPLE_H
+
+// Created by user
+
+#include <iostream>
+#include <vector>
+#include <ff/ff.hpp>
+#include <ff/farm.hpp>
+#include <ff/pipeline.hpp>
+
+using namespace ff;
+
+// task definition
+struct task_t {
+    int id;
+    double value;
+};
+
+// first stage: generates stream
+struct generator : ff_node_t<task_t> {
+    task_t* svc(task_t*) override {
+        for (int i = 0; i < 100; ++i) {
+            task_t* t = new task_t{i, i * 1.5};
+            ff_send_out(t);
+        }
+        return EOS;
+    }
+};
+
+// worker stage: processes stream in parallel
+struct worker : ff_node_t<task_t> {
+    task_t* svc(task_t* task) override {
+        // simulate workload
+        task->value = task->value * 2.0;
+        return task;
+    }
+};
+
+// final stage: collects results
+struct collector : ff_node_t<task_t> {
+    task_t* svc(task_t* task) override {
+        std::cout << "PROCESSED TASK ID: " << task->id 
+                  << " | FINAL VALUE: " << task->value << "\n";
+        delete task;
+        return GO_ON;
+    }
+};
+
+#endif // FASTFLOW_FARM_EXAMPLE_H
+
+int main() {
+    generator gen;
+    collector col;
+    
+    // setup workers
+    std::vector<std::unique_ptr<ff_node>> W;
+    for(int i = 0; i < 4; ++i) {
+        W.push_back(std::make_unique<worker>());
+    }
+    
+    // build farm
+    ff_Farm<task_t> farm(std::move(W));
+    farm.remove_collector(); 
+    
+    // build pipeline: generator -> farm -> collector
+    ff_Pipe<task_t> pipe(gen, farm, col);
+    
+    if (pipe.run_and_wait_end() < 0) {
+        std::cerr << "FATAL: PIPELINE EXECUTION FAILED\n";
+        return -1;
+    }
+    
+    std::cout << "EXECUTION COMPLETED SUCCESSFULLY\n";
+    return 0;
+}
+````
+
+### 4.1 Memory Management Implications
+
+Notice that the generator allocates memory on the heap (`new task_t`), and the collector is responsible for freeing it (`delete task`). Since FastFlow passes pointers, dynamic allocation is standard. However, frequent `new`/`delete` calls can cause contention on the glibc memory allocator. For extreme low-level performance, FastFlow applications often integrate custom thread-local memory allocators to bypass this OS-level bottleneck.
+
+
+<div style="page-break-after: always;"></div>
+
+# 07. Data Parallelism & GPU Concurrency
+
+This chapter extends the algorithmic skeleton framework to data-parallel workloads, exploring how to efficiently process large, partitioned data structures using both CPU-bound frameworks (FastFlow) and massively parallel architectures (GPUs via CUDA).
+
+## 1. Data Parallelism in FastFlow
+
+While stream parallelism processes discrete tokens over time, data parallelism operates on a finite, pre-existing data structure (like an array or matrix). FastFlow provides specific constructs to handle these workloads without the overhead of instantiating full pipeline or farm nodes for each element.
+
+### 1.1 Parallel For (`ff::ParallelFor`)
+
+The `ParallelFor` construct applies a function to a range of indices $[0, N)$. It splits the iteration space into chunks and assigns them to a pool of worker threads.
+
+* **Chunking Strategy:** The runtime can distribute iterations statically (fixed size chunks) or dynamically (workers steal chunks when idle) to balance the load.
+* **Low-Level Execution:** Unlike standard OpenMP, `ParallelFor` in FastFlow leverages the same lock-free worker pool underlying the `ff_Farm`. This avoids the OS-level thread creation and destruction overhead if multiple parallel loops are executed sequentially.
+
+### 1.2 Parallel For with Reduction (`ff::ParallelForReduce`)
+
+When the parallel loop must aggregate results into a single variable, synchronization is required to avoid data races. `ParallelForReduce` handles this by providing a thread-local accumulator and an associative reduction operator, eliminating the need for atomic instructions or mutexes during the map phase.
+
+```cpp
+#ifndef FASTFLOW_DATAPARALLEL_EXAMPLE_H
+#define FASTFLOW_DATAPARALLEL_EXAMPLE_H
+
+// Created by user
+
+#include <iostream>
+#include <vector>
+#include <thread>
+#include <ff/parallel_for.hpp>
+
+using namespace ff;
+
+void compute_data_parallel() {
+    const size_t num_elements = 1000000;
+    std::vector<double> data(num_elements, 2.0);
+    double global_sum = 0.0;
+    
+    // initialize the parallel-for engine
+    ParallelForReduce<double> pf(std::thread::hardware_concurrency());
+    
+    // execute map-reduce over the vector
+    // chunking is handled automatically, using thread-local identity (0.0)
+    pf.parallel_reduce(
+        global_sum,
+        0.0,
+        0, num_elements,
+        1, // step
+        0, // auto chunk size
+        [&](const long i, double& local_sum) {
+            // map phase: square the element and accumulate locally
+            local_sum += (data[i] * data[i]);
+        },
+        [](double& current_global, const double& local_result) {
+            // reduce phase: merge local results into global
+            current_global += local_result;
+        }
+    );
+    
+    std::cout << "PARALLEL REDUCTION COMPLETED. RESULT: " << global_sum << "\n";
+}
+
+#endif // FASTFLOW_DATAPARALLEL_EXAMPLE_H
+````
+
+----
+
+## 2. GPU Concurrency & CUDA Basics
+
+When data parallelism scales to millions of independent operations, CPU thread counts (even highly optimized ones) become a bottleneck due to context switching and complex control units. GPUs solve this using the **SIMT (Single Instruction, Multiple Threads)** execution model.
+
+### 2.1 The SIMT Execution Model
+
+In CUDA, a parallel function executed on the GPU is called a **Kernel**. When a kernel is launched, it is executed by thousands of lightweight threads.
+
+- **Threads** are grouped into **Blocks**. Threads within the same block execute concurrently on the same Streaming Multiprocessor (SM), can synchronize easily, and share fast on-chip memory.
+    
+- **Blocks** are grouped into a **Grid**. Blocks execute independently and cannot strictly synchronize with each other during kernel execution, allowing the GPU to scale the workload across any number of available SMs.
+    
+
+### 2.2 Memory Hierarchy
+
+Effective C++ programming on GPUs requires strict, explicit control over pointer locations and memory spaces:
+
+- **Global Memory:** The main VRAM. It is large but extremely slow (high latency). Accessible by all threads across all blocks.
+    
+- **Shared Memory:** A small, fast, user-managed cache allocated per Block. Used to share data among threads in the same block and avoid redundant global memory fetches.
+    
+- **Registers:** The fastest memory, strictly private to each individual thread.
+    
+
+### 2.3 CUDA Kernel Execution
+
+Writing a CUDA kernel involves defining the C++ code that a _single_ thread will execute. The thread computes its physical data partition by reading hardware-provided index variables.
+
+```cpp
+#ifndef CUDA_VECTOR_ADD_H
+#define CUDA_VECTOR_ADD_H
+
+// Created by user
+
+#include <iostream>
+#include <cuda_runtime.h>
+
+// kernel executed by each gpu thread
+__global__ void vector_add(const float* a, const float* b, float* c, int n) {
+    // compute global thread index mapping physical hardware to array index
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+    
+    // bound check to avoid segmentation faults
+    if (i < n) {
+        c[i] = a[i] + b[i];
+    }
+}
+
+void run_cuda_kernel() {
+    int n = 100000;
+    size_t bytes = n * sizeof(float);
+    
+    float *h_a, *h_b, *h_c;
+    float *d_a, *d_b, *d_c;
+    
+    // allocate host memory (initialization omitted for brevity)
+    h_a = (float*)malloc(bytes);
+    h_b = (float*)malloc(bytes);
+    h_c = (float*)malloc(bytes);
+    
+    // allocate device memory on the vram
+    cudaMalloc(&d_a, bytes);
+    cudaMalloc(&d_b, bytes);
+    cudaMalloc(&d_c, bytes);
+    
+    // copy data from host ram to gpu global memory over pcie
+    cudaMemcpy(d_a, h_a, bytes, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, h_b, bytes, cudaMemcpyHostToDevice);
+    
+    // define execution configuration
+    int threads_per_block = 256;
+    int blocks_per_grid = (n + threads_per_block - 1) / threads_per_block;
+    
+    // launch asynchronous kernel
+    vector_add<<<blocks_per_grid, threads_per_block>>>(d_a, d_b, d_c, n);
+    
+    // block cpu and copy result back to host
+    cudaMemcpy(h_c, d_c, bytes, cudaMemcpyDeviceToHost);
+    
+    std::cout << "CUDA KERNEL EXECUTED SUCCESSFULLY\n";
+    
+    // free memory to prevent leaks
+    cudaFree(d_a); cudaFree(d_b); cudaFree(d_c);
+    free(h_a); free(h_b); free(h_c);
+}
+
+#endif // CUDA_VECTOR_ADD_H
+```
+
+----
+
+## 3. Host-Device Synchronization and Latency Hiding
+
+A critical aspect of GPU programming is managing the asynchronous nature of kernel launches. The `<<<...>>>` syntax queues the kernel on the device and returns control to the host CPU immediately.
+
+To measure execution time accurately or ensure data is ready before subsequent CPU operations, explicit synchronization commands like `cudaDeviceSynchronize()` must be invoked. The overhead of PCI-Express memory transfers (`cudaMemcpy`) is massive and often represents the primary bottleneck. Advanced low-level optimization requires utilizing **CUDA Streams** to asynchronously overlap host-to-device memory copies with kernel execution, effectively hiding the PCIe latency.
+
+
+<div style="page-break-after: always;"></div>
+
