@@ -748,3 +748,69 @@ substitution unify(const type& t1, const type& t2) {
 
 <div style="page-break-after: always;"></div>
 
+# 09. Advanced Bottom-Up Parsing
+
+This section expands on the concepts of Shift-Reduce parsing, providing a rigorous definition of LR(1) items and the algorithms required to construct the ACTION and GOTO tables.
+
+----
+
+## 1. Bottom-Up Parsing Overview
+
+Bottom-up parsers, such as LR(1), build the syntax tree from the leaves toward the root. They handle a much larger class of grammars compared to top-down LL(1) parsers. 
+As the input is consumed from left to right, the parser encodes all possible derivations in an internal state. 
+
+### 1.1 The Shift-Reduce Mechanism
+The parser state is maintained using a stack and the input buffer.
+* **Shift:** Moves the next input token onto the stack.
+* **Reduce:** When the top symbols on the stack match a production's RHS, they are popped and replaced by the production's LHS.
+* **Accept:** The input is fully consumed, and the stack contains only the start symbol.
+
+
+
+----
+
+## 2. LR(1) Items and State Representation
+
+To track the parsing progress, we use the concept of an **LR(1) item**.
+
+> **Definition (LR(1) Item):**
+> An LR(1) item is a pair $[P, a]$, where $P$ is a production $A \to \alpha \bullet \beta$, and $a$ is a lookahead string of length 1 (a terminal or EOF).
+
+The dot ($\bullet$) indicates the portion of the RHS that has already been matched and pushed onto the stack.
+* $[A \to \bullet \beta, a]$: No symbols of this production have been matched yet.
+* $[A \to \alpha \bullet \beta, a]$: The string derived from $\alpha$ is currently on top of the stack.
+* $[A \to \gamma \bullet, a]$: The entire RHS has been matched. If the next input token is exactly $a$, the parser performs a reduction.
+
+----
+
+## 3. Constructing the Canonical Collection
+
+To build the parsing tables, we must compute the states of the parser, which are sets of LR(1) items. Two fundamental functions govern this process: `closure()` and `goto()`.
+
+### 3.1 The `closure(s)` Function
+Given a set of items $s$, `closure(s)` adds all items that represent potential valid derivations expanding from the non-terminals immediately to the right of the dot.
+
+```text
+// compute closure of a set of lr(1) items
+function compute_closure(initial_set):
+    closure_set = initial_set
+    changed = true
+    
+    while changed == true:
+        changed = false
+        
+        // find new items to add
+        for each item [A -> alpha . B beta, a] in closure_set:
+            for each production B -> gamma in grammar:
+                
+                // compute lookahead
+                for each terminal b in FIRST(beta + a):
+                    new_item = [B -> . gamma, b]
+                    if new_item not in closure_set:
+                        add new_item to closure_set
+                        changed = true
+                        
+    return closure_set
+
+<div style="page-break-after: always;"></div>
+
