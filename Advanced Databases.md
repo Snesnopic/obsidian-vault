@@ -372,22 +372,26 @@ The order of attributes in the definition is crucial. The index sorts the entrie
 
 # 04. Query Processing & Physical Operators
 
-This chapter describes how logical relational algebra expressions are translated into physical execution plans. A physical plan is a tree of **physical operators** provided by the Storage Engine.
+This chapter describes how logical relational algebra expressions are translated into physical execution plans. A physical plan is a tree of physical operators provided by the Storage Engine.
 
 ----
 
 ## 1. The Iterator Model
 
-To evaluate a query plan, DBMSs typically use a demand-driven pipeline model known as the **Iterator Model** (or Volcano model). Every physical operator implements a standard interface with the following methods:
+To evaluate a query plan, DBMSs typically use a demand-driven pipeline model known as the Iterator Model (or Volcano model). Every physical operator implements a standard interface with the following methods:
+
 * **`open()`**: Initializes the operator, allocates memory buffers, and recursively calls `open()` on its children to initialize the entire tree.
 * **`next()`**: Returns the next record of the result. It drives the data flow from the leaves up to the root.
 * **`isDone()`**: Checks if there are more records to produce.
 * **`close()`**: Cleans up the state and releases allocated resources.
 
+----
+
 ## 2. Cost and Result Size Estimation
 
 The Query Optimizer needs to estimate the execution cost $C$ (in terms of page I/O) and the expected number of resulting records $E_{rec}$ for each physical operator. 
-The estimation relies heavily on the **Selectivity Factor** ($sf$), which represents the probability that a record satisfies a given condition $\psi$.
+
+The estimation relies heavily on the **Selectivity Factor ($sf$)**, which represents the probability that a record satisfies a given condition $\psi$.
 
 ----
 
@@ -433,11 +437,18 @@ Optimizes I/O by loading a block (or page) of $O_E$ into memory, then scanning $
 Uses an index on the join attribute of the inner relation $O_I$. Highly efficient if $O_E$ is relatively small and $O_I$ has a suitable index.
 * **Cost:** $C = C(O_E) + E_{rec}(O_E) \times (C_I + C_D)$ 
 *(Where $C_I$ is the index lookup cost and $C_D$ is the data access cost for a single match).*
+* **Asymmetry Constraint:** The `IndexNestedLoop` is strictly asymmetric. The left-hand side (external operand) can be an arbitrarily complex tree of operators (e.g., a table scan or the result of another join), whereas the right-hand side (internal operand) must strictly be an `IndexFilter` based on the exact same join condition.
 
 ### 4.4 MergeJoin
 Requires both $O_E$ and $O_I$ to be **sorted** on the join attributes. It scans both inputs simultaneously in a single pass (like the merge step in MergeSort).
 * **Cost:** $C = C(O_E) + C(O_I)$ 
 *(Note: If the inputs are not already sorted, the cost of the `Sort` operator must be added).*
+
+### 4.5 Bit-based Algorithms (Existence / Semi-Joins)
+For specific operations checking the existence or absence of associations (e.g., finding all students who did not take any exams), the system can employ highly optimized bit-array algorithms instead of standard joins. 
+* **Mechanism:** The DBMS allocates a single bit of memory for each entity of the outer relation (e.g., one bit per student, initialized to 0).
+* **Execution:** It then scans the inner relation (e.g., the exams table), setting the corresponding student's bit to 1 whenever an exam record is found.
+* **Result:** At the end of the scan, the system checks the bits remaining at 0 to output the missing information, filtering the results with an extremely minimal memory footprint.
 
 ----
 
@@ -460,6 +471,7 @@ The **Sort** operator physically orders the records. Since relations are general
 * **Cost:** $C = C(O) + 2 \times N_{pag}(O) \times (\text{number of passes})$
 *(The records are read into memory, sorted in runs, written to disk, and then merged in subsequent passes).*
 
+
 <div style="page-break-after: always;"></div>
 
 # 05. Query Optimization
@@ -471,8 +483,8 @@ This chapter explores the Query Optimizer, the component responsible for transla
 ## 1. Query Processing Phases
 
 1. **Query Analysis:** The DBMS parses the SQL query, verifies its syntactic and semantic correctness, and checks user authorizations against the system catalog.
-2. **Query Transformation:** The query is translated into an internal relational algebra representation. The optimizer applies equivalence rules to rewrite the logical plan into a more efficient, semantically equivalent form.
-3. **Physical Plan Generation:** The optimizer maps the logical operators to specific physical operators (e.g., choosing `MergeJoin` over `NestedLoop`) and selects the optimal access paths (e.g., index scans vs. full table scans) based on cost estimation.
+2. **Query Transformation (Logical Optimization):** The query is translated into an internal relational algebra representation. The optimizer applies equivalence rules to rewrite the logical plan into a more efficient, semantically equivalent form. This phase is strictly independent of any physical data structures or indexes present in the database. 
+3. **Physical Plan Generation:** The optimizer maps the logical operators to specific physical operators. It is only in this phase that decisions regarding physical access paths are made (e.g., converting a logical filter into an `IndexFilter` or a `TableScan` based on available indexes). Furthermore, it selects specific algorithms based on properties like data ordering: for instance, choosing a `MergeJoin` over a `HashJoin` when multiple joins are cascaded, as `MergeJoin` exploits and preserves existing sorting for subsequent steps, whereas `HashJoin` does neither.
 
 ----
 
@@ -483,14 +495,14 @@ The Query Transformation phase relies heavily on equivalence rules to optimize t
 ### 2.1 Selection Rules
 * **Cascading of selections:** $$\sigma_{\psi_X}(\sigma_{\psi_Y}(E)) \equiv \sigma_{\psi_X \wedge \psi_Y}(E)$$
 * **Commutativity of selection and projection:**
-    $$\pi_{Y}(\sigma_{\psi_X}(E)) \equiv \sigma_{\psi_X}(\pi_{Y}(E)) \quad \text{if } X \subseteq Y$$
-    If $X$ contains attributes not in $Y$, the rule becomes:
-    $$\pi_{Y}(\sigma_{\psi_X}(E)) \equiv \pi_{Y}(\sigma_{\psi_X}(\pi_{X \cup Y}(E)))$$
+  $$\pi_{Y}(\sigma_{\psi_X}(E)) \equiv \sigma_{\psi_X}(\pi_{Y}(E)) \quad \text{if } X \subseteq Y$$
+  If $X$ contains attributes not in $Y$, the rule becomes:
+  $$\pi_{Y}(\sigma_{\psi_X}(E)) \equiv \pi_{Y}(\sigma_{\psi_X}(\pi_{X \cup Y}(E)))$$
 * **Commutativity of selection and join:**
-    If the condition $\psi_X$ only involves attributes of $E_1$:
-    $$\sigma_{\psi_X}(E_1 \bowtie E_2) \equiv \sigma_{\psi_X}(E_1) \bowtie E_2$$
-    If $\psi_X$ involves attributes of $E_1$ and $\psi_Y$ involves attributes of $E_2$:
-    $$\sigma_{\psi_X \wedge \psi_Y}(E_1 \bowtie E_2) \equiv \sigma_{\psi_X}(E_1) \bowtie \sigma_{\psi_Y}(E_2)$$
+  If the condition $\psi_X$ only involves attributes of $E_1$:
+  $$\sigma_{\psi_X}(E_1 \bowtie E_2) \equiv \sigma_{\psi_X}(E_1) \bowtie E_2$$
+  If $\psi_X$ involves attributes of $E_1$ and $\psi_Y$ involves attributes of $E_2$:
+  $$\sigma_{\psi_X \wedge \psi_Y}(E_1 \bowtie E_2) \equiv \sigma_{\psi_X}(E_1) \bowtie \sigma_{\psi_Y}(E_2)$$
 
 ----
 
@@ -503,13 +515,17 @@ During query optimization, the DBMS utilizes semantic constraints, specifically 
 
 A special case is $\emptyset \rightarrow Y$, meaning the value of $Y$ is the same for every tuple in the relation.
 
-### 3.1 Logical Implication & Armstrong's Axioms
-Given a set $F$ of FDs, we can derive other dependencies that logically hold. $F \vdash X \rightarrow Y$ if it can be derived using Armstrong's axioms: 
-1.  **Reflexivity:** If $Y \subseteq X$, then $X \rightarrow Y$.
-2.  **Augmentation:** If $X \rightarrow Y$ and $Z \subseteq T$, then $XZ \rightarrow YZ$.
-3.  **Transitivity:** If $X \rightarrow Y$ and $Y \rightarrow Z$, then $X \rightarrow Z$.
+### 3.1 Evaluating Redundancy of DISTINCT and GROUP BY
+A crucial application of Functional Dependencies is determining whether `DISTINCT` or `GROUP BY` operators are redundant. 
+Transforming a query from a standard `SELECT` to an equivalent logical plan with `SELECT DISTINCT` requires the optimizer to check for potential row duplication (e.g., a teacher teaching multiple courses appearing multiple times in a join). By analyzing the keys and FDs, the optimizer can verify if the result is already guaranteed to be unique. If uniqueness is proven without the operator, the expensive duplicate elimination or grouping steps are completely removed from the execution plan.
 
-### 3.2 Closure of an Attribute Set ($X^+$)
+### 3.2 Logical Implication & Armstrong's Axioms
+Given a set $F$ of FDs, we can derive other dependencies that logically hold. $F \vdash X \rightarrow Y$ if it can be derived using Armstrong's axioms: 
+1. **Reflexivity:** If $Y \subseteq X$, then $X \rightarrow Y$.
+2. **Augmentation:** If $X \rightarrow Y$ and $Z \subseteq T$, then $XZ \rightarrow YZ$.
+3. **Transitivity:** If $X \rightarrow Y$ and $Y \rightarrow Z$, then $X \rightarrow Z$.
+
+### 3.3 Closure of an Attribute Set ($X^+$)
 Instead of repeatedly applying Armstrong's axioms, it is computationally simpler to compute the **closure** of an attribute set $X$ with respect to $F$, denoted as $X^+$.
 
 > **Theorem:** $F \vdash X \rightarrow Y \iff Y \subseteq X^+$.

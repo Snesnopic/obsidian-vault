@@ -271,3 +271,315 @@ $wpp(c, Q) = [[c]]_{op}Q$.
 
 <div style="page-break-after: always;"></div>
 
+# 03. Hoare Logic
+
+This chapter introduces **Axiomatic Semantics** via **Hoare Logic**, a formal system used to reason about the correctness of computer programs by using logical triples.
+
+----
+
+## 1. Hoare Triples
+
+The fundamental unit of reasoning in Hoare Logic is the **Hoare Triple**, which relates a program's behavior to logical assertions about the state before and after its execution.
+
+A triple is written as:
+
+$$\{P\} \ c \ \{Q\}$$
+
+- **$P$ (Precondition):** An assertion that must hold before the execution of command $c$.
+    
+- **$c$ (Command):** The program or fragment being analyzed.
+    
+- **$Q$ (Postcondition):** An assertion that is guaranteed to hold after $c$ finishes execution, provided $P$ was initially true.
+    
+
+### 1.1 Partial Correctness
+
+Hoare Logic primarily deals with **Partial Correctness**. A triple $\{P\} \ c \ \{Q\}$ is valid (written $\models \{P\} \ c \ \{Q\}$) if:
+
+> For every initial state $\sigma$ that satisfies $P$, if the execution of $c$ starting from $\sigma$ terminates in a final state $\sigma'$, then $\sigma'$ must satisfy $Q$.
+
+_Crucially, partial correctness does not require the program to terminate_. If the program loops forever, the triple is vacuously true.
+
+----
+
+## 2. Inference Rules for Partial Correctness
+
+To prove a triple is valid, we use a set of **Inference Rules** to derive it formally (written $\vdash \{P\} \ c \ \{Q\}$).
+
+### 2.1 Basic Rules
+
+- **Skip Rule:** The state does not change, so the assertion remains the same.
+    
+    $$\frac{}{\{P\} \ \mathtt{skip} \ \{P\}}$$
+    
+- **Assignment Rule:** To ensure $P$ holds after $x := a$, it must hold for the expression $a$ beforehand. $P[a/x]$ denotes the substitution of $x$ with $a$ in $P$.
+    
+    $$\frac{}{\{P[a/x]\} \ x := a \ \{P\}}$$
+    
+
+### 2.2 Structural Rules
+
+- **Sequence Rule:** To reason about $c_1; c_2$, we find an intermediate assertion $R$.
+    
+    $$\frac{\{P\} \ c_1 \ \{R\} \quad \{R\} \ c_2 \ \{Q\}}{\{P\} \ c_1; c_2 \ \{Q\}}$$
+    
+- **Conditional Rule:** We analyze both branches of an `if` statement.
+    
+    $$\frac{\{P \land b\} \ c_1 \ \{Q\} \quad \{P \land \neg b\} \ c_2 \ \{Q\}}{\{P\} \ \mathtt{if} \ b \ \mathtt{then} \ c_1 \ \mathtt{else} \ c_2 \ \{Q\}}$$
+    
+
+### 2.3 The While Rule and Invariants
+
+Reasoning about loops requires a **Loop Invariant** $P$, a property that holds before, during, and after every iteration of the loop.
+
+$$\frac{\{P \land b\} \ c \ \{P\}}{\{P\} \ \mathtt{while} \ b \ \mathtt{do} \ c \ \{P \land \neg b\}}$$
+
+- If the invariant $P$ is preserved by the body $c$ when $b$ is true, it will still hold when the loop eventually terminates (at which point $b$ is false).
+    
+
+### 2.4 Rule of Consequence
+
+This rule allows us to strengthen preconditions or weaken postconditions using standard logic.
+
+$$\frac{P' \implies P \quad \{P\} \ c \ \{Q\} \quad Q \implies Q'}{\{P'\} \ c \ \{Q'\}}$$
+
+----
+
+## 3. Validity vs. Derivability
+
+There is a distinction between a property being "true" in the model and being "provable" in the logic:
+
+- **Validity ($\models \{P\} \ c \ \{Q\}$):** The property holds according to the denotational/operational semantics.
+    
+- **Derivability ($\vdash \{P\} \ c \ \{Q\}$):** The property can be proven using the inference rules listed above.
+    
+
+### 3.1 Soundness and Completeness
+
+- **Soundness:** Every triple we can derive is actually valid.
+    
+    $$\vdash \{P\} \ c \ \{Q\} \implies \models \{P\} \ c \ \{Q\}$$
+    
+- **Relative Completeness:** Every valid triple can be derived, assuming we have a perfect oracle for the underlying mathematical logic (e.g., arithmetic).
+    
+    $$\models \{P\} \ c \ \{Q\} \implies \vdash \{P\} \ c \ \{Q\}$$
+    
+
+----
+
+## 4. Practical Application: Verification Conditions
+
+In practice, human experts or automated tools use **Weakest Preconditions ($wp$)** to generate **Verification Conditions (VCs)**.
+
+1. Start with the desired postcondition $Q$.
+    
+2. Work backward through the program to find the weakest possible precondition.
+    
+3. Check if the given precondition $P$ implies this weakest precondition.
+    
+
+|**Rule**|**Backward Step**|
+|---|---|
+|**Assignment**|$wp(x := a, Q) = Q[a/x]$|
+|**Sequence**|$wp(c_1; c_2, Q) = wp(c_1, wp(c_2, Q))$|
+
+
+<div style="page-break-after: always;"></div>
+
+# 04. Total Correctness
+
+This chapter extends the reasoning of Hoare Logic to ensure **termination**. While partial correctness only guarantees the result _if_ the program ends, **Total Correctness** ensures that the program _must_ end and satisfy the postcondition.
+
+----
+
+## 1. Defining Total Correctness
+
+A total correctness assertion is written using square brackets to distinguish it from partial correctness:
+
+$$[P] \ c \ [Q]$$
+
+### 1.1 Formal Definition
+
+The triple $[P] \ c \ [Q]$ is valid (written $\models [P] \ c \ [Q]$) if and only if for every initial state $\sigma$ such that $\sigma \models P$:
+
+1. The execution of command $c$ starting from $\sigma$ **must terminate**.
+    
+2. The final state $\sigma'$ **must satisfy** the postcondition $Q$ ($\sigma' \models Q$).
+    
+
+### 1.2 Relation to Partial Correctness
+
+Total correctness is the conjunction of partial correctness and termination:
+
+$$[P] \ c \ [Q] \iff \{P\} \ c \ \{Q\} \land (\text{termination of } c \text{ from } P)$$
+
+Consequently, proving total correctness is strictly harder than proving partial correctness.
+
+----
+
+## 2. Mathematical Foundations: Well-Founded Relations
+
+To prove termination, especially for loops, we need a way to show that a program cannot run forever. We do this by mapping program states to a set that cannot have infinite decreasing sequences.
+
+### 2.1 Well-Founded Relations
+
+> **Definition:** A binary relation $\prec$ on a set $A$ is **well-founded** if there are no infinite descending chains $a_0 \succ a_1 \succ a_2 \succ \dots$ in $A$.
+
+- **Example (Well-founded):** The set of natural numbers with the standard "less than" relation $(\mathbb{N}, <)$. Any sequence of decreasing natural numbers must eventually hit zero.
+    
+- **Example (Not well-founded):** The set of integers $(\mathbb{Z}, <)$. One can decrease indefinitely into negative numbers ($0 > -1 > -2 \dots$).
+    
+
+### 2.2 Minimal Element Principle
+
+A relation $\prec$ is well-founded if and only if every non-empty subset $Q \subseteq A$ has at least one **minimal element** $m$ (an element such that no $x \in Q$ satisfies $x \prec m$).
+
+----
+
+## 3. Inference Rules for Total Correctness
+
+Most rules for total correctness (Skip, Assignment, Sequence, Conditional) are identical to those in partial correctness because these constructs naturally terminate if their components do. The primary change is the **While Rule**.
+
+### 3.1 The Total While Rule
+
+To prove $[P] \ \mathtt{while} \ b \ \mathtt{do} \ c \ [P \land \neg b]$, we introduce a **Variant** (also called a ranking function) $t$.
+
+$$\frac{\forall z \in A. \ [P \land b \land t = z] \ c \ [P \land t \prec z]}{\vdash [P] \ \mathtt{while} \ b \ \mathtt{do} \ c \ [P \land \neg b]}$$
+
+**Requirements for the Rule:**
+
+- **Invariant:** $P$ must be a valid loop invariant.
+    
+- **Well-founded Set:** $(A, \prec)$ must be a well-founded relation.
+    
+- **Variant Decrease:** In each iteration, the value of the expression $t$ must strictly decrease according to $\prec$.
+    
+
+Because $t$ decreases in a well-founded set, it cannot decrease forever; therefore, the loop must eventually terminate.
+
+----
+
+## 4. Practical Example: Counting Down
+
+Consider a simple loop that decrements a counter:
+
+$$\mathtt{while} \ (x > 0) \ \mathtt{do} \ x := x - 1$$
+
+1. **Invariant ($P$):** $x \geq 0$.
+    
+2. **Variant ($t$):** The value of $x$ itself.
+    
+3. **Well-founded Relation:** $(\mathbb{N}, <)$.
+    
+4. **Proof Step:** We must show that if the loop executes ($x > 0$), the new value $x'$ satisfies $x' < x$. Since $x' = x - 1$, this holds for all $x > 0$.
+    
+
+----
+
+## 5. Weakest Preconditions ($wp$)
+
+In total correctness, Dijkstra's **Weakest Precondition** ($wp$) specifically requires termination, unlike the Weakest Liberal Precondition ($wlp$).
+
+- **Partial Correctness ($wlp$):** $wlp(c, Q) = \{ \sigma \mid [[c]]\sigma \subseteq Q \}$.
+    
+- **Total Correctness ($wp$):** $wp(c, Q) = \{ \sigma \mid [[c]]\sigma \neq \emptyset \land [[c]]\sigma \subseteq Q \}$.
+    
+
+The condition $[[c]]\sigma \neq \emptyset$ explicitly forces the existence of a final state, thereby ensuring termination.
+
+
+
+<div style="page-break-after: always;"></div>
+
+# 05. Incorrectness Logic
+
+This chapter introduces **Incorrectness Logic (IL)**, a formal system designed for **bug-finding** and proving the **presence of errors** rather than their absence. Unlike Hoare Logic, which uses over-approximation to prove correctness, IL uses **under-approximation** to ensure that every reported bug is a real one (No False Positives).
+
+----
+
+## 1. Motivation: From Verification to Bug-Finding
+
+While Hoare Logic aims to prove that no bad states are reachable, Incorrectness Logic focuses on proving that a specific bad state _is_ reachable.
+
+- **Hoare Logic (Verification):** Focuses on "any accepted program satisfies the property" (Soundness). It is prone to False Positives due to over-approximation.
+    
+- **Incorrectness Logic (Bug-Finding):** Focuses on "any reported bug is a real bug". It uses under-approximation to avoid False Positives, though it may have False Negatives (missing some bugs).
+    
+
+----
+
+## 2. The Incorrectness Triple
+
+The core construct is the **Incorrectness Triple**, which uses square brackets but with a different semantic meaning than Hoare's total correctness:
+
+$$[P] \ c \ [Q]$$
+
+### 2.1 Semantic Definition
+
+An incorrectness triple $[P] \ c \ [Q]$ is valid if and only if:
+
+$$Q \subseteq [[c]]P$$
+
+This means that **every state** in the post-condition $Q$ is **reachable** from at least one state in the pre-condition $P$ after executing command $c$.
+
+### 2.2 Comparison of Triples
+
+- **Hoare (Over-approximation):** $\{P\} \ c \ \{Q\} \iff [[c]]P \subseteq Q$.
+    
+- **Incorrectness (Under-approximation):** $[P] \ c \ [Q] \iff Q \subseteq [[c]]P$.
+    
+
+----
+
+## 3. Inference Rules for Incorrectness Logic
+
+The rules for IL are designed to propagate reachability information forward.
+
+### 3.1 Basic Rules
+
+- **Assignment Rule:** A state reached after an assignment is reachable if the original state was in $P$.
+    
+    $$\frac{}{[P] \ x := e \ [\{ \sigma[ [ [ e ] ] \sigma / x] \mid \sigma \in P \}]}$$
+    
+- **Sequence Rule:** Reachability is transitive through sequential execution.
+    
+    $$\frac{[P] \ c_1 \ [R] \quad [R] \ c_2 \ [Q]}{[P] \ c_1; c_2 \ [Q]}$$
+    
+
+### 3.2 Choice and Iteration
+
+- **Choice Rule:** Since IL tracks what _can_ happen, the choice rule takes the union of reachable states from both branches.
+    
+    $$\frac{[P] \ c_1 \ [Q_1] \quad [P] \ c_2 \ [Q_2]}{[P] \ c_1 + c_2 \ [Q_1 \cup Q_2]}$$
+    
+- **Iteration (Unrolling):** To find bugs in loops, IL typically explores the loop for a finite number of iterations ($k$).
+    
+    $$\frac{[P] \ c^k \ [Q]}{[P] \ c^* \ [Q]}$$
+    
+    If a state is reachable in exactly $k$ steps, it is reachable in the loop.
+    
+
+----
+
+## 4. Handling Errors: Real Incorrectness Logic
+
+In real-world analysis, we distinguish between normal termination and error states.
+
+### 4.1 Exit Conditions
+
+An extended triple tracks the "exit status" $\epsilon$ (e.g., `ok` for normal termination, `er` for an error/bug):
+
+$$[P] \ c \ [\epsilon : Q]$$
+
+- **Reachability of Errors:** $[P] \ c \ [\text{er} : Q]$ means every state in $Q$ is an error state reachable from $P$.
+    
+- **Short-circuiting:** If a command $c_1$ results in an error, the subsequent command $c_2$ in a sequence $c_1; c_2$ is not executed for that specific trajectory.
+    
+
+### 4.2 Application to Static Analysis
+
+IL is the foundation for modern "bug-hunting" tools (like **Facebook Infer** or **Meta Zoncolan**). These tools prioritize reporting "True Positives" to avoid "alarm fatigue" among developers.
+
+
+<div style="page-break-after: always;"></div>
+
