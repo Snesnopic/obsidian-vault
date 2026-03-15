@@ -98,7 +98,7 @@ Efficiency measures how well the parallel resources are being utilized. It is de
 $$E(n) = \frac{T_{id}(n)}{T(n)} = \frac{T_{seq}}{n \cdot T_{par}(n)} = \frac{S_p(n)}{n}$$
 An ideal efficiency is $1$ (or $100\%$), corresponding to linear speedup.
 
----
+----
 
 ## 2. Laws of Scalability
 
@@ -261,27 +261,40 @@ In modern C++ environments, implementing these mathematical models effectively r
 
 # 03. Shared Memory & Low-Level Concurrency
 
-This chapter explores the intricacies of Shared Memory architectures, the challenges of keeping memory consistent across multiple processors, and the practical implementation of concurrent execution using modern tools.
+This chapter explores the intricacies of Shared Memory architectures, the challenges of keeping memory consistent across multiple processors, the severe impact of memory latency, and the practical implementation of concurrent execution using modern tools.
 
 ## 1. Shared Memory Architectures
 
 In a shared memory system, multiple processing elements (PEs) have access to a single, global memory address space. While this simplifies the programming model (data does not need to be explicitly sent and received via messages), it introduces severe hardware and software complexities.
 
-### 1.1 Cache Coherence
+### 1.1 The Memory Hierarchy and Latencies
 
-Modern CPUs utilize multiple levels of cache (L1, L2, L3) to hide main memory latency. If multiple cores load the same memory block into their local L1 caches and one core modifies it, the other copies become stale.
+
+
+To understand performance bottlenecks in shared memory, one must analyze the memory hierarchy. CPUs use layers of smaller, faster memory to hide the massive latency of the main RAM. The typical access times dictate the absolute necessity of data locality:
+
+* **L1 Cache:** Private to each core. Extremely fast (typically ~1-2 ns) but very small (e.g., 32KB-64KB).
+* **L2 Cache:** Usually private per core, sometimes shared between a pair. Slower (typically ~3-10 ns) but larger (e.g., 256KB-1MB).
+* **L3 Cache:** Shared across all cores on the processor die. Slower still (~10-40 ns) but significantly larger (e.g., 8MB-64MB).
+* **Main Memory (DRAM):** The global shared address space. Massive capacity but severe latency (often ~100 ns or more).
+
+When a thread requests data, the CPU checks these caches sequentially. A cache miss at all levels forces the CPU to stall for hundreds of clock cycles while waiting for data from DRAM.
+
+### 1.2 Cache Coherence
+
+Because modern CPUs heavily utilize these multiple levels of cache to hide DRAM latency, if multiple cores load the same memory block into their local L1 caches and one core modifies it, the other copies become stale.
 
 * **Coherence Protocols:** The hardware must keep all these copies consistent and coherent through specific protocols (e.g., MESI - Modified, Exclusive, Shared, Invalid).
-* **Performance Impact:** When a core writes to a shared variable, the coherence protocol must invalidate or update the cached copies in other cores. This generates heavy bus traffic and latency, a phenomenon known as **False Sharing** if cores are writing to different variables that happen to reside on the same cache line.
+* **Performance Impact:** When a core writes to a shared variable, the coherence protocol must invalidate or update the cached copies in other cores. If another core needs that variable, it suffers a severe cache miss penalty, forcing a slow fetch. This generates heavy bus traffic and latency, a phenomenon known as **False Sharing** if cores are writing to independent, totally different variables that just happen to reside on the exact same 64-byte cache line.
 
-### 1.2 Synchronization Primitives
+### 1.3 Synchronization Primitives
 
 To prevent race conditions when multiple threads access shared data, we must enforce mutual exclusion using synchronization mechanisms:
 
-* **Mutexes and Locks:** Ensure that only one thread can execute a critical section at a time. However, locking forces sequential execution, impacting Amdahl's Law and adding overhead.
+* **Mutexes and Locks:** Ensure that only one thread can execute a critical section at a time. However, locking forces sequential execution, drastically impacting Amdahl's Law and adding OS-level context switching overhead.
 * **Atomics and Lock-Free Programming:** Utilizing hardware-level atomic instructions (like Compare-And-Swap) to update variables without blocking threads. This is crucial for high-performance concurrent data structures.
 
----
+----
 
 ## 2. Branch Divergence and Predication
 
@@ -294,6 +307,7 @@ If threads executing in lockstep encounter a conditional branch (e.g., an `if-el
 ### 2.2 Predication as a Solution
 
 To mitigate branch divergence, one technique is **predication**. Instead of branching, the hardware computes both paths simultaneously.
+
 * **How it works:** All threads compute the instructions for both the `if` and the `else` branches. The results are guarded by a boolean predicate (flag). Only the results associated with the `true` predicate are actually committed to memory or registers.
 * **Trade-off:** This requires doing extra computational work, but it avoids the severe penalty of breaking the instruction pipeline and serializing the parallel execution context.
 
@@ -308,6 +322,10 @@ Modern standards provide robust abstractions for managing shared memory parallel
 Managing threads directly requires explicit synchronization.
 
 ```cpp
+#ifndef SHARED_MEMORY_THREADS_H
+#define SHARED_MEMORY_THREADS_H
+
+
 #include <iostream>
 #include <thread>
 #include <vector>
@@ -346,6 +364,8 @@ int main() {
     std::cout << "FINAL RESULT COMPUTED SUCCESSFULLY\n";
     return 0;
 }
+
+#endif // SHARED_MEMORY_THREADS_H
 ````
 
 ### 3.2 OpenMP
@@ -353,6 +373,9 @@ int main() {
 For data-parallel loops and regular computational kernels, OpenMP provides compiler directives (`#pragma`) that dramatically simplify parallelization by handling thread creation, work distribution, and synchronization automatically.
 
 ```cpp
+#ifndef SHARED_MEMORY_OPENMP_H
+#define SHARED_MEMORY_OPENMP_H
+
 #include <iostream>
 #include <vector>
 #include <omp.h>
@@ -369,6 +392,8 @@ void process_array(std::vector<int>& data) {
     
     std::cout << "OPENMP REDUCTION COMPLETED. SUM: " << total_sum << "\n";
 }
+
+#endif // SHARED_MEMORY_OPENMP_H
 ```
 
 By leveraging these constructs, developers can bridge the gap between abstract algorithmic skeletons (like Map and Reduce) and actual high-performance execution on shared memory architectures.
@@ -740,21 +765,17 @@ This chapter extends the algorithmic skeleton framework to data-parallel workloa
 While stream parallelism processes discrete tokens over time, data parallelism operates on a finite, pre-existing data structure (like an array or matrix). FastFlow provides specific constructs to handle these workloads without the overhead of instantiating full pipeline or farm nodes for each element.
 
 ### 1.1 Parallel For (`ff::ParallelFor`)
-
 The `ParallelFor` construct applies a function to a range of indices $[0, N)$. It splits the iteration space into chunks and assigns them to a pool of worker threads.
 
 * **Chunking Strategy:** The runtime can distribute iterations statically (fixed size chunks) or dynamically (workers steal chunks when idle) to balance the load.
 * **Low-Level Execution:** Unlike standard OpenMP, `ParallelFor` in FastFlow leverages the same lock-free worker pool underlying the `ff_Farm`. This avoids the OS-level thread creation and destruction overhead if multiple parallel loops are executed sequentially.
 
 ### 1.2 Parallel For with Reduction (`ff::ParallelForReduce`)
-
 When the parallel loop must aggregate results into a single variable, synchronization is required to avoid data races. `ParallelForReduce` handles this by providing a thread-local accumulator and an associative reduction operator, eliminating the need for atomic instructions or mutexes during the map phase.
 
 ```cpp
 #ifndef FASTFLOW_DATAPARALLEL_EXAMPLE_H
 #define FASTFLOW_DATAPARALLEL_EXAMPLE_H
-
-// Created by user
 
 #include <iostream>
 #include <vector>
@@ -797,11 +818,22 @@ void compute_data_parallel() {
 
 ----
 
-## 2. GPU Concurrency & CUDA Basics
+## 2. GPU Concurrency & SIMT Architecture
 
-When data parallelism scales to millions of independent operations, CPU thread counts (even highly optimized ones) become a bottleneck due to context switching and complex control units. GPUs solve this using the **SIMT (Single Instruction, Multiple Threads)** execution model.
+When data parallelism scales to millions of independent operations, CPU thread counts (even highly optimized ones) become a bottleneck due to context switching and complex control units. GPUs solve this using a massively parallel execution model.
 
-### 2.1 The SIMT Execution Model
+### 2.1 CPU vs GPU Architectures
+
+To effectively program GPUs, one must understand their hardware design philosophy, which drastically differs from CPUs:
+
+- **CPUs (Latency-Oriented):** Feature a few powerful cores, very large caches (L1/L2/L3), and sophisticated control units (branch prediction, out-of-order execution). They are optimized to execute a single thread as fast as possible.
+    
+- **GPUs (Throughput-Oriented):** Feature thousands of simpler cores, minimal control logic, and relatively small caches. They hide memory latency not through large caches, but through massive multi-threading, context-switching instantly when a thread blocks for memory.
+    
+
+### 2.2 The SIMT Execution Model
+
+GPUs use the **SIMT (Single Instruction, Multiple Threads)** execution model, which is an evolution of CPU SIMD vectorization implementing a Single Program Multiple Data (SPMD) paradigm.
 
 In CUDA, a parallel function executed on the GPU is called a **Kernel**. When a kernel is launched, it is executed by thousands of lightweight threads.
 
@@ -810,7 +842,11 @@ In CUDA, a parallel function executed on the GPU is called a **Kernel**. When a 
 - **Blocks** are grouped into a **Grid**. Blocks execute independently and cannot strictly synchronize with each other during kernel execution, allowing the GPU to scale the workload across any number of available SMs.
     
 
-### 2.2 Memory Hierarchy
+----
+
+## 3. CUDA Basics and Synchronization
+
+### 3.1 Memory Hierarchy
 
 Effective C++ programming on GPUs requires strict, explicit control over pointer locations and memory spaces:
 
@@ -821,15 +857,13 @@ Effective C++ programming on GPUs requires strict, explicit control over pointer
 - **Registers:** The fastest memory, strictly private to each individual thread.
     
 
-### 2.3 CUDA Kernel Execution
+### 3.2 CUDA Kernel Execution
 
-Writing a CUDA kernel involves defining the C++ code that a _single_ thread will execute. The thread computes its physical data partition by reading hardware-provided index variables.
+Writing a CUDA kernel involves defining the C++ code that a single thread will execute. The thread computes its physical data partition by reading hardware-provided index variables.
 
 ```cpp
 #ifndef CUDA_VECTOR_ADD_H
 #define CUDA_VECTOR_ADD_H
-
-// Created by user
 
 #include <iostream>
 #include <cuda_runtime.h>
@@ -873,6 +907,10 @@ void run_cuda_kernel() {
     // launch asynchronous kernel
     vector_add<<<blocks_per_grid, threads_per_block>>>(d_a, d_b, d_c, n);
     
+    // explicit synchronization barrier
+    // waits for the gpu to complete the kernel before cpu proceeds
+    cudaDeviceSynchronize();
+    
     // block cpu and copy result back to host
     cudaMemcpy(h_c, d_c, bytes, cudaMemcpyDeviceToHost);
     
@@ -886,62 +924,75 @@ void run_cuda_kernel() {
 #endif // CUDA_VECTOR_ADD_H
 ```
 
-----
-
-## 3. Host-Device Synchronization and Latency Hiding
+### 3.3 Host-Device Synchronization and Latency Hiding
 
 A critical aspect of GPU programming is managing the asynchronous nature of kernel launches. The `<<<...>>>` syntax queues the kernel on the device and returns control to the host CPU immediately.
 
-To measure execution time accurately or ensure data is ready before subsequent CPU operations, explicit synchronization commands like `cudaDeviceSynchronize()` must be invoked. The overhead of PCI-Express memory transfers (`cudaMemcpy`) is massive and often represents the primary bottleneck. Advanced low-level optimization requires utilizing **CUDA Streams** to asynchronously overlap host-to-device memory copies with kernel execution, effectively hiding the PCIe latency.
+To measure execution time accurately or ensure data is ready before subsequent CPU operations, explicit synchronization commands like `cudaDeviceSynchronize()` must be invoked. Without it, the host might attempt to read incomplete data from the GPU.
 
+The overhead of PCI-Express memory transfers (`cudaMemcpy`) is massive and often represents the primary bottleneck. Advanced low-level optimization requires utilizing **CUDA Streams** to asynchronously overlap host-to-device memory copies with kernel execution, effectively hiding the PCIe latency.
 
 <div style="page-break-after: always;"></div>
 
 # 08. Advanced GPU Concurrency & CUDA Optimizations
 
-Building upon the basic SIMT (Single Instruction, Multiple Threads) execution model, this chapter explores the hardware-specific details necessary to achieve peak performance on GPUs. We focus on memory access patterns, the explicit management of the memory hierarchy, and the overlapping of computation with data transfers.
+Building upon the basic SIMT (Single Instruction, Multiple Threads) execution model, this chapter explores the hardware-specific details necessary to achieve peak performance on GPUs. We focus on memory access patterns, the explicit management of the memory hierarchy, the mapping of software to hardware, and the overlapping of computation with data transfers.
 
-## 1. The Warp Execution Model
+## 1. Hardware Mapping: Software to Hardware
 
-While we program CUDA using a hierarchy of Grids and Blocks, the actual hardware execution on a Streaming Multiprocessor (SM) is managed in units called **Warps**.
+To heavily optimize CUDA kernels, the abstraction of Grids and Blocks must be mapped to the physical GPU components.
+
+
+
+* **Grid $\rightarrow$ GPU:** The entire grid represents the full kernel execution on the GPU.
+* **Block $\rightarrow$ Streaming Multiprocessor (SM):** Each block is assigned to a single SM. An SM can host multiple blocks concurrently, but a single block cannot be split across multiple SMs.
+* **Thread $\rightarrow$ CUDA Core:** Individual threads execute on the cores within the SM.
+
+## 2. The Warp Execution Model & Occupancy
+
+While we program CUDA using a hierarchy of Grids and Blocks, the actual hardware execution on a Streaming Multiprocessor (SM) is managed in units called Warps.
+
 * A warp consists of 32 contiguous threads from the same block.
 * All threads in a warp execute the exact same instruction at the same time.
 * **Warp Divergence:** If threads within a warp take different control-flow paths (e.g., due to an `if-else` statement), the SM must serialize the execution of the divergent paths. It executes the `true` path while masking the inactive threads, then executes the `false` path. This drastically reduces instruction throughput.
 
-## 2. Global Memory Coalescing
+### 2.1 Occupancy and Latency Hiding
+Unlike CPUs, which use large caches to reduce memory latency, GPUs use massive multi-threading to hide it. **Occupancy** is the ratio of active warps per SM to the maximum number of allowed warps. 
+When a warp performs a high-latency operation (like a global memory fetch), the warp scheduler instantly switches to another "ready" warp. High occupancy ensures there are always ready warps, keeping the functional units busy. 
+Occupancy is physically bounded by register usage per thread and shared memory usage per block.
 
-The bandwidth to global memory (VRAM) is a primary bottleneck in GPU computing. To maximize it, we must ensure **coalesced memory accesses**.
+## 3. Global Memory Coalescing
 
+The bandwidth to global memory (VRAM) is a primary bottleneck in GPU computing. To maximize it, we must ensure coalesced memory accesses.
 When threads in a warp issue a memory load or store, the hardware attempts to group (coalesce) these requests into as few memory transactions as possible (typically 32, 64, or 128 bytes). 
+
 * **Coalesced Access:** Thread $i$ accesses memory address $X + i$. The entire warp requests a contiguous block of memory, which can be fetched in a single transaction.
 * **Uncoalesced Access:** Threads access scattered, non-contiguous addresses. The hardware must issue multiple memory transactions, wasting bandwidth.
 
-### 2.1 Data Layout: AoS vs SoA
+### 3.1 Data Layout: AoS vs SoA
 To promote coalesced accesses, data structures should often be refactored.
-* **Array of Structures (AoS):** `struct { float x, y, z; } array[N];` 
-  Adjacent threads accessing `array[i].x` will fetch data spaced by the size of the struct, leading to uncoalesced accesses.
-* **Structure of Arrays (SoA):** `struct { float x[N], y[N], z[N]; };` 
-  Adjacent threads accessing `x[i]` will fetch contiguous memory, achieving perfect coalescing.
 
-----
+* **Array of Structures (AoS):** `struct { float x, y, z; } array[N];`
+Adjacent threads accessing `array[i].x` will fetch data spaced by the size of the struct, leading to uncoalesced accesses.
+* **Structure of Arrays (SoA):** `struct { float x[N], y[N], z[N]; };`
+Adjacent threads accessing `x[i]` will fetch contiguous memory, achieving perfect coalescing.
 
-## 3. Shared Memory and Tiling
+## 4. Shared Memory and Tiling
 
 Shared memory is a programmable L1 cache local to each SM. It is orders of magnitude faster than global memory but limited in size (e.g., 48KB or 96KB per block).
-
 We use shared memory to hold frequently accessed data. A common pattern is **Tiling**:
+
 1. Threads in a block cooperatively load a "tile" of data from global memory into shared memory.
 2. The block synchronizes to ensure all data is loaded.
 3. Threads perform multiple computations using the fast shared memory.
 4. The block synchronizes again, writes results to global memory, and moves to the next tile.
 
-### 3.1 Tiling Implementation
+### 4.1 Tiling Implementation
 
 ```cpp
 #ifndef CUDA_MATRIX_MUL_TILED_H
 #define CUDA_MATRIX_MUL_TILED_H
 
-// Created by user
 
 #include <iostream>
 #include <cuda_runtime.h>
@@ -986,15 +1037,43 @@ __global__ void matrix_mul_tiled(float* d_a, float* d_b, float* d_c, int width) 
 #endif // CUDA_MATRIX_MUL_TILED_H
 ````
 
-----
+## 5. Advanced Synchronization: `__syncthreads()` and Beyond
 
-## 4. Asynchronous Execution and CUDA Streams
+While `__syncthreads()` provides a block-wide barrier, modern CUDA exposes warp-level primitives. **Warp-shuffle** instructions allow threads within the exact same warp to exchange data directly through registers, bypassing shared memory completely.
 
-To fully utilize both the CPU and the GPU, as well as the PCIe bus connecting them, we must overlap data transfers with kernel execution. This is achieved using **CUDA Streams**.
+```cpp
+#ifndef CUDA_SHUFFLE_EXAMPLE_H
+#define CUDA_SHUFFLE_EXAMPLE_H
+
+
+#include <cuda_runtime.h>
+#include <iostream>
+
+__global__ void warp_reduce_kernel(int* d_data) {
+    int val = d_data[threadIdx.x];
+
+    // warp shuffle to read registers from other threads
+    // sum all values within the warp (32 threads)
+    for (int offset = 16; offset > 0; offset /= 2) {
+        val += __shfl_down_sync(0xFFFFFFFF, val, offset);
+    }
+
+    // first thread writes the total sum
+    if (threadIdx.x == 0) {
+        d_data[0] = val; 
+    }
+}
+
+#endif // CUDA_SHUFFLE_EXAMPLE_H
+```
+
+## 6. Asynchronous Execution and CUDA Streams
+
+To fully utilize both the CPU and the GPU, as well as the PCIe bus connecting them, we must overlap data transfers with kernel execution. This is achieved using CUDA Streams.
 
 A stream is a sequence of commands (memory copies, kernel launches) that execute in order. Commands in different streams can execute concurrently.
 
-### 4.1 Hiding PCIe Latency
+### 6.1 Hiding PCIe Latency
 
 By dividing the workload into chunks and assigning each chunk to a separate stream, the hardware can perform a `cudaMemcpyAsync` for chunk $i+1$ while the GPU is executing the kernel for chunk $i$.
 
@@ -1002,7 +1081,6 @@ By dividing the workload into chunks and assigning each chunk to a separate stre
 #ifndef CUDA_STREAMS_EXAMPLE_H
 #define CUDA_STREAMS_EXAMPLE_H
 
-// Created by user
 
 #include <iostream>
 #include <vector>
@@ -1058,6 +1136,20 @@ void run_with_streams(float* h_in, float* h_out, int n) {
 ```
 
 _Note: To fully utilize `cudaMemcpyAsync`, host memory must be page-locked (pinned memory) using `cudaMallocHost` rather than standard `malloc` or `std::vector` allocations._
+
+## 7. Arithmetic Intensity & The Memory Wall
+
+A defining metric for low-level performance optimization is **Arithmetic Intensity**: the ratio of floating-point operations (FLOPs) to memory accesses (Bytes).
+
+$$\text{Arithmetic Intensity} = \frac{\text{Operations}}{\text{Memory Traffic}}$$
+
+- **Memory-Bound Kernels:** Low arithmetic intensity. Execution speed is gated by VRAM bandwidth.
+    
+- **Compute-Bound Kernels:** High arithmetic intensity. Execution speed is gated by the SM's clock speed and number of active CUDA cores.
+    
+
+The ultimate goal of tiling and register manipulation is to artificially increase the arithmetic intensity by reusing data directly on-chip, successfully bypassing the "Memory Wall" created by the relatively slow off-chip DRAM.
+
 
 <div style="page-break-after: always;"></div>
 
@@ -1247,8 +1339,6 @@ Below is a complete implementation of a dynamically load-balanced Master-Worker 
 #ifndef DISTRIBUTED_FARM_MPI_H
 #define DISTRIBUTED_FARM_MPI_H
 
-// Created by user
-
 #include <iostream>
 #include <vector>
 #include <mpi.h>
@@ -1402,8 +1492,6 @@ Using the FastFlow framework, implementing a stateful stage in a pipeline or far
 #ifndef STATEFUL_SKELETON_H
 #define STATEFUL_SKELETON_H
 
-// Created by user
-
 #include <iostream>
 #include <ff/ff.hpp>
 #include <ff/pipeline.hpp>
@@ -1555,8 +1643,6 @@ Implementing a dynamic farm requires a carefully designed execution loop where w
 #ifndef AUTONOMIC_FARM_H
 #define AUTONOMIC_FARM_H
 
-// created by user
-
 #include <iostream>
 #include <vector>
 #include <thread>
@@ -1648,6 +1734,104 @@ public:
 ````
 
 Advanced frameworks like FastFlow provide built-in autonomic nodes (`ff_aFarm`) that encapsulate the MAPE loop, abstracting away the thread orchestration and relying strictly on lock-free queues even during dynamic resizing.
+
+
+<div style="page-break-after: always;"></div>
+
+# 14. SIMD & Vectorization on CPUs
+
+This chapter explores Single Instruction, Multiple Data (SIMD) programming on modern CPUs. It bridges the gap between purely sequential code and massively parallel GPU execution by exploiting data parallelism directly within the CPU cores.
+
+## 1. Vector Units and Registers
+
+Modern CPU cores contain dedicated vector units capable of processing multiple data elements concurrently using wide registers.
+
+
+* **Scalar Execution:** Traditional ALUs process one instruction on one piece of data at a time.
+* **SIMD Execution:** A single instruction (e.g., an addition) is applied simultaneously to multiple data elements packed inside a large SIMD register.
+* **Register Widths:**
+  * **SSE:** 128-bit registers (fits 4 standard 32-bit floats).
+  * **AVX/AVX2:** 256-bit registers (fits 8 floats).
+  * **AVX-512:** 512-bit registers (fits 16 floats).
+
+## 2. Automatic Compiler Vectorization
+
+The easiest way to leverage SIMD is to rely on the compiler's auto-vectorizer. The compiler analyzes loops and translates them into SIMD instructions automatically.
+
+### 2.1 Loop Unrolling
+To help the compiler pipeline instructions and hide latencies, developers can force loop unrolling using pragmas. Unrolling reduces control instruction overhead (branching, index updates) and exposes more independent operations (Instruction Level Parallelism, ILP).
+
+```cpp
+#ifndef SIMD_AUTO_VECT_H
+#define SIMD_AUTO_VECT_H
+
+#include <iostream>
+#include <algorithm>
+#include <vector>
+#include <cmath>
+
+void compute_max_unrolled(const std::vector<float>& data) {
+    float max_0 = -INFINITY, max_1 = -INFINITY;
+    float max_2 = -INFINITY, max_3 = -INFINITY;
+    
+    // hint the compiler to unroll the loop
+    #pragma GCC unroll 4
+    for (size_t i = 0; i < data.size(); i += 4) {
+        // independent max operations prevent read-after-write (raw) dependencies
+        max_0 = std::max(max_0, data[i]);
+        max_1 = std::max(max_1, data[i+1]);
+        max_2 = std::max(max_2, data[i+2]);
+        max_3 = std::max(max_3, data[i+3]);
+    }
+    
+    float final_max = std::max({max_0, max_1, max_2, max_3});
+    std::cout << "MAX VALUE FOUND: " << final_max << "\n";
+}
+
+#endif // SIMD_AUTO_VECT_H
+````
+
+_Note: Excessive unrolling can cause register spilling, which hurts performance by forcing data back to the L1 cache._
+
+## 3. Explicit Vectorization with Intrinsics
+
+When compilers fail to auto-vectorize complex logic, we use **Intrinsics**. Intrinsics are C/C++ functions mapped directly to assembly SIMD instructions, giving explicit, low-level control over the vector units.
+
+```cpp
+#ifndef SIMD_INTRINSICS_H
+#define SIMD_INTRINSICS_H
+
+#include <iostream>
+#include <immintrin.h> // required for avx intrinsics
+
+void add_arrays_avx(const float* a, const float* b, float* result, size_t size) {
+    size_t i = 0;
+    
+    // process 8 floats (256 bits) at a time
+    for (; i + 7 < size; i += 8) {
+        // load 256 bits of data from unaligned memory
+        __m256 vec_a = _mm256_loadu_ps(&a[i]);
+        __m256 vec_b = _mm256_loadu_ps(&b[i]);
+        
+        // perform parallel addition
+        __m256 vec_res = _mm256_add_ps(vec_a, vec_b);
+        
+        // store results back
+        _mm256_storeu_ps(&result[i], vec_res);
+    }
+    
+    // handle remaining elements sequentially (tail case)
+    for (; i < size; ++i) {
+        result[i] = a[i] + b[i];
+    }
+    
+    std::cout << "AVX ADDITION COMPLETED\n";
+}
+
+#endif // SIMD_INTRINSICS_H
+```
+
+By explicitly loading data into `__m256` types, we bypass the compiler's conservative dependency analysis and force the hardware to process the payload at maximum throughput.
 
 
 <div style="page-break-after: always;"></div>
