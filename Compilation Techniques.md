@@ -765,8 +765,6 @@ The parser state is maintained using a stack and the input buffer.
 * **Reduce:** When the top symbols on the stack match a production's RHS, they are popped and replaced by the production's LHS.
 * **Accept:** The input is fully consumed, and the stack contains only the start symbol.
 
-
-
 ----
 
 ## 2. LR(1) Items and State Representation
@@ -811,6 +809,93 @@ function compute_closure(initial_set):
                         changed = true
                         
     return closure_set
+````
+
+### 3.2 The `goto(s, X)` Function
+
+The `goto` function computes the transitions between states. Given a state $s$ (a set of items) and a grammar symbol $X$ (terminal or non-terminal):
+
+`goto(s, X) = closure({ [A -> \alpha X \bullet \beta, a] | [A -> \alpha \bullet X \beta, a] \in s })`.
+
+It represents the new state reached after recognizing $X$.
+
+---
+
+## 4. ACTION and GOTO Tables
+
+Once the canonical collection of sets of LR(1) items (states $s_0, s_1, \dots, s_n$) is built, we construct two tables:
+
+### 4.1 ACTION Table
+
+The ACTION table dictates the operation for a state given a lookahead token.
+
+- **Shift $s_k$:** If $[A \to \alpha \bullet a \beta, b] \in s_i$ and `goto(`$s_i, a$`)` $= s_k$, set `ACTION[`$s_i, a$`] = shift` $s_k$.
+    
+- **Reduce $A \to \gamma$:** If $[A \to \gamma \bullet, a] \in s_i$ (and $A \neq S'$), set `ACTION[`$s_i, a$`] = reduce` $A \to \gamma$.
+    
+- **Accept:** If $[S' \to S \bullet, \text{EOF}] \in s_i$, set `ACTION[`$s_i, \text{EOF}$`] = accept`.
+    
+
+### 4.2 GOTO Table
+
+The GOTO table determines the next state after a reduction.
+
+- If `goto(`$s_i, A$`)` $= s_j$ for a non-terminal $A$, then `GOTO[`$s_i, A$`] =` $s_j$.
+    
+
+<div style="page-break-after: always;"></div>
+
+# 10. Laboratory (Control-Flow Graph)
+
+This section covers the construction of the Control-Flow Graph (CFG) for the MiniImp language, which is a prerequisite for static analysis and compilation.
+
+----
+
+## 1. CFG Definition
+
+A Control-Flow Graph is a directed graph where:
+* **Nodes** are basic blocks, which consist of sequences of simple statements.
+* **Edges** represent the possible control-flow paths between these basic blocks.
+
+Building the CFG is a fundamental intermediate step required for performing Static Analysis (such as Data Flow Analysis) and for the final Compilation phase.
+
+----
+
+## 2. Generating the CFG for MiniImp
+
+The generation of the CFG depends on the specific command structures of the MiniImp language.
+
+### 2.1 Simple Commands
+For simple commands like assignments (`x := e`) or `skip`, the generation is straightforward. They form a single basic block with an entry point and an exit point.
+
+### 2.2 Sequence (`c1; c2`)
+When dealing with a sequence of commands:
+* Generate the graph for `c1`.
+* Generate the graph for `c2`.
+* Connect the final node(s) of `c1` to the initial node of `c2`.
+
+### 2.3 Conditional (`if b then c1 else c2`)
+For an `if-then-else` statement:
+* Create a node for the evaluation of the boolean condition `b?`.
+* The `true` branch connects to the initial node of `c1`'s graph.
+* The `false` branch connects to the initial node of `c2`'s graph.
+* The final nodes of both `c1` and `c2` graphs merge into a common `skip` node to unify the control flow.
+
+### 2.4 Looping (`while b do c`)
+For a `while` loop:
+* Create a node for the boolean condition `b?`.
+* The `true` branch points to the initial node of the loop body `c`.
+* The final node of `c` loops back to the condition node `b?`.
+* The `false` branch exits the loop and connects to a `skip` node.
+
+----
+
+## 3. Program Level CFG
+
+In MiniImp, programs do not feature procedures. A program is structured as:
+`def main with input x output y as c`
+Because there are no procedure calls to handle, the CFG of the entire program is simply the CFG of the main command `c`.
+
 
 <div style="page-break-after: always;"></div>
 
