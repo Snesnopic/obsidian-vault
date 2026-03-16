@@ -504,6 +504,19 @@ The Query Transformation phase relies heavily on equivalence rules to optimize t
   If $\psi_X$ involves attributes of $E_1$ and $\psi_Y$ involves attributes of $E_2$:
   $$\sigma_{\psi_X \wedge \psi_Y}(E_1 \bowtie E_2) \equiv \sigma_{\psi_X}(E_1) \bowtie \sigma_{\psi_Y}(E_2)$$
 
+### 2.2 Subquery Unnesting and the "Count Bug"
+Optimizers attempt to flatten nested subqueries (like `EXISTS`) into standard joins to avoid re-executing the inner query iteratively (nested loops) for every outer tuple.
+* Flattening an `EXISTS` subquery usually requires adding a `DISTINCT` clause to avoid duplicating rows from the outer query if multiple matches exist.
+* **The "Count Bug":** A critical edge case occurs when the subquery contains a trivial (implicit) `GROUP BY` with the condition `COUNT(*) = 0`, or equivalently, a `NOT EXISTS` clause. Unlike other aggregate functions, `COUNT(*)` applied to an empty set returns a row with the value zero rather than an empty result.
+* Transforming `COUNT(*) = 0` using a standard `INNER JOIN` is semantically incorrect because it completely eliminates the unmatched rows from the result. To correctly unnest this pattern, the optimizer must use a `LEFT OUTER JOIN` and subsequently filter for `NULL` values to track the entities with zero associations.
+
+### 2.3 View Merging and Join Pushing
+When querying a view, the optimizer tries to merge the view's logical plan with the outer query's plan to create a single, standard SQL plan where all joins are performed before grouping operations. 
+A structural challenge arises if the view contains a `GROUP BY` ($\gamma$) and the outer query performs a `JOIN` ($\bowtie$), resulting in an inverted plan where the join sits on top of the grouping operator.
+* **Join Pushing:** The optimizer can push the `JOIN` below the `GROUP BY` if and only if the join is "unary" (non-multiplicative).
+* This rule strictly requires the join condition to equate a Foreign Key in the grouped data to the Primary Key of the joined table. Since the relation is on a primary key, each grouped row is multiplied by at most one, leaving the cardinality and the results of aggregate functions (like `SUM` or `COUNT`) uncorrupted.
+* **Dimension Expansion:** When the join is pushed, the new `GROUP BY` must expand its dimensions to include all attributes of the joined table. 
+
 ----
 
 ## 3. Functional Dependencies
@@ -515,9 +528,10 @@ During query optimization, the DBMS utilizes semantic constraints, specifically 
 
 A special case is $\emptyset \rightarrow Y$, meaning the value of $Y$ is the same for every tuple in the relation.
 
-### 3.1 Evaluating Redundancy of DISTINCT and GROUP BY
-A crucial application of Functional Dependencies is determining whether `DISTINCT` or `GROUP BY` operators are redundant. 
-Transforming a query from a standard `SELECT` to an equivalent logical plan with `SELECT DISTINCT` requires the optimizer to check for potential row duplication (e.g., a teacher teaching multiple courses appearing multiple times in a join). By analyzing the keys and FDs, the optimizer can verify if the result is already guaranteed to be unique. If uniqueness is proven without the operator, the expensive duplicate elimination or grouping steps are completely removed from the execution plan.
+### 3.1 Evaluating Redundancy with FDs
+Functional Dependencies are fundamental for proving structural equivalences and removing redundancies:
+* **DISTINCT and GROUP BY Elimination:** Transforming a query from a standard `SELECT` to an equivalent logical plan with `SELECT DISTINCT` requires the optimizer to check for potential row duplication (e.g., a teacher teaching multiple courses appearing multiple times in a join). By analyzing the keys and FDs, the optimizer can verify if the result is already guaranteed to be unique. If uniqueness is proven without the operator, the expensive duplicate elimination or grouping steps are completely removed from the execution plan.
+* **Preserving Group Cardinality in Join Pushing:** As seen in View Merging, pushing a join below a `GROUP BY` requires expanding the grouping dimensions to include all attributes of the joined table. FDs mathematically prove why this expansion does not shrink the groups: because the join is performed on a Primary Key, all newly added attributes are functionally determined by the Foreign Key (which was already present in the original grouping dimensions). Therefore, the total number of distinct groups remains perfectly identical.
 
 ### 3.2 Logical Implication & Armstrong's Axioms
 Given a set $F$ of FDs, we can derive other dependencies that logically hold. $F \vdash X \rightarrow Y$ if it can be derived using Armstrong's axioms: 
