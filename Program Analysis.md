@@ -271,7 +271,112 @@ $wpp(c, Q) = [[c]]_{op}Q$.
 
 <div style="page-break-after: always;"></div>
 
-# 03. Hoare Logic
+# 03. Total Correctness
+
+This chapter extends the reasoning of Hoare Logic to ensure **termination**. While partial correctness only guarantees the result _if_ the program ends, **Total Correctness** ensures that the program _must_ end and satisfy the postcondition.
+
+----
+
+## 1. Defining Total Correctness
+
+A total correctness assertion is written using square brackets to distinguish it from partial correctness:
+
+$$[P] \ c \ [Q]$$
+
+### 1.1 Formal Definition
+
+The triple $[P] \ c \ [Q]$ is valid (written $\models [P] \ c \ [Q]$) if and only if for every initial state $\sigma$ such that $\sigma \models P$:
+
+1. The execution of command $c$ starting from $\sigma$ **must terminate**.
+    
+2. The final state $\sigma'$ **must satisfy** the postcondition $Q$ ($\sigma' \models Q$).
+    
+
+### 1.2 Relation to Partial Correctness
+
+Total correctness is the conjunction of partial correctness and termination:
+
+$$[P] \ c \ [Q] \iff \{P\} \ c \ \{Q\} \land (\text{termination of } c \text{ from } P)$$
+
+Consequently, proving total correctness is strictly harder than proving partial correctness.
+
+----
+
+## 2. Mathematical Foundations: Well-Founded Relations
+
+To prove termination, especially for loops, we need a way to show that a program cannot run forever. We do this by mapping program states to a set that cannot have infinite decreasing sequences.
+
+### 2.1 Well-Founded Relations
+
+> **Definition:** A binary relation $\prec$ on a set $A$ is **well-founded** if there are no infinite descending chains $a_0 \succ a_1 \succ a_2 \succ \dots$ in $A$.
+
+- **Example (Well-founded):** The set of natural numbers with the standard "less than" relation $(\mathbb{N}, <)$. Any sequence of decreasing natural numbers must eventually hit zero.
+    
+- **Example (Not well-founded):** The set of integers $(\mathbb{Z}, <)$. One can decrease indefinitely into negative numbers ($0 > -1 > -2 \dots$).
+    
+
+### 2.2 Minimal Element Principle
+
+A relation $\prec$ is well-founded if and only if every non-empty subset $Q \subseteq A$ has at least one **minimal element** $m$ (an element such that no $x \in Q$ satisfies $x \prec m$).
+
+----
+
+## 3. Inference Rules for Total Correctness
+
+Most rules for total correctness (Skip, Assignment, Sequence, Conditional) are identical to those in partial correctness because these constructs naturally terminate if their components do. The primary change is the **While Rule**.
+
+### 3.1 The Total While Rule
+
+To prove $[P] \ \mathtt{while} \ b \ \mathtt{do} \ c \ [P \land \neg b]$, we introduce a **Variant** (also called a ranking function) $t$.
+
+$$\frac{\forall z \in A. \ [P \land b \land t = z] \ c \ [P \land t \prec z]}{\vdash [P] \ \mathtt{while} \ b \ \mathtt{do} \ c \ [P \land \neg b]}$$
+
+**Requirements for the Rule:**
+
+- **Invariant:** $P$ must be a valid loop invariant.
+    
+- **Well-founded Set:** $(A, \prec)$ must be a well-founded relation.
+    
+- **Variant Decrease:** In each iteration, the value of the expression $t$ must strictly decrease according to $\prec$.
+    
+
+Because $t$ decreases in a well-founded set, it cannot decrease forever; therefore, the loop must eventually terminate.
+
+----
+
+## 4. Practical Example: Counting Down
+
+Consider a simple loop that decrements a counter:
+
+$$\mathtt{while} \ (x > 0) \ \mathtt{do} \ x := x - 1$$
+
+1. **Invariant ($P$):** $x \geq 0$.
+    
+2. **Variant ($t$):** The value of $x$ itself.
+    
+3. **Well-founded Relation:** $(\mathbb{N}, <)$.
+    
+4. **Proof Step:** We must show that if the loop executes ($x > 0$), the new value $x'$ satisfies $x' < x$. Since $x' = x - 1$, this holds for all $x > 0$.
+    
+
+----
+
+## 5. Weakest Preconditions ($wp$)
+
+In total correctness, Dijkstra's **Weakest Precondition** ($wp$) specifically requires termination, unlike the Weakest Liberal Precondition ($wlp$).
+
+- **Partial Correctness ($wlp$):** $wlp(c, Q) = \{ \sigma \mid [[c]]\sigma \subseteq Q \}$.
+    
+- **Total Correctness ($wp$):** $wp(c, Q) = \{ \sigma \mid [[c]]\sigma \neq \emptyset \land [[c]]\sigma \subseteq Q \}$.
+    
+
+The condition $[[c]]\sigma \neq \emptyset$ explicitly forces the existence of a final state, thereby ensuring termination.
+
+
+
+<div style="page-break-after: always;"></div>
+
+# 04. Hoare Logic
 
 This chapter introduces **Axiomatic Semantics** via **Hoare Logic**, a formal system used to reason about the correctness of computer programs by using logical triples.
 
@@ -386,112 +491,61 @@ In practice, human experts or automated tools use **Weakest Preconditions ($wp$)
 
 <div style="page-break-after: always;"></div>
 
-# 04. Total Correctness
+# 05. Necessary Condition Logic
 
-This chapter extends the reasoning of Hoare Logic to ensure **termination**. While partial correctness only guarantees the result _if_ the program ends, **Total Correctness** ensures that the program _must_ end and satisfy the postcondition.
-
-----
-
-## 1. Defining Total Correctness
-
-A total correctness assertion is written using square brackets to distinguish it from partial correctness:
-
-$$[P] \ c \ [Q]$$
-
-### 1.1 Formal Definition
-
-The triple $[P] \ c \ [Q]$ is valid (written $\models [P] \ c \ [Q]$) if and only if for every initial state $\sigma$ such that $\sigma \models P$:
-
-1. The execution of command $c$ starting from $\sigma$ **must terminate**.
-    
-2. The final state $\sigma'$ **must satisfy** the postcondition $Q$ ($\sigma' \models Q$).
-    
-
-### 1.2 Relation to Partial Correctness
-
-Total correctness is the conjunction of partial correctness and termination:
-
-$$[P] \ c \ [Q] \iff \{P\} \ c \ \{Q\} \land (\text{termination of } c \text{ from } P)$$
-
-Consequently, proving total correctness is strictly harder than proving partial correctness.
+This chapter introduces **Necessary Condition Logic (NC Logic)**, which shifts the perspective from forward execution to backward reasoning using **over-approximation**. While Hoare Logic asks "what is guaranteed to happen if we start in $P$?", NC Logic asks "what *must* have been true at the start if we eventually reached $Q$?".
 
 ----
 
-## 2. Mathematical Foundations: Well-Founded Relations
+## 1. The Core Concept: Backward Over-Approximation
 
-To prove termination, especially for loops, we need a way to show that a program cannot run forever. We do this by mapping program states to a set that cannot have infinite decreasing sequences.
+NC Logic is the backward counterpart to Hoare Logic. It is used to find the **necessary conditions** for a specific outcome (e.g., reaching a target state, a bug, or a specific line of code).
 
-### 2.1 Well-Founded Relations
+### 1.1 Semantic Definition
+We denote an NC triple using angle brackets:
+$$\langle P \rangle \ c \ \langle Q \rangle$$
 
-> **Definition:** A binary relation $\prec$ on a set $A$ is **well-founded** if there are no infinite descending chains $a_0 \succ a_1 \succ a_2 \succ \dots$ in $A$.
+This triple is valid if and only if:
+$$[[c]]_{op} Q \subseteq P$$
 
-- **Example (Well-founded):** The set of natural numbers with the standard "less than" relation $(\mathbb{N}, <)$. Any sequence of decreasing natural numbers must eventually hit zero.
-    
-- **Example (Not well-founded):** The set of integers $(\mathbb{Z}, <)$. One can decrease indefinitely into negative numbers ($0 > -1 > -2 \dots$).
-    
+**Meaning:** The set of all initial states that can possibly lead to a state in $Q$ via command $c$ ($[[c]]_{op} Q$) is a subset of $P$. Therefore, starting in $P$ is a *necessary condition* to reach $Q$. If the initial state was not in $P$, it is impossible to reach $Q$.
 
-### 2.2 Minimal Element Principle
+### 1.2 Comparison with Hoare Logic
+* **Hoare Logic (HL):** $\{P\} \ c \ \{Q\} \iff [[c]]P \subseteq Q$ (Forward Over-approximation).
+* **NC Logic:** $\langle P \rangle \ c \ \langle Q \rangle \iff [[c]]_{op}Q \subseteq P$ (Backward Over-approximation).
 
-A relation $\prec$ is well-founded if and only if every non-empty subset $Q \subseteq A$ has at least one **minimal element** $m$ (an element such that no $x \in Q$ satisfies $x \prec m$).
+By expanding the definition, $\langle P \rangle \ c \ \langle Q \rangle$ is equivalent to saying: $\forall \sigma, \sigma'. \ (\sigma, \sigma') \in [[c]] \land \sigma' \in Q \implies \sigma \in P$.
 
-----
+---
 
-## 3. Inference Rules for Total Correctness
+## 2. Inference Rules for NC Logic
 
-Most rules for total correctness (Skip, Assignment, Sequence, Conditional) are identical to those in partial correctness because these constructs naturally terminate if their components do. The primary change is the **While Rule**.
+The inference rules for NC Logic are structurally similar to Hoare Logic but are designed to propagate the post-condition $Q$ backwards to find the necessary pre-condition $P$.
 
-### 3.1 The Total While Rule
+### 2.1 Basic Rules
+* **Skip:** $$\frac{}{\langle P \rangle \ \mathtt{skip} \ \langle P \rangle}$$
+* **Assignment:** The exact set of states that lead to $Q$ after $x := e$ is $Q[e/x]$. Since we are over-approximating, any $P$ that contains $Q[e/x]$ is a valid necessary condition.
+    $$\frac{}{\langle Q[e/x] \rangle \ x := e \ \langle Q \rangle}$$
 
-To prove $[P] \ \mathtt{while} \ b \ \mathtt{do} \ c \ [P \land \neg b]$, we introduce a **Variant** (also called a ranking function) $t$.
+### 2.2 Structural Rules
+* **Sequence:** $$\frac{\langle P \rangle \ c_1 \ \langle R \rangle \quad \langle R \rangle \ c_2 \ \langle Q \rangle}{\langle P \rangle \ c_1; c_2 \ \langle Q \rangle}$$
+* **Choice (Non-determinism/If-statements):** If $Q$ can be reached via either branch, the necessary condition must account for both possibilities. Thus, we take the union.
+    $$\frac{\langle P_1 \rangle \ c_1 \ \langle Q \rangle \quad \langle P_2 \rangle \ c_2 \ \langle Q \rangle}{\langle P_1 \cup P_2 \rangle \ c_1 + c_2 \ \langle Q \rangle}$$
 
-$$\frac{\forall z \in A. \ [P \land b \land t = z] \ c \ [P \land t \prec z]}{\vdash [P] \ \mathtt{while} \ b \ \mathtt{do} \ c \ [P \land \neg b]}$$
-
-**Requirements for the Rule:**
-
-- **Invariant:** $P$ must be a valid loop invariant.
-    
-- **Well-founded Set:** $(A, \prec)$ must be a well-founded relation.
-    
-- **Variant Decrease:** In each iteration, the value of the expression $t$ must strictly decrease according to $\prec$.
-    
-
-Because $t$ decreases in a well-founded set, it cannot decrease forever; therefore, the loop must eventually terminate.
-
-----
-
-## 4. Practical Example: Counting Down
-
-Consider a simple loop that decrements a counter:
-
-$$\mathtt{while} \ (x > 0) \ \mathtt{do} \ x := x - 1$$
-
-1. **Invariant ($P$):** $x \geq 0$.
-    
-2. **Variant ($t$):** The value of $x$ itself.
-    
-3. **Well-founded Relation:** $(\mathbb{N}, <)$.
-    
-4. **Proof Step:** We must show that if the loop executes ($x > 0$), the new value $x'$ satisfies $x' < x$. Since $x' = x - 1$, this holds for all $x > 0$.
-    
+### 2.3 Rule of Consequence
+In NC Logic, since $P$ is an over-approximation of the pre-states, we can safely **weaken the precondition** (make it larger) or **strengthen the postcondition** (make it smaller).
+$$\frac{P \implies P' \quad \langle P \rangle \ c \ \langle Q \rangle \quad Q' \implies Q}{\langle P' \rangle \ c \ \langle Q' \rangle}$$
+*(Note how this is the exact opposite of the Hoare Logic consequence rule).*
 
 ----
 
-## 5. Weakest Preconditions ($wp$)
+## 3. Applications
 
-In total correctness, Dijkstra's **Weakest Precondition** ($wp$) specifically requires termination, unlike the Weakest Liberal Precondition ($wlp$).
-
-- **Partial Correctness ($wlp$):** $wlp(c, Q) = \{ \sigma \mid [[c]]\sigma \subseteq Q \}$.
-    
-- **Total Correctness ($wp$):** $wp(c, Q) = \{ \sigma \mid [[c]]\sigma \neq \emptyset \land [[c]]\sigma \subseteq Q \}$.
-    
-
-The condition $[[c]]\sigma \neq \emptyset$ explicitly forces the existence of a final state, thereby ensuring termination.
-
-
+NC Logic is extremely useful in **security analysis and debugging**. If $Q$ represents an exploitation state (e.g., a buffer overflow or unauthorized access), computing $\langle P \rangle \ c \ \langle Q \rangle$ gives us $P$: the conditions that an attacker *must* satisfy to trigger the exploit. If $P$ evaluates to `false`, the bug is unreachable.
 
 <div style="page-break-after: always;"></div>
 
-# 05. Incorrectness Logic
+# 06. Incorrectness Logic
 
 This chapter introduces **Incorrectness Logic (IL)**, a formal system designed for **bug-finding** and proving the **presence of errors** rather than their absence. Unlike Hoare Logic, which uses over-approximation to prove correctness, IL uses **under-approximation** to ensure that every reported bug is a real one (No False Positives).
 
@@ -580,6 +634,60 @@ $$[P] \ c \ [\epsilon : Q]$$
 
 IL is the foundation for modern "bug-hunting" tools (like **Facebook Infer** or **Meta Zoncolan**). These tools prioritize reporting "True Positives" to avoid "alarm fatigue" among developers.
 
+
+<div style="page-break-after: always;"></div>
+
+# 04. Sufficient Incorrectness Logic
+
+This chapter introduces **Sufficient Incorrectness Logic (SIL)**. While standard Incorrectness Logic (IL) uses forward under-approximation, SIL uses **backward under-approximation**. It is designed to find conditions that are strictly **sufficient** to trigger a specific state or bug.
+
+----
+
+## 1. The Core Concept: Backward Under-Approximation
+
+SIL is the backward counterpart to Incorrectness Logic. It answers the question: "What starting conditions are *sufficient* to guarantee that a path to $Q$ exists?".
+
+### 1.1 Semantic Definition
+We denote a SIL triple using floor brackets (or sometimes a variant of standard brackets depending on the literature convention):
+$$\lfloor P \rfloor \ c \ \lfloor Q \rfloor$$
+
+This triple is valid if and only if:
+$$P \subseteq [[c]]_{op} Q$$
+
+**Meaning:** Every state in $P$ has at least one valid execution path through $c$ that terminates in $Q$. Therefore, satisfying $P$ is *sufficient* to reach $Q$. 
+
+### 1.2 Symmetry of the Four Logics
+To see the complete picture of Program Analysis logics:
+1.  **Hoare Logic (HL):** $[[c]]P \subseteq Q$ (Forward Over) - *Absence of bugs.*
+2.  **Incorrectness Logic (IL):** $Q \subseteq [[c]]P$ (Forward Under) - *Presence of bugs from P.*
+3.  **Necessary Condition (NC):** $[[c]]_{op}Q \subseteq P$ (Backward Over) - *Required conditions to reach Q.*
+4.  **Sufficient Incorrectness (SIL):** $P \subseteq [[c]]_{op}Q$ (Backward Under) - *Sufficient conditions to reach Q.*
+
+----
+
+## 2. Inference Rules for SIL
+
+The rules for SIL mirror those of IL but operate in reverse, propagating the post-condition $Q$ backwards to find a sufficient pre-condition $P$.
+
+### 2.1 Basic Rules
+* **Skip:** $$\frac{}{\lfloor P \rfloor \ \mathtt{skip} \ \lfloor P \rfloor}$$
+* **Assignment:** Since $Q[e/x]$ is the exact set of pre-states, any subset $P$ is a sufficient condition.
+    $$\frac{}{\lfloor Q[e/x] \rfloor \ x := e \ \lfloor Q \rfloor}$$
+
+### 2.2 Structural Rules
+* **Sequence:** $$\frac{\lfloor P \rfloor \ c_1 \ \lfloor R \rfloor \quad \lfloor R \rfloor \ c_2 \ \lfloor Q \rfloor}{\lfloor P \rfloor \ c_1; c_2 \ \lfloor Q \rfloor}$$
+* **Choice (Non-determinism):** Unlike NC Logic which unions preconditions, in SIL, if $P_1$ is sufficient to reach $Q$ through $c_1$, then $P_1$ is already sufficient for the entire choice construct.
+    $$\frac{\lfloor P_1 \rfloor \ c_1 \ \lfloor Q \rfloor}{\lfloor P_1 \rfloor \ c_1 + c_2 \ \lfloor Q \rfloor} \quad \text{or} \quad \frac{\lfloor P_2 \rfloor \ c_2 \ \lfloor Q \rfloor}{\lfloor P_2 \rfloor \ c_1 + c_2 \ \lfloor Q \rfloor}$$
+
+### 2.3 Rule of Consequence
+Since SIL tracks an under-approximation ($P$ is a subset of the actual pre-states), we can safely **strengthen the precondition** (make it smaller) or **weaken the postcondition** (make it larger).
+$$\frac{P' \implies P \quad \lfloor P \rfloor \ c \ \lfloor Q \rfloor \quad Q \implies Q'}{\lfloor P' \rfloor \ c \ \lfloor Q' \rfloor}$$
+
+----
+
+## 3. Applications
+
+SIL is the ultimate tool for **automated exploit generation and test-case generation**. If $Q$ is an assertion failure or a crash, finding a valid SIL triple $\lfloor P \rfloor \ c \ \lfloor Q \rfloor$ means that *any* state satisfying $P$ will definitively trigger the bug. You can plug the constraints of $P$ into an SMT solver (like Z3) to generate a concrete test case that is mathematically guaranteed to crash the program.
 
 <div style="page-break-after: always;"></div>
 
