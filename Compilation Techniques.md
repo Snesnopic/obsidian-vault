@@ -845,57 +845,114 @@ The GOTO table determines the next state after a reduction.
 
 <div style="page-break-after: always;"></div>
 
-# 10. Laboratory (Control-Flow Graph)
+# 99. Laboratory
+This document serves as the comprehensive guide for the Compilation Techniques laboratory project. The objective is to build a compiler that includes evaluation, static analysis, optimization, and code generation targeting LLVM IR. 
 
-This section covers the construction of the Control-Flow Graph (CFG) for the MiniImp language, which is a prerequisite for static analysis and compilation.
-
-----
-
-## 1. CFG Definition
-
-A Control-Flow Graph is a directed graph where:
-* **Nodes** are basic blocks, which consist of sequences of simple statements.
-* **Edges** represent the possible control-flow paths between these basic blocks.
-
-Building the CFG is a fundamental intermediate step required for performing Static Analysis (such as Data Flow Analysis) and for the final Compilation phase.
+The project is divided into two distinct languages:
+1. **MiniImp:** A minimal imperative language focusing on control flow, data flow analysis, and optimization.
+2. **MiniFun:** A minimal functional language focusing on environments, closures, and a polymorphic type system.
 
 ----
 
-## 2. Generating the CFG for MiniImp
+## Project Submission and Requirements
 
-The generation of the CFG depends on the specific command structures of the MiniImp language.
+The final submission requires two main components:
+1. **Codebase:** The project code must be clean, commented, and packed into a single zip file following a specific naming convention. You can use multiple modules or files, but they must be provided together.
+2. **Report & Execution Instructions:** A document containing your design ideas and clear execution instructions. If the program cannot be executed or tested by the instructor, it will not be debugged for you. Ensure edge cases (e.g., merging multiple basic blocks) are handled and documented.
 
-### 2.1 Simple Commands
-For simple commands like assignments (`x := e`) or `skip`, the generation is straightforward. They form a single basic block with an entry point and an exit point.
+----
+## Fragment 1: Language Semantics
 
-### 2.2 Sequence (`c1; c2`)
-When dealing with a sequence of commands:
-* Generate the graph for `c1`.
-* Generate the graph for `c2`.
-* Connect the final node(s) of `c1` to the initial node of `c2`.
+The first milestone requires implementing the operational semantics for both languages. Each language is defined by its syntax (grammar) and semantics (meaning, via deduction systems).
 
-### 2.3 Conditional (`if b then c1 else c2`)
-For an `if-then-else` statement:
-* Create a node for the evaluation of the boolean condition `b?`.
-* The `true` branch connects to the initial node of `c1`'s graph.
-* The `false` branch connects to the initial node of `c2`'s graph.
-* The final nodes of both `c1` and `c2` graphs merge into a common `skip` node to unify the control flow.
+### MiniImp Semantics
+MiniImp operates by reading and updating a memory $\sigma$, which is a partial function mapping locations (variables) to values (integers).
+* **Deadlocks:** A program fails if it reaches an erroneous state where the semantics are undefined. In MiniImp, this happens specifically when a variable is undefined (e.g., trying to read `y` when it has no value in $\sigma$).
+* **Non-termination:** The `while` loop construct can cause non-termination, resulting in an infinite derivation tree.
 
-### 2.4 Looping (`while b do c`)
-For a `while` loop:
-* Create a node for the boolean condition `b?`.
-* The `true` branch points to the initial node of the loop body `c`.
-* The final node of `c` loops back to the condition node `b?`.
-* The `false` branch exits the loop and connects to a `skip` node.
+### MiniFun Semantics
+MiniFun requires managing lexical scopes and function evaluations.
+* **Closures:** When a function is evaluated, the semantics must capture the environment at that exact time.
+    * Standard function `fun x => t` produces a closure `(x, t, \rho)`.
+    * Recursive function `letfun f x = t` produces a closure that also stores its own name: `(f, x, t, \rho)`.
 
 ----
 
-## 3. Program Level CFG
+## Fragment 4: Type System (Algorithm W)
 
-In MiniImp, programs do not feature procedures. A program is structured as:
-`def main with input x output y as c`
-Because there are no procedure calls to handle, the CFG of the entire program is simply the CFG of the main command `c`.
+*Note: Completing this fragment is not mandatory to pass the exam, but it is required to achieve the maximum grade.*
 
+This fragment implements static analysis for MiniFun to prove properties without execution, avoiding runtime errors such as adding a boolean to an integer. It relies on propagating constraining information through the syntax tree.
+
+### Implementation Requirements
+1. Define data structures for **monotypes**, **polytypes**, and **substitutions**.
+2. Implement the core type-inference functions: `inst`, `gener`, and `unify`.
+3. Write a `typechecking` function for MiniFun.
+
+### Algorithm W: `if-then-else` (ITE) Step-by-Step
+The order of operations during type checking strictly matters. For an ITE construct:
+1. Check the first argument (condition).
+2. Update the context with the substitution and check the second argument (then branch).
+3. Update the context with the resulting substitution and check the third argument (else branch).
+4. Unify the first argument's type with `bool`.
+5. Unify the types of the second and third arguments.
+
+----
+
+## Fragment 5: Control-Flow Graph (CFG)
+
+*Prerequisite: Fragment 1.*
+
+This fragment involves building the Control-Flow Graph for MiniImp, a crucial intermediate step for Data Flow Analysis and Compilation.
+
+### CFG Structure
+* **Nodes:** Basic blocks (sequences of simple, straight-line statements).
+* **Edges:** Possible control-flow paths between the basic blocks.
+* **Program Level:** Since MiniImp lacks procedures, the CFG of the entire program is simply the CFG of the main command block `c`.
+
+### Translation Rules
+* **Simple Commands:** Assignments (`x := e`) or `skip` generate a graph with a single node, one entry, and one exit.
+* **Sequence (`c1; c2`):** Generate graphs for `c1` and `c2`. Connect the final node(s) of `c1` to the initial node of `c2`.
+* **Conditional (`if b then c1 else c2`):**
+    * Create a node for `b?`.
+    * True edge goes to the start of `c1`. False edge goes to the start of `c2`.
+    * Both branches merge into a common `skip` node at the end to unify the control flow.
+* **Looping (`while b do c`):**
+    * Create a node for `b?`.
+    * True edge goes to the start of the loop body `c`.
+    * The end of `c` loops back to `b?`.
+    * False edge connects to a `skip` node representing the loop exit.
+
+```cpp
+// pseudocode for cfg generation of a sequence
+function generate_sequence_cfg(cmd1, cmd2):
+    cfg1 = generate_cfg(cmd1)
+    cfg2 = generate_cfg(cmd2)
+    
+    // link the exit points of the first block to the entry of the second
+    for each exit_node in cfg1.exit_nodes:
+        add_edge(exit_node, cfg2.entry_node)
+        
+    return build_graph(cfg1.entry_node, cfg2.exit_nodes)
+````
+
+----
+
+## Post-CFG Analysis and Optimization
+
+After constructing the CFG for MiniImp, the project requires implementing Data Flow Analysis.
+
+These analysis techniques form the theoretical background necessary to perform compiler optimizations on the imperative language before code generation.
+
+----
+
+## Final Compilation Step: LLVM IR
+
+The culmination of the MiniImp project is compiling the imperative language down to the LLVM Intermediate Representation (LLVM IR).
+
+- **LLVM Infrastructure:** LLVM is a language-agnostic framework. By compiling MiniImp to LLVM IR, you leverage its back-end infrastructure to handle machine-code generation and further optimizations automatically.
+    
+- **Implementation Options:** You can interface with LLVM by using its C++ APIs, using bindings available for other programming languages, or simply by writing a generator that outputs a raw text file containing the LLVM IR instructions.
 
 <div style="page-break-after: always;"></div>
 
