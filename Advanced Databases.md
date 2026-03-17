@@ -492,11 +492,29 @@ This chapter explores the Query Optimizer, the component responsible for transla
 
 ----
 
-## 2. Relational Algebra Equivalences
+## 2. Physical Plan Generation and Search Space
+
+When translating a multi-join logical query into a physical plan, the optimizer faces an exponentially large search space. For $n$ joined relations, it must choose the permutation (order of evaluation), the associativity (tree shape), and the specific physical algorithm (e.g., Nested Loop, Merge Join, Hash Join) for each individual join, resulting in $3^n$ physical combinations just for the operators.
+
+### 2.1 The System Catalog and Statistics
+To evaluate and compare the costs of these millions of potential plans, the optimizer relies on the **System Catalog**, a meta-database containing statistical metadata about the tables. 
+* It stores the number of pages, number of distinct keys, min/max values, and detailed **histograms** to precisely estimate Selectivity Factors. 
+* DBAs manually trigger the `UPDATE STATISTICS` command to realign this catalog when data distributions change over time.
+
+### 2.2 Search Algorithms and Heuristics
+To navigate the immense search space without taking too much time, optimizers employ different strategies:
+* **Complete Algorithms:** They use dynamic programming or branch-and-bound techniques, starting with single-relation access plans and incrementally expanding the cheapest ones. They backtrack if an expanded plan becomes more expensive than a previously explored branch, guaranteeing the discovery of the absolute fastest plan.
+* **Left-Deep Trees Heuristic:** To drastically prune the search space, the optimizer may restrict the tree shape to "Left-Deep Trees", a linear structure where the right-hand operand of every join must be a base table. This limits complexity and maximizes the continuous use of `IndexNestedLoop` operators.
+* **Greedy Search:** The optimizer picks the cheapest local option at every step and expands it downward without ever backtracking.
+* **Timeouts and Local Manipulations:** For extremely complex queries, the system rapidly generates a sub-optimal plan using heuristics, then applies random or localized structural manipulations to improve it until a strict timeout (e.g., 0.5 seconds) is reached, ensuring the user does not wait indefinitely for the optimization phase itself.
+
+----
+
+## 3. Relational Algebra Equivalences
 
 The Query Transformation phase relies heavily on equivalence rules to optimize the logical plan. The most crucial heuristic is to **push down selections and projections** as close to the leaves of the tree as possible to reduce the size of intermediate results. 
 
-### 2.1 Selection Rules
+### 3.1 Selection Rules
 * **Cascading of selections:** $$\sigma_{\psi_X}(\sigma_{\psi_Y}(E)) \equiv \sigma_{\psi_X \wedge \psi_Y}(E)$$
 * **Commutativity of selection and projection:**
   $$\pi_{Y}(\sigma_{\psi_X}(E)) \equiv \sigma_{\psi_X}(\pi_{Y}(E)) \quad \text{if } X \subseteq Y$$
@@ -508,22 +526,32 @@ The Query Transformation phase relies heavily on equivalence rules to optimize t
   If $\psi_X$ involves attributes of $E_1$ and $\psi_Y$ involves attributes of $E_2$:
   $$\sigma_{\psi_X \wedge \psi_Y}(E_1 \bowtie E_2) \equiv \sigma_{\psi_X}(E_1) \bowtie \sigma_{\psi_Y}(E_2)$$
 
-### 2.2 Subquery Unnesting and the "Count Bug"
+### 3.2 Pushing Selections through Group-By (HAVING to WHERE)
+A specialized selection rule involves the `HAVING` clause ($\sigma$ operating after a $\gamma$). 
+* If a condition in the `HAVING` clause references *only* grouping dimensions (e.g., `HAVING Year > 2000`), the optimizer commutes the selection, pushing it below the `GROUP BY` into the `WHERE` clause.
+* While human programmers naturally write dimension filters in the `WHERE` clause, this algebraic equivalence is crucial for optimizing machine-generated queries created by graphical Business Intelligence (BI) tools, which often blindly place all conditions in the `HAVING` block.
+
+### 3.3 Subquery Unnesting and the "Count Bug"
 Optimizers attempt to flatten nested subqueries (like `EXISTS`) into standard joins to avoid re-executing the inner query iteratively (nested loops) for every outer tuple.
 * Flattening an `EXISTS` subquery usually requires adding a `DISTINCT` clause to avoid duplicating rows from the outer query if multiple matches exist.
 * **The "Count Bug":** A critical edge case occurs when the subquery contains a trivial (implicit) `GROUP BY` with the condition `COUNT(*) = 0`, or equivalently, a `NOT EXISTS` clause. Unlike other aggregate functions, `COUNT(*)` applied to an empty set returns a row with the value zero rather than an empty result.
 * Transforming `COUNT(*) = 0` using a standard `INNER JOIN` is semantically incorrect because it completely eliminates the unmatched rows from the result. To correctly unnest this pattern, the optimizer must use a `LEFT OUTER JOIN` and subsequently filter for `NULL` values to track the entities with zero associations.
 
-### 2.3 View Merging and Join Pushing
+### 3.4 View Merging and Join Pushing
 When querying a view, the optimizer tries to merge the view's logical plan with the outer query's plan to create a single, standard SQL plan where all joins are performed before grouping operations. 
 A structural challenge arises if the view contains a `GROUP BY` ($\gamma$) and the outer query performs a `JOIN` ($\bowtie$), resulting in an inverted plan where the join sits on top of the grouping operator.
 * **Join Pushing:** The optimizer can push the `JOIN` below the `GROUP BY` if and only if the join is "unary" (non-multiplicative).
 * This rule strictly requires the join condition to equate a Foreign Key in the grouped data to the Primary Key of the joined table. Since the relation is on a primary key, each grouped row is multiplied by at most one, leaving the cardinality and the results of aggregate functions (like `SUM` or `COUNT`) uncorrupted.
 * **Dimension Expansion:** When the join is pushed, the new `GROUP BY` must expand its dimensions to include all attributes of the joined table. 
 
+### 3.5 Pre-Grouping (Pushing Group-By through Join)
+While logical optimization usually pushes joins down (View Merging), the optimizer might evaluate the exact opposite transformation during physical plan generation if it determines that joining large tables is too expensive.
+* **The Concept:** Pre-grouping moves the `GROUP BY` operator *below* the `JOIN` to drastically reduce the number of records before the join is computed. 
+* **Conditions:** Similar to View Merging, this is only valid if the table being extracted from the group-by is functionally determined by the grouping dimensions (i.e., the grouping attributes contain the foreign key linking to that table). Furthermore, all aggregate functions in the `SELECT` clause must operate exclusively on the table being pre-grouped, not on the table being pulled out of the grouping phase.
+
 ----
 
-## 3. Functional Dependencies
+## 4. Functional Dependencies
 
 During query optimization, the DBMS utilizes semantic constraints, specifically Functional Dependencies (FDs), to eliminate redundant operations (like useless `DISTINCT` or `GROUP BY` clauses) and simplify conditions.
 
@@ -532,18 +560,18 @@ During query optimization, the DBMS utilizes semantic constraints, specifically 
 
 A special case is $\emptyset \rightarrow Y$, meaning the value of $Y$ is the same for every tuple in the relation.
 
-### 3.1 Evaluating Redundancy with FDs
+### 4.1 Evaluating Redundancy with FDs
 Functional Dependencies are fundamental for proving structural equivalences and removing redundancies:
 * **DISTINCT and GROUP BY Elimination:** Transforming a query from a standard `SELECT` to an equivalent logical plan with `SELECT DISTINCT` requires the optimizer to check for potential row duplication (e.g., a teacher teaching multiple courses appearing multiple times in a join). By analyzing the keys and FDs, the optimizer can verify if the result is already guaranteed to be unique. If uniqueness is proven without the operator, the expensive duplicate elimination or grouping steps are completely removed from the execution plan.
 * **Preserving Group Cardinality in Join Pushing:** As seen in View Merging, pushing a join below a `GROUP BY` requires expanding the grouping dimensions to include all attributes of the joined table. FDs mathematically prove why this expansion does not shrink the groups: because the join is performed on a Primary Key, all newly added attributes are functionally determined by the Foreign Key (which was already present in the original grouping dimensions). Therefore, the total number of distinct groups remains perfectly identical.
 
-### 3.2 Logical Implication & Armstrong's Axioms
+### 4.2 Logical Implication & Armstrong's Axioms
 Given a set $F$ of FDs, we can derive other dependencies that logically hold. $F \vdash X \rightarrow Y$ if it can be derived using Armstrong's axioms: 
 1. **Reflexivity:** If $Y \subseteq X$, then $X \rightarrow Y$.
 2. **Augmentation:** If $X \rightarrow Y$ and $Z \subseteq T$, then $XZ \rightarrow YZ$.
 3. **Transitivity:** If $X \rightarrow Y$ and $Y \rightarrow Z$, then $X \rightarrow Z$.
 
-### 3.3 Closure of an Attribute Set ($X^+$)
+### 4.3 Closure of an Attribute Set ($X^+$)
 Instead of repeatedly applying Armstrong's axioms, it is computationally simpler to compute the **closure** of an attribute set $X$ with respect to $F$, denoted as $X^+$.
 
 > **Theorem:** $F \vdash X \rightarrow Y \iff Y \subseteq X^+$.
@@ -553,6 +581,7 @@ Instead of repeatedly applying Armstrong's axioms, it is computationally simpler
 3. Repeat until $X^+$ stops changing:
    * Add to $X^+$ all attributes $A_j$ such that the predicate $A_j = A_k$ is a conjunct of $\sigma$ and $A_k \in X^+$.
    * Add to $X^+$ all attributes of a table if $X^+$ contains a key for that table.
+
 
 <div style="page-break-after: always;"></div>
 
