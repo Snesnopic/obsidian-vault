@@ -637,7 +637,7 @@ IL is the foundation for modern "bug-hunting" tools (like **Facebook Infer** or 
 
 <div style="page-break-after: always;"></div>
 
-# 04. Sufficient Incorrectness Logic
+# 07. Sufficient Incorrectness Logic
 
 This chapter introduces **Sufficient Incorrectness Logic (SIL)**. While standard Incorrectness Logic (IL) uses forward under-approximation, SIL uses **backward under-approximation**. It is designed to find conditions that are strictly **sufficient** to trigger a specific state or bug.
 
