@@ -528,8 +528,8 @@ The Query Transformation phase relies heavily on equivalence rules to optimize t
 
 ### 3.2 Pushing Selections through Group-By (HAVING to WHERE)
 A specialized selection rule involves the `HAVING` clause ($\sigma$ operating after a $\gamma$). 
-* If a condition in the `HAVING` clause references *only* grouping dimensions (e.g., `HAVING Year > 2000`), the optimizer commutes the selection, pushing it below the `GROUP BY` into the `WHERE` clause.
-* While human programmers naturally write dimension filters in the `WHERE` clause, this algebraic equivalence is crucial for optimizing machine-generated queries created by graphical Business Intelligence (BI) tools, which often blindly place all conditions in the `HAVING` block.
+* **Dimension Filters:** If a condition in the `HAVING` clause references *only* grouping dimensions (e.g., `HAVING Year > 2000`), the optimizer commutes the selection, pushing it below the `GROUP BY` into the `WHERE` clause. While human programmers naturally write dimension filters in the `WHERE` clause, this algebraic equivalence is crucial for optimizing machine-generated queries created by graphical Business Intelligence (BI) tools.
+* **Existential Quantification via Aggregate Functions:** Generally, conditions on aggregate functions cannot be pushed down. However, a major exception exists for existential checks using `MAX` or `MIN`. If a query filters groups with `HAVING MAX(A) > c` (and computes no other conflicting aggregate functions), it is logically checking if *at least one* record has `A > c`. The optimizer can safely push this filter down as a `WHERE A > c` condition *before* the `GROUP BY`, discarding irrelevant records early and drastically reducing the data to be grouped.
 
 ### 3.3 Subquery Unnesting and the "Count Bug"
 Optimizers attempt to flatten nested subqueries (like `EXISTS`) into standard joins to avoid re-executing the inner query iteratively (nested loops) for every outer tuple.
@@ -538,10 +538,9 @@ Optimizers attempt to flatten nested subqueries (like `EXISTS`) into standard jo
 * Transforming `COUNT(*) = 0` using a standard `INNER JOIN` is semantically incorrect because it completely eliminates the unmatched rows from the result. To correctly unnest this pattern, the optimizer must use a `LEFT OUTER JOIN` and subsequently filter for `NULL` values to track the entities with zero associations.
 
 ### 3.4 View Merging and Join Pushing
-When querying a view, the optimizer tries to merge the view's logical plan with the outer query's plan to create a single, standard SQL plan where all joins are performed before grouping operations. 
-A structural challenge arises if the view contains a `GROUP BY` ($\gamma$) and the outer query performs a `JOIN` ($\bowtie$), resulting in an inverted plan where the join sits on top of the grouping operator.
-* **Join Pushing:** The optimizer can push the `JOIN` below the `GROUP BY` if and only if the join is "unary" (non-multiplicative).
-* This rule strictly requires the join condition to equate a Foreign Key in the grouped data to the Primary Key of the joined table. Since the relation is on a primary key, each grouped row is multiplied by at most one, leaving the cardinality and the results of aggregate functions (like `SUM` or `COUNT`) uncorrupted.
+When querying a view, the optimizer tries to merge the view's logical plan with the outer query's plan to create a single, standard SQL plan where all joins are performed before grouping operations.
+* A structural challenge arises if the view contains a `GROUP BY` ($\gamma$) and the outer query performs a `JOIN` ($\bowtie$), resulting in an inverted plan where the join sits on top of the grouping operator.
+* **Join Pushing:** The optimizer can push the `JOIN` below the `GROUP BY` if and only if the join is "unary" (non-multiplicative). This rule strictly requires the join condition to equate a Foreign Key in the grouped data to the Primary Key of the joined table. Since the relation is on a primary key, each grouped row is multiplied by at most one, leaving the cardinality and the results of aggregate functions (like `SUM` or `COUNT`) uncorrupted.
 * **Dimension Expansion:** When the join is pushed, the new `GROUP BY` must expand its dimensions to include all attributes of the joined table. 
 
 ### 3.5 Pre-Grouping (Pushing Group-By through Join)
@@ -582,7 +581,6 @@ Instead of repeatedly applying Armstrong's axioms, it is computationally simpler
    * Add to $X^+$ all attributes $A_j$ such that the predicate $A_j = A_k$ is a conjunct of $\sigma$ and $A_k \in X^+$.
    * Add to $X^+$ all attributes of a table if $X^+$ contains a key for that table.
 
-
 <div style="page-break-after: always;"></div>
 
 # 06. Transaction Management & Recovery
@@ -591,14 +589,15 @@ This chapter covers how the DBMS guarantees the Atomicity and Durability propert
 
 ----
 
-## 1. Types of Failures
+## 1. ACID Properties and Failures
 
-The Recovery Manager must handle two primary categories of failures:
+The Recovery Manager is responsible for handling database failures, focusing on two inherently asymmetric properties:
+* **Atomicity:** Pertains to failures *before* a transaction commits. It guarantees that if a transaction aborts or crashes mid-execution, none of its partial updates remain in the database (rollback).
+* **Durability:** Pertains to failures *after* a transaction commits. It guarantees that once the system confirms a commit, all updates survive any subsequent crashes.
 
-1. **System Failures:** Crashes caused by software bugs, OS panics, or power outages. The contents of the main memory (Buffer Pool) are lost, but the permanent memory (disk) remains intact.
-    
+### 1.1 Types of Failures
+1. **System Failures:** Crashes caused by software bugs, OS panics, or power outages. The contents of the volatile main memory (Buffer Pool) are lost, but the permanent memory (disk) remains intact.
 2. **Media Failures (Disasters):** Physical damage to the storage devices (e.g., disk head crash). These require restoring the database from a remote backup or an archive and applying the log.
-    
 
 ----
 
@@ -607,22 +606,15 @@ The Recovery Manager must handle two primary categories of failures:
 To recover from system failures, the DBMS maintains a **Log File** in permanent memory. The log is an append-only sequential file containing the history of all operations.
 
 ### 2.1 Log Records
-
 Each update operation generates a log record containing:
-
-- **Transaction ID ($T_{id}$)**
-    
-- **Target Variable / Page ID**
-    
-- **Before Image (BI):** The old value of the data, used for UNDO.
-    
-- **After Image (AI):** The new value of the data, used for REDO. Format: `(W, Trid, Variable, Old value, New value)`.
-    
+* **Transaction ID ($T_{id}$)**
+* **Target Variable / Page ID**
+* **Before Image (BI):** The old value of the data, used for UNDO.
+* **After Image (AI):** The new value of the data, used for REDO.
+Format: `(W, Trid, Variable, Old value, New value)`.
 
 ### 2.2 Write-Ahead Logging (WAL)
-
 To ensure that recovery is always possible, the Buffer Manager strictly adheres to the **Write-Ahead Logging (WAL)** protocol:
-
 > **WAL Rule:** Before a modified page $P$ (with `dirty == true`) can be flushed from the volatile Buffer Pool to the permanent disk, all log records related to the updates on $P$ must be forced to the permanent log file.
 
 ----
@@ -630,33 +622,35 @@ To ensure that recovery is always possible, the Buffer Manager strictly adheres 
 ## 3. Undo and Redo Operations
 
 Recovery algorithms rely on two fundamental operations applied to the log records:
+* **Undo:** Reverts the effects of an uncommitted (or aborted) transaction. It uses the Before Image (BI) and must be performed scanning the log **backwards**.
+* **Redo:** Re-applies the effects of a committed transaction that might not have been flushed to disk before the crash. It uses the After Image (AI) and must be performed scanning the log **forwards**.
 
-- **Undo:** Reverts the effects of an uncommitted (or aborted) transaction. It uses the Before Image (BI) and must be performed scanning the log **backwards**.
-    
-- **Redo:** Re-applies the effects of a committed transaction that might not have been flushed to disk before the crash. It uses the After Image (AI) and must be performed scanning the log **forwards**.
-    
+### 3.1 Idempotence
+A mathematical necessity for recovery operations is **idempotence**. Writing a Before Image (for Undo) or an After Image (for Redo) multiple times yields the exact same physical result as writing it once. This guarantees that if the DBMS experiences another system crash *during* the restart/recovery phase, the recovery process can simply be launched again from the beginning without corrupting the data.
 
 ----
 
 ## 4. Checkpointing
 
-Scanning the entire log from the beginning during recovery is extremely inefficient. A **Checkpoint (CKP)** operation periodically writes a special record to the log to bound the recovery time.
+Scanning the entire log from the beginning during recovery is extremely inefficient. A **Checkpoint** operation periodically bounds the recovery time by guaranteeing that older updates are physically present on the disk.
 
-The checkpoint record contains a list of all transactions that are currently active at the moment the checkpoint is taken: `(b-ckp, ActiveTransactionList)`.
+### 4.1 Non-stop (Fuzzy) Checkpoint
+To avoid freezing the entire database during a checkpoint, modern systems use an asynchronous "non-stop" algorithm:
+1. The system writes a `begin checkpoint` record to the log, listing all transactions active at that exact moment.
+2. A background thread begins sequentially flushing all currently dirty pages from the buffer to the disk. Meanwhile, regular transactions continue executing and modifying the buffer independently.
+3. Once the thread finishes writing the specific batch of dirty pages, the system writes an `end checkpoint` record to the log.
+* **Guarantee:** If the restart algorithm finds an `end checkpoint`, it knows for absolute certainty that any write operation performed *before* the matching `begin checkpoint` is permanently on disk. If the system crashes before writing the `end checkpoint`, the pending checkpoint is simply ignored.
 
 ----
 
 ## 5. The Restart Algorithm
 
-When the system reboots after a failure, the Recovery Manager executes a Restart procedure. The standard algorithm (e.g., ARIES-based logic ) operates in passes.
+When the system reboots after a failure, the Recovery Manager executes a Restart procedure. The standard algorithm (e.g., ARIES-based logic) operates in passes.
 
 ### 5.1 Backward Pass (Rollback / Undo)
+The system scans the log backwards starting from the end, until it finds the last valid `begin checkpoint` and all active transactions at the time of the crash are completely undone.
 
-The system scans the log backwards starting from the end, until it finds the last checkpoint and all active transactions at the time of the crash are completely undone.
-
-Plaintext
-
-```
+```text
 ckp = false;
 toUndo = {};
 toRedo = {};
@@ -680,12 +674,9 @@ for backward r in log until (ckp and empty(toUndo)) {
 ```
 
 ### 5.2 Forward Pass (RollForward / Redo)
-
 Once the backward pass determines the exact sets of transactions to undo and redo, the system scans the log forwards starting from the last `b-ckp` record to reapply the updates of the committed transactions.
 
-Plaintext
-
-```
+```text
 rollForward(toRedo):
 for r in log starting from last begin-ckp until empty(toRedo) {
     if (r == (commit, T)) {
@@ -697,7 +688,9 @@ for r in log starting from last begin-ckp until empty(toRedo) {
 }
 ```
 
-By the end of this process, the database is restored to a consistent state, reflecting all committed transactions and erasing all traces of uncommitted ones.
+### 5.3 Buffer-Centric Execution
+It is crucial to note that the entire Undo and Redo execution during the Restart algorithm takes place strictly **inside the volatile Buffer Pool**. The recovery process restores the coherent state in the RAM, not forcing immediate writes to the disk. The physical disk itself only contains an outdated "photograph"; the true, up-to-date state of the database is continuously represented by the combination of the persistent log and the active buffer.
+
 
 <div style="page-break-after: always;"></div>
 
