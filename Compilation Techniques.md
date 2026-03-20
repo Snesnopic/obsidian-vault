@@ -993,6 +993,62 @@ This analysis computes the specific assignments (definitions) that can affect a 
 
 <div style="page-break-after: always;"></div>
 
+# 12. Syntax-Directed Translation & IR Generation
+
+This section explores the transition from the theoretical framework of Attribute Grammars to the practical, ad-hoc techniques used in modern compilers to perform semantic analysis and generate Intermediate Representations (IR) directly during the parsing phase.
+
+----
+
+## 1. The Realist's Alternative: Ad-hoc SDT
+
+While Attribute Grammars (AGs) provide a clean, functional specification for semantics, they struggle with non-local information.
+* **The Copy Rule Problem:** Passing non-local information (like a symbol table or a global cost counter) requires an excessive number of "copy rules" to move data up and down the tree.
+* **Tree Construction:** Pure AGs generally require the compiler to fully build the parse tree to evaluate the attributes.
+
+To solve these problems, compilers drop the strict functional approach and use **Ad-hoc Syntax-Directed Translation (SDT)**. 
+* SDT associates a snippet of code (an action) with each production.
+* These actions can read or write from a central repository (global tables or variables), granting easy access to non-local information.
+* In a bottom-up parser, the corresponding snippet of code runs immediately when a reduction occurs.
+
+----
+
+## 2. Generating Intermediate Representations
+
+During SDT, the semantic actions are typically responsible for translating the source code into an Intermediate Representation. IRs generally fall into three major categories: Structural, Linear, and Hybrid.
+
+### 2.1 Structural IR: Abstract Syntax Tree (AST)
+An AST retains the essential structure of the parse tree but eliminates the non-terminal nodes. It is graphically oriented and heavily used in source-to-source translators.
+To build an AST bottom-up, the semantic actions invoke node constructors:
+* For a production like `Expr -> Expr + Term`, the action would be `$$ = MakeAddNode($1, $3);`.
+* The pointers to these constructed nodes are passed up the parse tree as synthesized attributes.
+
+### 2.2 Linear IR: Three-Address Code (ILOC)
+Linear code consists of a sequence of instructions that execute in their order of appearance, acting as pseudo-code for an abstract machine. 
+To generate linear code (like ILOC) bottom-up, the actions allocate temporary registers and emit instructions sequentially:
+* For a production like `Expr -> Expr + Term`, the action creates a new destination register (`$$= NextRegister();`) and emits the code (`Emit(add, $1, $3,$$);`).
+
+----
+
+## 3. Augmenting the LR(1) Parser
+
+To execute these ad-hoc code snippets and pass attributes around without explicitly building a parse tree, the standard LR(1) skeleton parser must be modified to stash attributes directly on the parsing stack.
+
+### 3.1 The 3-Item Stack
+Instead of pushing just two items (the state and the grammar symbol), the augmented parser pushes **three items** for each recognized symbol:
+1. The token/symbol.
+2. The parser state.
+3. The attribute value associated with that symbol (often denoted as `$$` for the left-hand side, and `$1, $2, ...` for the right-hand side symbols).
+
+### 3.2 The Augmented Reduction Phase
+When the parser decides to reduce using a production $A \to \beta$:
+1. It pops $3 \times |\beta|$ items from the stack (removing the right-hand side symbols, their states, and their attributes).
+2. It executes a giant `case` (or `switch`) statement based on the production number. Each case holds the code snippet for that specific production, computing the new attribute value `$$`.
+3. It pushes the new left-hand side symbol $A$, the newly computed attribute `$$`, and the new state (determined by `GOTO[current_state, A]`) back onto the stack.
+
+This mechanism allows the compiler to seamlessly interleave syntax verification, semantic checking, and IR generation in a single, highly efficient pass.
+
+<div style="page-break-after: always;"></div>
+
 # 99. Laboratory
 This document serves as the comprehensive guide for the Compilation Techniques laboratory project. The objective is to build a compiler that includes evaluation, static analysis, optimization, and code generation targeting LLVM IR. 
 

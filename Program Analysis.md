@@ -691,3 +691,225 @@ SIL is the ultimate tool for **automated exploit generation and test-case genera
 
 <div style="page-break-after: always;"></div>
 
+# 08. Separation Logic
+
+This chapter introduces **Separation Logic (SL)**, an extension of Hoare Logic designed to facilitate reasoning about programs that mutate shared data structures and pointers. It solves the **aliasing problem** that makes standard Hoare Logic cumbersome when dealing with the heap.
+
+----
+
+## 1. The Aliasing Problem and Local Reasoning
+
+In standard Hoare Logic, assigning to a pointer (e.g., `*x = 10`) can inadvertently change the value of other variables if they alias the same memory location (e.g., if `x` and `y` point to the same address). 
+
+Separation Logic introduces **local reasoning**: specifications and proofs can focus *only* on the portion of memory actually used by a command (its footprint). The **Frame Rule** then allows extending this local proof to a broader, global state without worrying about hidden side-effects.
+
+----
+
+## 2. Memory Model: Store and Heap
+
+The state in SL is split into two distinct components:
+* **Store (Stack) $s : \text{Var} \to \text{Val}$:** Maps variables to values.
+* **Heap $h : \text{Loc} \rightharpoonup \text{Val}$:** A partial function mapping memory locations (addresses) to values.
+
+Two heaps $h_1$ and $h_2$ are **disjoint** (written $h_1 \perp h_2$) if their domains do not overlap ($\text{dom}(h_1) \cap \text{dom}(h_2) = \emptyset$). If they are disjoint, their union $h_1 \uplus h_2$ forms a valid, larger heap.
+
+----
+
+## 3. Assertions in Separation Logic
+
+SL introduces spatial connectives to express properties about the exact geometry of the heap.
+
+### 3.1 Spatial Connectives
+* **Empty Heap ($\text{emp}$):** Asserts that the heap is currently empty (contains no allocated locations).
+    $$s, h \models \text{emp} \iff \text{dom}(h) = \emptyset$$
+* **Points-to ($E \mapsto E'$):** Asserts that the heap contains *exactly one* allocated location, which is the evaluation of $E$, and it holds the value $E'$.
+    $$s, h \models E \mapsto E' \iff \text{dom}(h) = \{[[E]]s\} \land h([[E]]s) = [[E']]s$$
+* **Separating Conjunction ($P * Q$):** Asserts that the current heap can be split into two *disjoint* sub-heaps, where one satisfies $P$ and the other satisfies $Q$.
+    $$s, h \models P * Q \iff \exists h_1, h_2.\ h_1 \perp h_2 \land h = h_1 \uplus h_2 \land (s, h_1 \models P) \land (s, h_2 \models Q)$$
+* **Magic Wand / Separating Implication ($P \mathrel{-\mkern-6mu*} Q$):** Asserts that if the current heap is extended with a disjoint heap satisfying $P$, the combined heap will satisfy $Q$.
+
+----
+
+## 4. Inference Rules
+
+SL modifies standard Hoare triples $\{P\} \ c \ \{Q\}$ to enforce a strict **footprint semantics**: $c$ must execute safely (without segmentation faults or accessing unallocated memory) using *only* the memory explicitly described in $P$.
+
+### 4.1 The Frame Rule
+The cornerstone of local reasoning in SL. It states that if a program $c$ executes safely in a small heap ($P$), its execution will be identical in a larger heap ($P * R$), leaving the untouched part ($R$) completely unchanged.
+$$\frac{\{P\} \ c \ \{Q\}}{\{P * R\} \ c \ \{Q * R\}}$$
+*Side condition:* The command $c$ must not modify any variables present in the free variables of $R$.
+
+### 4.2 Heap Manipulation Rules
+These commands map directly to low-level memory operations (dereferencing, mutation, dynamic allocation, and deallocation).
+
+* **Allocation (Cons):** Allocates contiguous memory cells.
+    $$\frac{}{\{\text{emp}\} \ x := \text{cons}(e_1, \dots, e_n) \ \{x \mapsto e_1 * \dots * x+n-1 \mapsto e_n\}}$$
+* **Mutation:** Updates the value at a memory location. The location must be explicitly known to exist in the precondition.
+    $$\frac{}{\{E \mapsto -\} \ [E] := E' \ \{E \mapsto E'\}}$$
+    *(Note: $E \mapsto -$ means $E$ points to some arbitrary, unconstrained value).*
+* **Lookup:** Reads a value from the heap.
+    $$\frac{}{\{E \mapsto v\} \ x := [E] \ \{E \mapsto v \land x = v\}}$$
+    *(Side condition: $x$ must not appear free in $E$ or $v$).*
+* **Deallocation (Dispose):** Frees a memory location. It consumes the points-to assertion, rendering that memory address inaccessible for future operations.
+    $$\frac{}{\{E \mapsto -\} \ \text{dispose}(E) \ \{\text{emp}\}}$$
+
+----
+
+## 5. Memory Safety
+By design, Separation Logic triples ensure **memory safety**. If $\{P\} \ c \ \{Q\}$ is provable, it is mathematically guaranteed that $c$ will not cause memory faults (like double-freeing or dereferencing a null/dangling pointer) when executed from a state satisfying $P$.
+
+## 6. Inductive Predicates for Data Structures
+
+When dealing with dynamic data structures like linked lists—common in languages with manual memory management—we need a way to describe an arbitrary number of dynamically allocated nodes. Separation Logic handles this elegantly using recursive (inductive) predicates.
+
+### 6.1 Lists and List Segments
+To reason about a list, we define what it means for a pointer to hold a list of a certain shape. 
+
+* **List Segment ($ls$):** A list segment from a pointer $x$ to a pointer $y$ represents a chain of nodes starting at $x$ and ending just before $y$.
+  $$ls(x, y) \triangleq (x = y \land \text{emp}) \lor (x \neq y \land \exists v, l.\ x \mapsto (v, l) * ls(l, y))$$
+  *Base case:* $x$ and $y$ are the same pointer, and the heap is empty.
+  *Inductive step:* $x$ points to a node containing a value $v$ and a "next" pointer $l$, and separately ($*$), there is a list segment from $l$ to $y$.
+
+* **Null-Terminated List ($\text{list}$):** A standard linked list is simply a list segment that ends at `nil` (or `null`).
+  $$\text{list}(x) \triangleq ls(x, \text{nil})$$
+
+### 6.2 Why Standard Conjunction Fails
+Using standard Boolean conjunction ($\land$) to assert that pointers do not alias requires an $O(n^2)$ explosion of inequalities. For three pointers $x, y, z$, we would need:
+$x \neq y \land y \neq z \land x \neq z$
+
+If we try to define data structures using $\land$, we cannot guarantee disjointness. For example, claiming a heap satisfies a list starting at $x$ $\land$ a list starting at $y$ does not prevent the two lists from merging or sharing nodes in memory. The separating conjunction ($*$) natively enforces that the memory footprints of the two lists are strictly disjoint: $\text{list}(x) * \text{list}(y)$.
+
+----
+
+## 7. Practical Reasoning with the Frame Rule
+
+Let's look at how local reasoning applies to practical pointer manipulation, such as traversing or mutating a linked list.
+
+
+
+### 7.1 Example: List Concatenation
+Consider the task of appending a list pointed to by $y$ to the end of a non-empty list pointed to by $x$.
+
+**Code snippet:**
+```c
+// t traverses the list to find the last node
+t := x;
+n := [t.next];
+while (n != nil) {
+    t := n;
+    n := [t.next];
+}
+// append y
+[t.next] := y;
+````
+
+**Proof Sketch:**
+
+1. **Precondition:** The lists are completely disjoint. $\{ \text{list}(x) * \text{list}(y) \land x \neq \text{nil} \}$
+    
+2. **Loop Invariant:** As we traverse, we logically split the list $x$ into a processed segment and an unprocessed segment.
+    
+    $\{ ls(x, t) * t \mapsto (v, n) * \text{list}(n) * \text{list}(y) \}$
+    
+3. **Loop Exit:** When the loop terminates, $n = \text{nil}$. The invariant becomes:
+    
+    $\{ ls(x, t) * t \mapsto (v, \text{nil}) * \text{list}(y) \}$
+    
+4. **Mutation:** The assignment `[t.next] := y` updates the "next" field of the last node to point to $y$. The minimal footprint for this mutation is just $t \mapsto (v, \text{nil})$.
+    
+    By the mutation axiom: $\{ t \mapsto (v, \text{nil}) \} \ \mathtt{[t.next] := y} \ \{ t \mapsto (v, y) \}$
+    
+5. **Applying the Frame Rule:** We frame the rest of the lists ($ls(x, t)$ and $\text{list}(y)$) around the local mutation:
+    
+    $\{ ls(x, t) * t \mapsto (v, \text{nil}) * \text{list}(y) \} \ \mathtt{[t.next] := y} \ \{ ls(x, t) * t \mapsto (v, y) * \text{list}(y) \}$
+    
+6. **Postcondition:** The resulting spatial layout $ls(x, t) * t \mapsto (v, y) * ls(y, \text{nil})$ exactly matches the definition of $\text{list}(x)$.
+    
+
+By defining only the exact memory cell being mutated and framing out the rest, Separation Logic avoids the need to globally verify that the mutation did not corrupt other parts of the data structures.
+
+
+<div style="page-break-after: always;"></div>
+
+# 09. Incorrectness Separation Logic
+
+This chapter introduces **Incorrectness Separation Logic (ISL)**, which merges the local reasoning of Separation Logic (SL) with the under-approximation principles of Incorrectness Logic (IL). The goal shifts from proving that a program is perfectly safe to systematically and mathematically proving the presence of memory bugs (like memory leaks, use-after-free, and null-pointer dereferences) without yielding false positives.
+
+----
+
+## 1. The Need for ISL
+
+Standard Separation Logic is an over-approximation technique: it guarantees the *absence* of memory safety violations. However, when static analysis tools (like Meta's Infer) report a potential issue based on an over-approximation, it might be a false positive, leading to "alarm fatigue" among developers.
+
+Incorrectness Logic (IL) guarantees that any reported bug is a true bug (under-approximation). By combining IL with the spatial reasoning of SL ($*$), we get **ISL**, which allows bug-finding tools to scale to large codebases by analyzing functions locally and framing out the rest of the memory.
+
+----
+
+## 2. Adapting Separation Logic for Incorrectness
+
+In ISL, we use the incorrectness triple $[P] \ c \ [Q]$, where $P$ and $Q$ now contain spatial assertions. 
+
+### 2.1 The Issue with Deallocation
+In standard SL, the `free(x)` (or `dispose(x)`) command consumes the memory cell, leaving an empty heap:
+$$\{x \mapsto -\} \ \mathtt{free(x)} \ \{\text{emp}\}$$
+
+If we attempt to use this directly in an under-approximation setting (ISL), we encounter a problem. In IL, we can drop assertions to widen the precondition or shrink the postcondition. If `free(x)` simply results in `emp`, we lose the explicit information that the memory at $x$ was deallocated. If we later try to dereference $x$, the logic might not have enough information to decisively prove an error occurred, leading to false negatives (missing real bugs).
+
+### 2.2 The "Deallocated" Assertion
+To solve this, ISL introduces a new spatial assertion to explicitly track freed memory. Instead of simply removing the cell from the domain, we mark it as deallocated (often denoted conceptually as $\text{invalid}(x)$ or $x \mapsto \text{freed}$).
+
+$$[x \mapsto v] \ \mathtt{free(x)} \ [x \mapsto \text{freed}]$$
+
+This is crucial for bug finding:
+* **Use-After-Free:** If the current state contains $x \mapsto \text{freed}$ and the command attempts to read or write to $[x]$, the logic definitively transitions to an error state.
+* **Double-Free:** If the state contains $x \mapsto \text{freed}$ and the command executes `free(x)`, it definitively triggers an error.
+
+
+
+----
+
+## 3. The ISL Frame Rule
+
+The Frame Rule remains the cornerstone for scalability, allowing tools to analyze a small footprint and embed it into a larger context.
+$$\frac{[P] \ c \ [\epsilon: Q]}{[P * R] \ c \ [\epsilon: Q * R]}$$
+*(where $\epsilon$ is the exit status: `ok` or `er`, and $R$ is untouched by $c$)*
+
+**Compatibility with Freed Memory:**
+The separating conjunction ($*$) works seamlessly with the new deallocated assertion. If we have $(x \mapsto \text{freed}) * (y \mapsto v)$, it guarantees that $x$ and $y$ do not alias. Because $x$ is explicitly marked as freed, $y$ must be a valid, distinct allocated cell. 
+
+----
+
+## 4. Real-World Case Study: Vector Reallocation
+
+A classic bug efficiently found by ISL involves dynamic array reallocations, such as using `std::vector::push_back` in C++.
+
+**The Scenario:**
+1. A program obtains a pointer `p` to an element inside a vector (e.g., `p = &v[0]`).
+2. The program calls `v.push_back(new_element)`.
+3. The program attempts to read or write using `p`.
+
+**The Bug (Use-After-Free):**
+Under the hood, if the vector's capacity is full, `push_back` will allocate a new, larger memory block, copy the existing elements over, and **free the old memory block**. 
+* The pointer `p` still points to the old memory address.
+* Because the old block was freed, `p` is now a dangling pointer.
+* Dereferencing `p` at step 3 causes a Use-After-Free error.
+
+ISL can mathematically prove this bug exists:
+* *Step 1:* State is $p \mapsto v * \text{vector\_rest}$.
+* *Step 2:* The `push_back` semantics explicitly output a state where the old footprint is freed: $p \mapsto \text{freed} * \text{new\_vector\_allocation}$.
+* *Step 3:* The read operation strictly requires $p \mapsto -$. Since it encounters $p \mapsto \text{freed}$, the derivation forces a transition to the `er` (error) state.
+
+----
+
+## 5. Sufficient Incorrectness Separation Logic
+
+Just as standard IL has a backward counterpart, ISL can be run backwards to yield **Sufficient Incorrectness Separation Logic**. 
+
+Instead of moving forward to see if a bug is reachable, we start from the error state (e.g., the exact line where `p` is dereferenced while pointing to freed memory) and propagate the constraints *backwards*. 
+
+$$\lfloor P \rfloor \ c \ \lfloor \text{er} : Q \rfloor$$
+
+This computes the exact, minimal spatial heap requirements (the Sufficient Condition $P$) that an attacker or fuzzer needs to provide to guarantee the software crashes. Because it uses local reasoning, the analyzer only tracks the pointers involved in the crash, ignoring the thousands of irrelevant memory cells in the global heap.
+
+<div style="page-break-after: always;"></div>
+
