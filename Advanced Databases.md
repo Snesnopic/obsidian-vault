@@ -727,29 +727,38 @@ This chapter focuses on the Concurrency Manager, the module ensuring that the co
 
 ----
 
-## 1. Transactions and Histories
+## 1. Concurrency Anomalies (Interferences)
 
-A transaction $T_i$ is a sequence of read ($r_i[x]$) and write ($w_i[x]$) operations on database elements, terminating with either a commit ($c_i$) or an abort ($a_i$). We ignore complex operations such as data creation or list insertions.
+When multiple transactions execute in parallel without proper synchronization, several race conditions and anomalies can occur. The Concurrency Manager must prevent these to guarantee the Isolation property:
+* **Lost Updates:** Occurs when two concurrent transactions read the same data and then update it. The second write completely overwrites and deletes the effect of the first transaction's update.
+* **Dirty Read:** Occurs when a transaction reads an intermediate, uncommitted value written by another transaction that subsequently aborts. The transaction bases its logic on data that "never officially existed".
+* **Unrepeatable Read:** Occurs when a transaction reads the same variable twice during its execution but gets different values because another concurrent transaction updated the variable and committed in between the two reads.
+
+----
+
+## 2. Transactions and Histories
+
+A transaction $T_i$ is a sequence of read ($r_i[x]$) and write ($w_i[x]$) operations on database elements (locations), terminating with either a commit ($c_i$) or an abort ($a_i$). We ignore complex operations such as data creation or list insertions.
 
 > **Definition (History / Schedule):**
 > A history $H$ on a set of transactions $T = \{T_1, T_2, \dots, T_n\}$ is an ordered set of their operations that preserves the internal ordering of operations within each individual transaction.
 
-### 1.1 Conflicting Operations
+### 2.1 Conflicting Operations
 Two operations are in **conflict** if:
 1. They belong to different transactions.
-2. They access the same database item.
+2. They access the same database item (location).
 3. At least one of them is a write operation ($w_i[x]$).
 
-### 1.2 Conflict Equivalence (c-equivalence)
+### 2.2 Conflict Equivalence (c-equivalence)
 Two histories $H_1$ and $H_2$ are **c-equivalent** if they are defined on the same set of transactions, have the same operations, and the relative order of all conflicting operations of normally terminated transactions is exactly the same.
 
 ----
 
-## 2. Serializability
+## 3. Serializability
 
 The primary goal of concurrency control is to ensure that a concurrent history is correct. A history is considered correct if its overall effect on the database is identical to a serial history.
 
-### 2.1 Conflict Serializability (c-serializability)
+### 3.1 Conflict Serializability (c-serializability)
 A history $H$ is **c-serializable** if it is c-equivalent to a serial history. 
 
 **Theorem (Serialization Graph):**
@@ -759,38 +768,46 @@ To determine if a history $H$ is c-serializable, we construct a Serialization Gr
 
 $H$ is c-serializable **if and only if** its $SG(H)$ is **acyclic**. If the graph is acyclic, any topological sort of the nodes yields a valid equivalent serial history.
 
-
 ----
 
-## 3. Locking Protocols
+## 4. Locking Protocols
 
 DBMSs use runtime protocols (schedulers) to restrict the generated histories to only serializable ones. The most common approach is based on locks.
 
-### 3.1 Two-Phase Locking (2PL)
+### 4.1 Two-Phase Locking (2PL)
 A transaction must acquire a read lock (shared) before reading an item and a write lock (exclusive) before writing.
+
 The 2PL protocol dictates that a transaction cannot request any new locks once it has released its first lock. This divides the transaction into two phases:
 * **Growing Phase:** The transaction acquires locks but cannot release any.
 * **Shrinking Phase:** The transaction releases locks but cannot acquire any new ones.
+
 **Result:** Any history produced by a 2PL scheduler is guaranteed to be c-serializable.
 
-### 3.2 Strict 2PL
-Standard 2PL can lead to *cascading aborts* if a transaction reads uncommitted data from a transaction that later aborts. 
-**Strict 2PL** prevents this by enforcing that a transaction must hold all its exclusive (write) locks until it either commits or aborts.
+### 4.2 Strict 2PL
+Standard 2PL can lead to **cascading aborts** if a transaction reads uncommitted data from a transaction that later aborts (a Dirty Read anomaly). 
+**Strict 2PL** prevents this by enforcing that a transaction must hold all its exclusive (write) locks until it either commits or aborts. Because it never releases locks early, no other transaction can read uncommitted data, completely eliminating the risk of cascading aborts.
+
+### 4.3 Lock Manager Implementation
+The scheduler (Lock Manager) enforces the locking protocol using internal data structures:
+* **Lock Table & Granting:** When a transaction requests a lock, the manager checks for conflicts. If none exist, the lock is granted.
+* **Wait Queues (Freezing):** If the requested lock is held by another transaction in a conflicting mode, the requesting transaction is suspended (frozen) and placed in a wait queue specifically associated with that location.
+* **Notification (Wake-up):** When a transaction terminates and releases its locks, the scheduler goes to the wait queues of those locations and wakes up the suspended transactions. These transactions are moved "back in time" to re-issue their original lock request.
+* **Wake-up Policies:** Schedulers use various priority policies to pick the next transaction from the queue (e.g., oldest first, reader-preference, or highest number of currently held locks to free resources faster).
 
 ----
 
-## 4. Deadlock Management
+## 5. Deadlock Management
 
-Locking protocols can introduce **deadlocks** (e.g., $T_1$ waits for a lock held by $T_2$, and $T_2$ waits for a lock held by $T_1$). 
+Locking protocols can introduce **deadlocks** (e.g., $T_1$ waits for a lock held by $T_2$, and $T_2$ waits for a lock held by $T_1$).
+
 DBMSs handle deadlocks using timeouts, deadlock detection (cycle detection in a Waits-For graph), or prevention schemes based on transaction timestamps.
-
 Two common prevention strategies are:
 * **Wait-Die:** Non-preemptive. If an older $T_i$ requests a lock held by a younger $T_j$, $T_i$ is allowed to wait. If a younger $T_i$ requests a lock held by an older $T_j$, $T_i$ "dies" (is aborted).
 * **Wound-Wait:** Preemptive. If an older $T_i$ requests a lock held by a younger $T_j$, $T_i$ "wounds" $T_j$ (forces $T_j$ to abort). If a younger $T_i$ requests a lock held by an older $T_j$, $T_i$ is allowed to wait.
 
 ----
 
-## 5. Snapshot Isolation (SI)
+## 6. Snapshot Isolation (SI)
 
 Snapshot Isolation is a concurrency control strategy commonly used to increase read performance, offering an alternative to strict locking.
 * Each transaction operates on a consistent "snapshot" of the database taken when the transaction begins.
