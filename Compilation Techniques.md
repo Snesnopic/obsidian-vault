@@ -1049,6 +1049,179 @@ This mechanism allows the compiler to seamlessly interleave syntax verification,
 
 <div style="page-break-after: always;"></div>
 
+# 14. The Procedure Abstraction
+
+This section covers the compilation challenges associated with procedure calls, focusing on how the compiler bridges the gap between static compile-time analysis and dynamic run-time execution.
+
+----
+
+## 1. Compile-Time vs. Run-Time Responsibilities
+
+A procedure provides a clean abstraction for the programmer (independent namespaces, isolated local variables, standard interfaces), but it is the compiler's job to make this abstraction work on the physical hardware.
+
+The compiler must generate the linkage code that manages the transition between caller and callee. This requires distinguishing between:
+* **Compile-Time:** The compiler determines the layout of memory, computes offsets, and emits the code to manage state.
+* **Run-Time:** The generated code executes, allocating memory, resolving addresses, and preserving the execution context.
+
+----
+
+## 2. Name Spaces and Scoping
+
+Procedures define independent namespaces. A local variable declared inside a procedure hides a global variable with the same name. 
+
+### 2.1 Lexical vs. Dynamic Scoping
+* **Lexical (Static) Scoping:** A variable name is resolved by looking at the lexical structure of the source code. If a variable is not found in the current block, the compiler looks at the immediately enclosing block, up to the global scope. This allows the compiler to determine variable bindings statically.
+* **Dynamic Scoping:** A variable name is resolved by looking at the most recent active run-time binding (the call stack). This is generally slower and less predictable, and rarely used in modern low-level or systems programming (like C++).
+
+Variables are internally mapped to a coordinate system: `<lexical_level, offset>`.
+* **Lexical Level:** The nesting depth of the procedure (e.g., Global = 0, Main = 1, Nested function = 2).
+* **Offset:** The byte offset of the variable relative to the start of its storage area.
+
+----
+
+## 3. Activation Records (Stack Frames)
+
+Every time a procedure is invoked, a new Activation Record (AR) is created (typically pushed onto the stack). It stores all the information required to execute the procedure and return control to the caller.
+
+
+
+### 3.1 Structure of an Activation Record
+While specific layouts depend on the architecture and linkage conventions, a standard AR contains:
+1.  **Actual Parameters:** Arguments passed by the caller.
+2.  **Return Value:** Space allocated to pass the result back.
+3.  **Return Address:** The instruction pointer to resume in the caller's code.
+4.  **Saved Registers:** Copies of machine registers that the current procedure will overwrite but must be restored before returning.
+5.  **Access Link / Static Link:** A pointer to the AR of the lexically enclosing procedure (used to find non-local variables).
+6.  **Local Variables:** Storage for variables declared inside the procedure.
+
+### 3.2 Handling Variable-Length Data
+The compiler computes the static `offset` for each local variable. If a variable has a size that is unknown at compile time (e.g., dynamically sized arrays), it cannot be placed sequentially with fixed-size variables without ruining their constant offsets.
+* **Solution:** The compiler allocates a standard, fixed-size pointer inside the AR at a known offset. This pointer points to the actual variable-length data, which is allocated at the end of the AR (or on the heap). 
+
+----
+
+## 4. Accessing Non-Local Variables
+
+In languages that allow nested procedures, a function might access a variable declared in its parent. Since the parent's AR is somewhere on the stack, the compiler must generate code to locate it at run-time. There are two primary techniques:
+
+### 4.1 Access Links (Static Links)
+The AR includes a pointer to the AR of the lexically enclosing procedure.
+* **Mechanism:** If a procedure at Level 3 needs a variable from Level 1, the generated code must traverse the access links backward: `current_AR -> access_link -> access_link`.
+* **Performance:** Finding the variable takes time proportional to the difference in lexical levels: $O(\Delta \text{levels})$.
+* **Maintenance:** When a procedure calls another, it passes the appropriate access link as a hidden parameter.
+
+
+
+### 4.2 The Display Array
+Instead of chaining pointers through the stack, the system maintains a global array of pointers called the **Display**.
+* **Mechanism:** `Display[i]` always points to the currently active AR for lexical level `i`. To access a variable at Level 1, the code directly loads `Display[1]` and adds the variable's offset.
+* **Performance:** Variable access is strictly $O(1)$ constant time.
+* **Maintenance:** Calling a procedure requires updating the Display array. Returning requires restoring the previous Display state. The overhead is shifted from *variable access* to *procedure invocation*.
+
+----
+
+## 5. Linkage Conventions (Caller vs. Callee)
+
+The linkage convention dictates the contract between the caller and the callee. 
+
+### Register Saving Responsibilities
+Registers are a shared resource. Who is responsible for saving them to the AR?
+* **Caller-Saved:** The calling procedure saves registers it cares about because it assumes the callee will overwrite them. Advantage: The caller only saves what is actively live.
+* **Callee-Saved:** The called procedure saves the registers it plans to use and restores them before returning. Advantage: If the callee doesn't use a register, no memory traffic is wasted.
+
+Modern compilers (especially for performance-critical languages like C++) use a hybrid approach dictated by the Application Binary Interface (ABI), statically assigning some registers as caller-saved and others as callee-saved to minimize memory operations.
+
+```cpp
+// pseudo-code illustrating caller/callee save convention
+void caller() {
+    // save caller-saved registers (if live)
+    // push parameters
+    // call callee
+    callee();
+    // restore caller-saved registers
+}
+
+void callee() {
+    // prologue: push callee-saved registers to AR
+    // execute body
+    // epilogue: pop callee-saved registers from AR
+    // return
+}
+
+<div style="page-break-after: always;"></div>
+
+# 15. Code Generation & Shape Optimization
+
+This section explores the transition from the intermediate representation (IR) to target-machine code. The compiler must make crucial choices regarding how language constructs are shaped into instructions, how variables are accessed, and how memory is managed, significantly impacting the performance of the final executable.
+
+----
+
+## 1. The Importance of Code Shape
+
+"Code shape" refers to the specific sequence of instructions chosen to implement a high-level construct. The compiler often has multiple valid ways to translate a single statement, but these choices are not created equal regarding efficiency.
+
+For instance, consider translating a `switch` or `case` statement. The compiler could choose:
+1. **Sequential `if-else` (Linear Search):** Checking each condition sequentially. The execution cost depends heavily on which case is triggered.
+2. **Binary Search:** More efficient if the cases are sparse but ordered.
+3. **Jump Table:** Creating an array of addresses and jumping directly to the correct case in $O(1)$ time.
+
+The "best" choice depends on the specific context (e.g., the number of cases and their density). The compiler's back-end (optimizer and code generator) must make these choices because a purely mechanical translation lacks the context to select the optimal shape.
+
+### 1.1 Context-Dependent Optimization
+Consider the expression `x + y + z`. Because addition is commutative and associative, the compiler could generate:
+1. `(x + y) + z`
+2. `x + (y + z)`
+3. `(x + z) + y`
+
+Which is best? It depends on the context.
+* If the compiler knows statically that `x = 2` and `z = 3`, it can precompute `x + z = 5` (Constant Folding), reducing the expression to `5 + y`.
+* If `y + z` was already computed in a previous statement, the compiler can reuse that result (Common Subexpression Elimination), saving instructions.
+
+----
+
+## 2. Memory Models: Register-to-Register
+
+Before generating code, the compiler must adopt a memory model. The most common model for modern architectures (especially RISC) is the **Register-to-Register** model.
+
+* **Concept:** The compiler assumes an infinite number of virtual registers. It attempts to keep all values in registers for as long as possible.
+* **The Process:** During the initial code generation, every new value gets a brand-new virtual register. 
+* **The Catch:** Physical machines have a limited number of actual registers. 
+* **The Solution:** A later phase called **Register Allocation** maps the infinite virtual registers to the finite physical ones. If there aren't enough physical registers, the allocator inserts "spill" code (stores and loads) to temporarily move values to memory.
+
+*(Contrast this with the Memory-to-Memory model, where values are assumed to live in memory and are only loaded into registers right before an operation, requiring the optimizer to remove redundant memory accesses).*
+
+----
+
+## 3. Tree-Walk Code Generation
+
+To generate linear code (like ILOC) from an Abstract Syntax Tree (AST), the compiler performs a **post-order traversal** (tree-walk). 
+* It visits the children before evaluating the parent node.
+
+
+
+### 3.1 The Translation Routine
+The core of this process is a recursive function `expr(node)` that emits instructions and returns the register containing the result.
+
+**Algorithm logic:**
+1. **If node is an Identifier (Variable):**
+   * Retrieve the base address (the pointer to the Activation Record) into a register.
+   * Retrieve the variable's offset within that record into another register.
+   * Emit a `load` instruction using base + offset, putting the variable's value into a new result register.
+2. **If node is a Number (Constant):**
+   * Emit a `load immediate` instruction to put the constant value into a new result register.
+3. **If node is an Operator (+, -, *, /):**
+   * Recursively call `expr()` on the left child, getting its result register.
+   * Recursively call `expr()` on the right child, getting its result register.
+   * Emit the arithmetic instruction using the two child registers, putting the final result into a new register.
+
+### 3.2 The Impact of Evaluation Order
+A naive post-order traversal (always evaluating the left child first, then the right) is simple but not always optimal regarding register usage.
+
+If an expression tree is unbalanced, always evaluating the left side first might require keeping many intermediate results alive in registers simultaneously. 
+* **Sethi-Ullman Algorithm (Concept):** By strategically alternating the evaluation order—evaluating the child subtree that requires *more* registers first—the compiler can minimize the peak number of registers needed simultaneously. If the peak register usage stays below the physical machine limit, the compiler completely avoids expensive memory spills.
+
+<div style="page-break-after: always;"></div>
+
 # 99. Laboratory
 This document serves as the comprehensive guide for the Compilation Techniques laboratory project. The objective is to build a compiler that includes evaluation, static analysis, optimization, and code generation targeting LLVM IR. 
 
