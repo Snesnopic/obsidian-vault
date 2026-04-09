@@ -1353,6 +1353,95 @@ The **Pass Manager** orchestrates these passes, automatically scheduling them ba
 
 <div style="page-break-after: always;"></div>
 
+# 17. Code Generation to LLVM IR
+
+This section details the practical translation of a high-level imperative language (like MiniImp) into LLVM Intermediate Representation, bridging the gap between abstract syntax and machine-level execution.
+
+----
+
+## 1. Deconstructing Expressions
+
+LLVM IR instructions are simple and strictly limited in the number of operands. Complex arithmetic or boolean expressions cannot be represented in a single instruction.
+
+* **Flattening:** A complex expression like `x = 2 + y * z` must be broken down into a sequence of fundamental operations.
+* **Fresh Registers:** Because LLVM IR operates under the Register-to-Register model, every intermediate step of a computation must be stored in a newly generated, unique virtual register.
+
+```text
+// Pseudocode translation of: x = 2 + y * z
+%temp1 = load y
+%temp2 = load z
+%temp3 = mul %temp1, %temp2
+%temp4 = add 2, %temp3
+store %temp4 into x
+````
+
+---
+
+## 2. Control Flow and Basic Blocks
+
+Control flow constructs (like `if-else` and `while`) must be translated into a flat sequence of Basic Blocks connected by explicit branch instructions.
+
+### 2.1 Mapping the CFG
+
+The conceptual Control-Flow Graph previously built is now mapped directly to LLVM IR blocks:
+
+- Every node in the CFG becomes an LLVM Basic Block starting with a fresh label (e.g., `entry:`, `if_true:`, `if_false:`, `merge:`).
+    
+- Every block **must** end with a terminator instruction. If the block naturally falls through to the next, an unconditional branch (`br label %next_block`) must be explicitly inserted.
+    
+
+### 2.2 The Pragmatics of Block Size
+
+The compiler designer must choose how to group statements into blocks:
+
+- **Minimal Blocks:** Creating a new basic block for every single statement is easy to implement but generates excessive jumping. This makes unoptimized code extremely slow and hinders the debugging experience.
+    
+- **Maximal Blocks:** Grouping as many sequential statements as possible into a single block improves baseline performance and readability, making the compiler more pragmatic and user-friendly before optimizations are even applied.
+    
+
+----
+
+## 3. Surviving the SSA Form Requirement
+
+LLVM IR enforces Static Single Assignment (SSA) form, meaning a virtual register can only be assigned a value exactly once. This creates challenges for imperative variables that are mutated over time (e.g., `x = 1; x = x + 1;`).
+
+### 3.1 The Phi Node Solution
+
+When a variable is assigned different values in different branches (e.g., inside an `if` and an `else` block), the compiler must use a $\phi$ (`phi`) node at the merge point to select the correct value based on the execution path.
+
+- **Constraint:** `phi` nodes must be placed at the absolute beginning of the basic block, before any other instruction.
+    
+
+### 3.2 The "Alloca" Memory Trick (Cheating SSA)
+
+Generating perfect SSA form and computing the correct placement of `phi` nodes manually during AST traversal is complex (requiring Dominator Tree analysis).
+
+Instead, compiler front-ends commonly use the following strategy to bypass manual SSA generation:
+
+1. **Allocate on Stack:** For every declared variable, emit an `alloca` instruction to reserve memory on the stack.
+    
+2. **Load and Store:** Never keep the variable's value in an SSA register across statements. Whenever the variable is read, emit a `load`. Whenever it is updated, emit a `store`.
+    
+3. **Delegate to LLVM:** Produce this inefficient, memory-heavy IR. Then, invoke the LLVM optimizer with the `mem2reg` pass. LLVM will automatically analyze the stack allocations, promote them to SSA registers, and perfectly insert all necessary `phi` nodes.
+    
+
+----
+
+## 4. Compilation and Tooling
+
+To manipulate and compile the generated IR, the LLVM infrastructure provides several command-line tools:
+
+- **`opt`:** The LLVM optimizer. It takes the unoptimized IR and applies passes.
+    
+    - Example: `opt -passes=mem2reg input.ll -S -o optimized.ll` (The `-S` flag ensures the output remains in human-readable textual format rather than binary bitcode).
+        
+- **`llc`:** The LLVM static compiler. It translates the optimized IR into target-specific assembly or machine code (e.g., an `.s` or `.o` file).
+    
+- **Compiler Explorer (godbolt.org):** A crucial web-based visualization tool. It allows developers to write code, see the generated LLVM IR, and inspect the exact sequence of optimization passes (the "pipeline") to understand how the IR is transformed into efficient machine code.
+    
+
+<div style="page-break-after: always;"></div>
+
 # 99. Laboratory
 This document serves as the comprehensive guide for the Compilation Techniques laboratory project. The objective is to build a compiler that includes evaluation, static analysis, optimization, and code generation targeting LLVM IR. 
 
@@ -1469,13 +1558,32 @@ In the final project report, you must explicitly detail your implementation choi
 
 ----
 
-## Final Compilation Step: LLVM IR
+## Fragment 7: LLVM IR Code Generation
 
-The culmination of the MiniImp project is compiling the imperative language down to the LLVM Intermediate Representation (LLVM IR).
+*Prerequisite: Fragment 6 (Data-Flow Analysis) or Fragment 5 (CFG).*
 
-- **LLVM Infrastructure:** LLVM is a language-agnostic framework. By compiling MiniImp to LLVM IR, you leverage its back-end infrastructure to handle machine-code generation and further optimizations automatically.
-    
-- **Implementation Options:** You can interface with LLVM by using its C++ APIs, using bindings available for other programming languages, or simply by writing a generator that outputs a raw text file containing the LLVM IR instructions.
+The final milestone of the MiniImp project is the translation of the abstract syntax (or the CFG) into valid, executable LLVM Intermediate Representation.
+
+### Implementation Requirements
+1. **IR Emitter:** Write a function that traverses the program and outputs LLVM IR text (`.ll` format). 
+2. **Expression Flattening:** Ensure all complex arithmetic and boolean expressions are broken down into simple operations using fresh virtual registers (`%0`, `%1`, etc.).
+3. **Control Flow:** Translate `if-then-else` and `while` constructs into labeled basic blocks with explicit conditional (`br i1`) and unconditional (`br`) branches.
+4. **Variable Management:** Implement variable storage. You are highly encouraged to use the **`alloca` trick**:
+   * Allocate all local variables on the stack at the entry block.
+   * Use explicit `load` and `store` instructions for all reads and assignments.
+5. **Optimization Integration:** Your pipeline must automatically or manually pass the generated IR through the LLVM `opt` tool using at least the `mem2reg` pass to convert the memory-based IR into pure SSA form with `phi` nodes.
+
+### Testing and Linking
+Because MiniImp does not have built-in I/O functions in its grammar, you will need to interface with external C code to verify your execution:
+* Write a simple C wrapper (e.g., `main.c`) that takes input, calls your generated LLVM function (which should be named and exported properly), and prints the returned result.
+* Use `llc` to compile your `.ll` file to an object file, and link it together with your C wrapper using `clang` or `gcc`.
+
+### Report Documentation
+In the final project report, detail your code generation strategy:
+* How did you map your CFG nodes to LLVM Basic Blocks?
+* Did you choose minimal or maximal block sizes, and why?
+* How did you handle variable mutability (did you build SSA manually with `phi` nodes, or did you rely on `alloca` + `mem2reg`)?
+````
 
 <div style="page-break-after: always;"></div>
 

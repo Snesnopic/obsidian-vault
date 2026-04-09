@@ -2480,3 +2480,223 @@ When applying `std::async` or a Thread Pool to recursive Divide and Conquer algo
 
 <div style="page-break-after: always;"></div>
 
+# 20. Workload Balancing & Task Scheduling
+
+This chapter explores the critical challenge of workload balancing in data-parallel computations. Achieving peak parallel performance requires an optimal distribution of tasks among workers, forcing a constant trade-off between maximizing data locality and minimizing workload imbalance.
+
+## 1. The Workload Imbalance Problem
+
+Data Parallelism involves applying a function to multiple partitions of a dataset using a set of Workers. If the partitions do not require the exact same amount of computation time, the system suffers from **Workload Imbalance**. 
+
+* **The Bottleneck:** In a synchronous parallel execution, the completion time is strictly determined by the slowest worker. If one thread finishes its partition in 1 second while another takes 10 seconds, the first thread sits idle for 9 seconds, wasting CPU resources and destroying scalability.
+* **The Trade-off:** To fix imbalance, we can divide the data into many smaller tasks and distribute them flexibly. However, doing so destroys **Data Locality** (leading to cache misses) and introduces **Scheduling Overhead** (mutex contention, atomic operations). 
+
+### 1.1 Skewed Workloads: The Mandelbrot Set
+The computation of the Mandelbrot set is a classic example of a highly skewed workload. Each pixel is computed independently via an iterative mathematical formula. 
+* "Black" pixels (inside the set) reach the maximum number of iterations, taking a long time to compute.
+* Colored pixels (outside the set) escape the formula quickly, requiring very few iterations.
+If we assign rows of the image to threads using naive static partitioning, the thread that gets the central rows (containing mostly black pixels) will take orders of magnitude longer to finish than the threads processing the top or bottom edges.
+
+----
+
+## 2. Static Distribution Policies
+
+Static policies partition the dataset and assign tasks to threads before the computation begins. They introduce zero runtime overhead but cannot adapt if the workload proves to be irregular.
+
+### 2.1 Block Distribution
+The dataset is divided into contiguous chunks of size $B = \lceil N / P \rceil$, where $N$ is the number of elements and $P$ is the number of threads.
+* **Pros:** Maximizes spatial locality (great for caching). Minimal overhead.
+* **Cons:** Terrible for skewed workloads.
+* **Best for:** Regular computations like Vector Addition or Matrix-Vector multiplication.
+
+```cpp
+// Static Block Partitioning Logic
+int chunk_size = (N + num_threads - 1) / num_threads;
+int start = thread_id * chunk_size;
+int end = std::min(start + chunk_size, N);
+
+for (int i = start; i < end; ++i) {
+    // compute contiguous block
+}
+```
+
+### 2.2 Cyclic Distribution
+
+Elements are assigned to threads using a stride equal to the number of threads (e.g., Thread 0 gets elements 0, 4, 8; Thread 1 gets 1, 5, 9).
+
+- **Pros:** Naturally balances skewed workloads by "shuffling" the heavy tasks across all threads.
+    
+- **Cons:** Completely destroys spatial locality, leading to massive cache misses.
+    
+
+### 2.3 Block-Cyclic Distribution
+
+A hybrid approach. Instead of a stride of 1, we use a continuous chunk of size $C$, and then jump by a stride of $P \times C$.
+
+This preserves a degree of locality within the block while still shuffling the workload globally.
+
+----
+
+## 3. Dynamic Task Assignment
+
+For highly irregular or unpredictable workloads (e.g., Triangular Irregular Networks or computing the symmetric All-Pairs Distance Matrix for the MNIST dataset), static policies fail. We must use dynamic scheduling, where tasks are assigned to workers at runtime.
+
+### 3.1 Work Sharing (Centralized Queue / Index)
+
+All tasks are placed in a single, centralized shared structure (like a `std::queue` or a global atomic counter). Workers fetch a chunk of tasks, compute them, and then return to fetch more.
+
+- **Implementation:** Instead of a complex queue, if tasks are just array indices, we can use a single `std::atomic<int>`.
+    
+- **Pros:** Achieves near-perfect load balancing. Fast workers automatically process more tasks than slow workers.
+    
+- **Cons:** The centralized structure becomes a bottleneck due to lock contention or atomic access scaling poorly with high thread counts.
+    
+
+```cpp
+#include <atomic>
+#include <vector>
+
+std::atomic<int> global_index{0};
+const int chunk_size = 16;
+
+void dynamic_worker(int total_tasks) {
+    while (true) {
+        // Fetch and increment atomically
+        int start = global_index.fetch_add(chunk_size);
+        
+        if (start >= total_tasks) break; // No more tasks
+        
+        int end = std::min(start + chunk_size, total_tasks);
+        
+        // Compute dynamically acquired chunk
+        for (int i = start; i < end; ++i) {
+            compute_heavy_task(i);
+        }
+    }
+}
+```
+
+### 3.2 Work Stealing (Distributed Queues)
+
+To solve the contention bottleneck of Work Sharing, **Work Stealing** gives each worker its own local task queue.
+
+- A worker primarily fetches tasks from its own local queue (lock-free or low-contention).
+    
+- If a worker's local queue becomes empty, it becomes a "thief", randomly selecting another worker and stealing a chunk of tasks from the back of their queue.
+    
+- **Pros:** Highly scalable, minimal contention, preserves locality better than centralized queues.
+    
+- **Cons:** Complex to implement, especially regarding termination detection (how to know when all queues are empty and no tasks are currently flying across the network).
+    
+
+----
+
+## 4. The Chunk Size Dilemma
+
+When using Block-Cyclic or Dynamic approaches, choosing the right **Chunk Size** (Task Size) is critical and forms a U-shaped performance curve:
+
+1. **Too Large:** Low scheduling overhead, but risks severe workload imbalance. If the last chunk happens to contain all the heaviest computations, one thread will be stuck while the others idle.
+    
+2. **Too Small:** Perfect load balancing, but the overhead dominates. If the chunk size is 1, threads spend more time fighting over the `std::atomic` index or the mutex than actually computing the data.
+    
+
+**The Golden Rule:** There is no universal formula to calculate the optimal chunk size. It must be found experimentally (trial and error) by tuning the parameter until the overhead and the load imbalance are perfectly balanced for the specific hardware and dataset.
+
+<div style="page-break-after: always;"></div>
+
+# 21. Theoretical Models of Computation
+
+This chapter abstracts away from the physical hardware (like cache hierarchies and NUMA nodes) to explore the fundamental theoretical limits of parallel execution. By utilizing idealized models, we can establish strict upper and lower bounds on performance and mathematically prove the efficiency of parallel algorithms.
+
+## 1. The Work-Span (Work-Depth) Model
+
+The Work-Span model represents a parallel program as a Directed Acyclic Graph (DAG). 
+* **Nodes** represent discrete tasks (with an associated execution cost).
+* **Edges** represent strict data dependencies between tasks.
+
+A task becomes "ready" to fire only when all its predecessors have completed. The model assumes a **Greedy Scheduler**: if a task is ready and a processor is available, the task is dispatched immediately with zero overhead.
+
+
+
+### 1.1 Fundamental Metrics: $T_1$ and $T_\infty$
+To evaluate the DAG, we define two critical metrics:
+* **Work ($T_1$):** The total amount of computation. It is the sum of the execution times of all tasks in the graph. This corresponds to the execution time on a single processor.
+* **Span or Critical Path ($T_\infty$):** The longest weighted path of dependencies from the start node to the end node. It represents the absolute minimum execution time achievable, even with an infinite number of processors.
+
+### 1.2 Lower Bounds on Execution Time
+Given $P$ available processors, the parallel execution time $T_P$ is strictly bounded by two realities:
+1. **The Work Bound:** $T_P \ge \frac{T_1}{P}$. The workload cannot be divided more perfectly than perfectly.
+2. **The Span Bound:** $T_P \ge T_\infty$. You cannot compute a sequence of strictly dependent tasks any faster than sequential execution allows.
+
+### 1.3 Brent's Theorem
+Brent's Theorem provides a powerful upper bound on the execution time when using a finite number of processors $P$, assuming a greedy scheduler. It states:
+
+$$T_P \le \frac{T_1 - T_\infty}{P} + T_\infty$$
+
+This formula mathematically isolates the parallelizable portion of the graph ($(T_1 - T_\infty)$) and divides it perfectly across $P$ processors, while adding back the strict sequential bottleneck ($T_\infty$). 
+
+**Available Parallelism:** The ratio $\frac{T_1}{T_\infty}$ dictates the potential concurrency. If we over-decompose a problem so that the Work is massively larger than the Span ($\frac{T_1}{T_\infty} \gg P$), the algorithm can achieve near-linear speedup. Modern runtimes like Intel TBB are built entirely around satisfying this model.
+
+----
+
+## 2. The PRAM (Parallel Random Access Machine) Model
+
+While Work-Span ignores memory entirely, PRAM models an idealized shared-memory system.
+
+* **Architecture:** $P$ processors connected to a globally shared memory.
+* **Uniform Access:** Every processor can access any memory location in exactly $O(1)$ constant time (no caches, no NUMA penalties, no bus contention).
+* **Lockstep Execution:** All processors execute synchronously. In a single step, every processor performs:
+  1. **Read** from shared memory into a local register.
+  2. **Compute** an operation locally.
+  3. **Write** the result back to shared memory.
+
+
+
+### 2.1 Cost Optimality
+In the PRAM model, minimizing absolute execution time is not enough. We must evaluate the **Cost** of the algorithm:
+$$\text{Cost} = \text{Time} \times \text{Processors}$$
+
+An algorithm is **Cost-Optimal** if its parallel Cost matches the time complexity of the best known sequential algorithm. For example, if a sequential algorithm runs in $O(N)$ time, a PRAM algorithm running in $O(\log N)$ time using $N$ processors has a Cost of $O(N \log N)$. This is *not* cost-optimal, meaning processor efficiency is being wasted.
+
+----
+
+## 3. Parallel Prefix Sum (Scan)
+
+To demonstrate PRAM algorithm design, we analyze the Prefix Sum, a foundational building block for many complex parallel algorithms (like quicksort or tree traversals).
+
+Given an array $X$ and an associative operator $\oplus$ (e.g., addition), the inclusive prefix sum calculates an array $S$ where $S_i = X_0 \oplus X_1 \oplus \dots \oplus X_i$.
+
+### 3.1 Naive Recursive Doubling (Non-Cost-Optimal)
+We assign $N$ processors to an array of size $N$. 
+At step $k$, each processor $i$ reads its current value and the value at index $i - 2^{k-1}$, sums them, and writes the result.
+
+
+
+* **Time:** $O(\log N)$ steps.
+* **Processors:** $N$.
+* **Cost:** $O(N \log N)$. 
+Since the sequential prefix sum runs in $O(N)$, this parallel version is too fast but wastes resources; it is not cost-optimal.
+
+### 3.2 The Cost-Optimal Algorithm
+To achieve cost optimality, we restrict the number of processors to $P = \frac{N}{\log N}$.
+
+1. **Local Sequential Scan:** Divide the array into $P$ chunks of size $\log N$. Each processor computes the prefix sum of its local chunk sequentially. Time: $O(\log N)$.
+2. **Parallel Prefix on Partial Sums:** Take the final value of each of the $P$ chunks and perform the recursive doubling algorithm on just these $P$ elements. Time: $O(\log P) \approx O(\log N)$.
+3. **Local Updates:** Each processor adds the global accumulated value from Step 2 to all elements inside its local chunk. Time: $O(\log N)$.
+
+* **Total Time:** $O(\log N) + O(\log N) + O(\log N) = O(\log N)$.
+* **Cost:** $O(\log N) \times \frac{N}{\log N} = O(N)$. 
+The algorithm is now perfectly cost-optimal.
+
+## 4. Practical Application: Sparse Array Compaction
+
+Theoretical PRAM algorithms dictate the implementation of actual standard libraries. The C++ `<numeric>` library provides `std::inclusive_scan` and `std::exclusive_scan` (which support `std::execution::par` execution policies).
+
+A classic use case is **Sparse Array Compaction**. If you have a massive array mostly filled with zeros, you want to extract only the non-zero elements into a dense array.
+1. Create a bitmap (1 if non-zero, 0 if zero).
+2. Run a Parallel Prefix Sum on the bitmap. The resulting values perfectly dictate the target memory index in the new dense array for every non-zero element.
+3. Scatter the non-zero values to their newly computed indices.
+
+
+<div style="page-break-after: always;"></div>
+
