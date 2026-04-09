@@ -1557,7 +1557,7 @@ In the final project report, you must explicitly detail your implementation choi
 * **Representation:** What data representation did you choose for Reaching Definitions (e.g., unique assignment identifiers) and why?
 
 ----
-
+ 
 ## Fragment 7: Optimizations
 
 *Prerequisite: Fragment 6 (Data-Flow Analysis).*
