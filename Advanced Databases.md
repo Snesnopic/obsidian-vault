@@ -846,93 +846,94 @@ Snapshot Isolation prevents Dirty Reads, Unrepeatable Reads, and Lost Updates, m
 
 # 08. Physical Database Design and Tuning
 
-This chapter covers the methodology used to select the optimal set of physical access structures (primarily indexes) for a given database workload, aiming to minimize the overall execution cost of queries and updates.
+This chapter covers the methodology used to select the optimal set of physical access structures (primarily indexes) and schema transformations for a given database workload, aiming to minimize the overall execution cost of queries and updates.
 
 ----
 
-## 1. The Index Selection Process
+## 1. Workload Analysis and the Tuning Process
 
-Choosing the right indexes requires balancing the read performance benefits against the storage overhead and the update penalties (since every `INSERT`, `UPDATE`, or `DELETE` requires maintaining the indexes). The global view of the index selection process consists of five main steps:
+Physical design begins with gathering quantitative information about the hardware, the specific DBMS, and most importantly, the workload. Because a real database executes thousands of different queries, the DBA must focus on **critical operations**: queries that run very frequently or those that absolutely require a short execution time despite being rare.
 
-1. **Identify critical queries:** Focus on the most frequent or resource-intensive queries in the workload.
-2. **Create possible indexes:** Propose theoretical indexes that would perfectly tune each single critical query.
-3. **Remove subsumed indexes:** Eliminate redundant indexes. An index $I_1$ on attribute $A$ is generally subsumed by a multi-attribute index $I_2$ on $(A, B)$, because $I_2$ can also be used to resolve searches on just $A$ (as a prefix of the search key).
-4. **Merge indexes where possible:** Instead of having one index on $A$ and another on $B$, consider a single combined index on $(A, B)$ or $(B, A)$ to save space and update overhead, depending on the combined selectivity.
-5. **Evaluate benefit/cost ratio:** For the remaining candidate indexes, calculate the mathematical cost of executing the workload with and without the index, factoring in the frequency of the queries versus the frequency of updates.
-
----
-
-## 2. Review of Index Types for Design
-
-When designing the physical layout, the DBA must choose between different index types based on the data cardinality and the query patterns.
-
-* **Clustered Index:** Physically sorts the underlying data pages. You can only have one per table. Ideal for range queries (e.g., `Salary BETWEEN 30000 AND 50000`) or equality queries on non-unique attributes, because matching records will be physically contiguous.
-* **Non-Clustered (Secondary) Index:** Provides pointers to physically scattered data. Good for exact match queries on highly selective attributes (e.g., `EmployeeID = 12345`).
-* **Bitmap Index:** Extremely efficient for attributes with very low cardinality (e.g., `Country`, `Gender`, `Status`). It allows the DBMS to resolve complex boolean conditions (`AND`, `OR`, `NOT`) directly using bitwise operations before fetching the actual data records.
+To formalize this, DBAs often create an **Insert/Select/Update/Delete table** for critical queries to track:
+* The frequency of the operation.
+* The attributes involved in the `WHERE` conditions (and their Selectivity Factors).
+* The specific attributes being projected, inserted, or updated.
 
 ----
 
-## 3. Database Tuning and Query Rewriting
+## 2. Index Selection and Tuning
 
-Physical design is not just about adding indexes; it also involves tuning the queries themselves. The Query Optimizer handles many automatic transformations, but manual query rewriting is sometimes necessary to eliminate semantically useless operations.
+Choosing the right indexes requires balancing read performance benefits against storage overhead and update penalties, since every `INSERT`, `UPDATE`, or `DELETE` requires maintaining the indexes.
 
-* **Avoiding useless `GROUP BY` or `HAVING`:**
-  A query like:
-```sql
-  SELECT FkDepartment, MIN(Salary) 
-  FROM Lecturers 
-  GROUP BY FkDepartment 
-  HAVING FkDepartment = 10;
-```
+### 2.1 The Golden Rule: Indexing Keys
+All modern DBMSs automatically define indexes on Primary Keys and Foreign Keys, which is fundamental for two reasons:
+1. **Query Speed (Joins):** Most joins involve Primary and Foreign Keys. Having indexes on both sides guarantees that the optimizer can always choose an efficient `IndexNestedLoop` join, regardless of which table is filtered first.
+2. **Update/Delete Speed (Integrity Checks):** When inserting a new record, the DBMS must check for Primary Key uniqueness. When deleting a record, it must check for dependent Foreign Key constraints. Without indexes, these simple integrity checks would degrade into massive, full-table scans.
 
-Is highly inefficient because it groups the entire table first and then filters. It should be rewritten using selection pushing:
-
-```sql
-SELECT FkDepartment, MIN(Salary) 
-FROM Lecturers 
-WHERE FkDepartment = 10 
-GROUP BY FkDepartment;
-```
-
-_(Note: If `FkDepartment` was not in the `SELECT` clause, the `GROUP BY` would become entirely useless and could be removed)_.
+### 2.2 Over-Indexing Danger
+While indexes drastically speed up queries, having too many indexes will slow down the entire system during updates. Finding the optimal configuration is a highly complex (often exponential) problem, requiring a mix of DBA common sense and automated dynamic tuning tools provided by the DBMS.
 
 ----
 
-## 4. Selectivity Factor ($sf$) Formulas for Cost Evaluation
+## 3. Transaction and Application Tuning
 
-To correctly evaluate the benefit of an index in Step 5, you must estimate the Selectivity Factor ($sf$) of the query conditions. Assuming an attribute $A$ with a known maximum ($max(A)$) and minimum ($min(A)$):
+Performance tuning is not limited to physical files; how the application interacts with the DBMS concurrency manager is equally critical.
 
-- **Equality ($A = c$):** $sf(\psi) = \frac{1}{N_{key}(A)}$
-    
-- **Range Inequality ($A < c$):** $sf(\psi) = \frac{c - min(A)}{max(A) - min(A)}$ (if $A$ is numeric and has an index, otherwise typically estimated as $1/3$).
-    
-- **Range BETWEEN ($A$ BETWEEN $c_1$ AND $c_2$):** $sf(\psi) = \frac{c_2 - c_1}{max(A) - min(A)}$ (if $A$ is numeric and has an index, otherwise $1/4$).
-    
-- **Negation (NOT $\psi$):** $sf(\psi) = 1 - sf(\psi_1)$.
-    
-- **Conjunction ($\psi_1$ AND $\psi_2$):** $sf(\psi) = sf(\psi_1) \times sf(\psi_2)$ (assuming independent probabilities).
-    
-- **Disjunction ($\psi_1$ OR $\psi_2$):** $sf(\psi) = sf(\psi_1) + sf(\psi_2) - (sf(\psi_1) \times sf(\psi_2))$.
-	
+### 3.1 Avoiding User Interaction During Locks
+The most fundamental rule of transaction programming is: **Never hold a lock while waiting for user input**.
+* If a transaction locks database resources and then waits for a user to confirm an action (e.g., going to get a coffee), those resources are paralyzed for other users.
+* **Solution:** Use an optimistic approach. Perform complex operations or dialogue with the user using local, temporary copies of the data. Only after the user confirms the action should the application open a transaction, quickly lock the shared data, verify that it hasn't changed in the meantime, apply the updates, and commit immediately.
+
+### 3.2 Tuning Isolation Levels
+If the DBMS allows it, explicitly requesting a lower isolation level for specific transactions can drastically improve concurrency:
+* For massive statistical queries where slight inaccuracies are tolerable, using `Read Committed` or `Repeatable Read` instead of `Serializable` allows the DBMS to release read locks immediately after reading, unblocking concurrent updates.
 
 ----
 
-## 5. Estimating GROUP BY Cardinality
+## 4. Logical Schema Tuning
+
+Sometimes, adding indexes is not enough, and the DBA must physically restructure the logical schema to favor specific workloads (especially in OLAP scenarios where table scans dominate costs).
+
+### 4.1 Vertical Partitioning (Projections)
+If a table has many attributes (e.g., 25 columns) but a critical statistical query always scans only 3 of them, the DBA can split the table vertically.
+* One table holds the Primary Key and the 3 frequently accessed attributes; the other holds the Primary Key and the remaining 22 attributes.
+* This reduces the size of the scanned records, minimizing disk I/O and making the critical query orders of magnitude faster.
+
+### 4.2 Horizontal Partitioning (Selections)
+A table is divided into multiple tables based on the value of an attribute (e.g., date).
+* **Example:** Recent sales from the last month are kept in a small partition stored on extremely fast Solid State Drives (SSDs), while historical data is moved to slower, cheaper rotating disks.
+
+### 4.3 Denormalization
+Denormalization intentionally violates normalization rules (e.g., Third Normal Form) by storing redundant, pre-joined data to avoid costly joins at runtime.
+* **Example:** Instead of storing `Students` and `Exams` separately, the DBA stores a single table where the student's personal details are repeated for every exam they took.
+* **Trade-off:** This is highly beneficial for **OLAP** (Analysis) workloads where data is heavily queried but rarely updated. However, it is disastrous for **OLTP** (Transactional) workloads because updating a single fact (e.g., the student's address) requires scanning and updating multiple redundant rows, increasing both update time and the risk of inconsistencies.
+
+----
+
+## 5. Selectivity Factor ($sf$) Formulas for Cost Evaluation
+
+To correctly evaluate the benefit of an index, you must estimate the Selectivity Factor ($sf$) of the query conditions. Assuming an attribute $A$ with a known maximum ($max(A)$) and minimum ($min(A)$):
+
+* **Equality ($A = c$):** $sf(\psi) = \frac{1}{N_{key}(A)}$
+* **Range Inequality ($A < c$):** $sf(\psi) = \frac{c - min(A)}{max(A) - min(A)}$ (if $A$ is numeric and has an index, otherwise typically estimated as $1/3$).
+* **Range BETWEEN ($A$ BETWEEN $c_1$ AND $c_2$):** $sf(\psi) = \frac{c_2 - c_1}{max(A) - min(A)}$ (if $A$ is numeric and has an index, otherwise $1/4$).
+* **Negation (NOT $\psi$):** $sf(\psi) = 1 - sf(\psi_1)$.
+* **Conjunction ($\psi_1$ AND $\psi_2$):** $sf(\psi) = sf(\psi_1) \times sf(\psi_2)$ (assuming independent probabilities).
+* **Disjunction ($\psi_1$ OR $\psi_2$):** $sf(\psi) = sf(\psi_1) + sf(\psi_2) - (sf(\psi_1) \times sf(\psi_2))$.
+
+----
+
+## 6. Estimating GROUP BY Cardinality
 
 A critical part of physical design and query optimization is correctly estimating the number of groups produced by a `GROUP BY` operator to evaluate the memory and I/O footprint of operations like `HashGroupBy` or sorting.
 
-### 5.1 Baseline Estimate vs. Range Filters
-
+### 6.1 Baseline Estimate vs. Range Filters
 The theoretical maximum number of groups is the total number of distinct values of the grouping attribute in the table. However, if the query applies a range filter on that specific attribute, the estimate must be scaled down proportionally.
+* **Example:** If attribute `A` has 10,000 distinct values globally, but a `WHERE` clause restricts `A` to a range that covers only 20% of its total domain, the estimated number of distinct groups generated by `GROUP BY A` will be 2,000 (i.e., $10,000 \times 0.20$).
 
-- **Example:** If attribute `A` has 10,000 distinct values globally, but a `WHERE` clause restricts `A` to a range that covers only 20% of its total domain, the estimated number of distinct groups generated by `GROUP BY A` will be 2,000 (i.e., $10,000 \times 0.20$).
-    
-
-### 5.2 Independence of Orthogonal Filters
-
-When estimating the distinct values of a grouping attribute `A`, filters applied to _other_ independent attributes (e.g., a highly selective condition on attribute `B`) should generally not be used to reduce the expected number of groups for `A`.
-
-- **Reasoning:** Even if a filter on `B` eliminates 90% of the total records in the table, it randomly removes rows across all values of `A`. Unless there is a known strong statistical correlation between `A` and `B`, it is highly unlikely that restricting `B` will completely eliminate all instances of any specific value of `A`. Therefore, the estimated number of groups for `A` remains largely unaffected by orthogonal filters.
+### 6.2 Independence of Orthogonal Filters
+When estimating the distinct values of a grouping attribute `A`, filters applied to *other* independent attributes (e.g., a highly selective condition on attribute `B`) should generally not be used to reduce the expected number of groups for `A`.
+* **Reasoning:** Even if a filter on `B` eliminates 90% of the total records in the table, it randomly removes rows across all values of `A`. Unless there is a known strong statistical correlation between `A` and `B`, it is highly unlikely that restricting `B` will completely eliminate all instances of any specific value of `A`. Therefore, the estimated number of groups for `A` remains largely unaffected by orthogonal filters.
 
 <div style="page-break-after: always;"></div>
 
