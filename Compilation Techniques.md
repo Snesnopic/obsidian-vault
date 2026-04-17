@@ -1533,6 +1533,183 @@ By evaluating both potential outcomes into temporary registers and using conditi
 
 <div style="page-break-after: always;"></div>
 
+# 19. Scopes and Value Numbering
+
+This section delves into the optimizer, exploring how the compiler transforms the Intermediate Representation (IR) to improve execution speed, memory footprint, and power consumption without altering the program's observable semantics.
+
+----
+
+## 1. Scopes of Optimization
+
+Optimizations can be applied at different levels of the program's structure. The broader the scope, the more opportunities the compiler has, but the more computationally expensive the analysis becomes.
+
+1. **Local:** Operates within a single Basic Block (straight-line code). Strong guarantees exist because there is no control flow to disrupt the state.
+2. **Superlocal:** Operates over an **Extended Basic Block (EBB)**—a sequence of blocks where each block (except the first) has exactly one predecessor. It allows propagating information down a specific linear path.
+3. **Regional:** Operates over broader CFG regions, such as loops. 
+4. **Global:** Operates over an entire procedure or function.
+5. **Interprocedural:** Operates across the whole program (multiple functions/files).
+
+----
+
+## 2. Translating Branches: Predication vs. Jumping
+
+When the compiler encounters conditional statements, it must decide the most efficient hardware translation.
+
+* **Standard Branching:** The compiler generates jump instructions based on condition codes. This is safe but incurs heavy hardware penalties if the CPU mispredicts the branch.
+* **Predicated Execution / Conditional Moves:** The compiler evaluates *both* branches of the condition sequentially and uses a conditional move (`cmov`) to select the correct final value. 
+
+**Trade-offs of Predication:**
+Predication eliminates costly branch instructions. However, it is only effective if:
+1. Both execution paths are relatively short. If one path takes 100 cycles and the other takes 1, forcing the CPU to compute both wastes time.
+2. The paths have no side effects (like memory stores or exceptions) that cannot be easily rolled back if the condition evaluates to false.
+
+----
+
+## 3. Local Value Numbering (LVN)
+
+Value Numbering is a powerful local optimization technique used primarily for **Common Subexpression Elimination (CSE)**. The goal is to avoid recomputing expressions that have already been evaluated.
+
+### 3.1 The Algorithm
+The compiler traverses the instructions in a basic block and assigns a unique integer (a "Value Number") to every distinct computed value. 
+It maintains a Hash Table mapping `(Operator, ValueNum_Left, ValueNum_Right)` to a `Result_ValueNum`.
+
+```text
+// Example execution of LVN
+1. a = b + c    // Hash(+, VN(b), VN(c)) is new. Assign VN 1 to 'a'.
+2. d = b + c    // Hash(+, VN(b), VN(c)) matches VN 1! 
+                // Optimization: Replace with 'd = a'
+3. e = a - d    // Hash(-, VN 1, VN 1). 
+````
+
+### 3.2 Extensions and Algebraic Identities
+
+LVN can be augmented to catch more redundancies:
+
+- **Commutativity:** For commutative operators like `+` or `*`, the compiler sorts the operand value numbers before hashing (e.g., `Hash(+, 2, 1)` becomes `Hash(+, 1, 2)`) to recognize that `b + c` is the same as `c + b`.
+    
+- **Constant Folding:** If the operands are constants, compute the result immediately at compile-time.
+    
+- **Algebraic Identities:** Hardcode rules to simplify expressions dynamically, such as $x + 0 = x$, $x * 1 = x$, or $x - x = 0$.
+    
+
+### 3.3 The Naming Problem and SSA
+
+A major limitation of standard LVN is variable reassignment.
+
+If the code does `a = x + y`, followed later by `x = 10`, and then `b = x + y`, the name `x` means something different the second time. The compiler must carefully invalidate previous value numbers associated with `x`.
+
+This is why **Static Single Assignment (SSA) form** is so critical. In SSA, variables are never reassigned (`x1`, `x2`). This allows the LVN algorithm to safely rely on variable names as pure representations of values, dramatically simplifying the optimization pass.
+
+---
+
+## 4. Superlocal Value Numbering (SVN)
+
+Superlocal Value Numbering extends LVN beyond a single basic block by applying it to Extended Basic Blocks (EBBs).
+
+Since an EBB is a path where control flow does not merge from unknown locations, the compiler can take the hash table generated at the end of the first block and pass it directly as the starting state for the next block in the path. This allows finding common subexpressions across block boundaries, provided the execution path strictly dictates that the first block must have been executed to reach the second.
+
+---
+
+## 5. Loop Unrolling
+
+Loops carry inherent overhead at runtime: incrementing the counter, evaluating the condition, and branching back to the top.
+
+**Loop Unrolling** mitigates this overhead by replicating the loop body multiple times (the "unroll factor").
+
+### 5.1 Benefits
+
+- If a loop is unrolled by a factor of 4, the branch and condition overhead is reduced by 75%.
+    
+- It creates larger basic blocks, giving local optimizers (like LVN and instruction schedulers) a much larger window of code to work with, unlocking new optimization opportunities.
+    
+- It can eliminate redundant end-of-loop copy operations by shifting variable names across the unrolled iterations.
+    
+
+### 5.2 Drawbacks and Edge Cases
+
+- **Code Bloat:** Unrolling increases the size of the compiled executable, which can put negative pressure on the CPU's Instruction Cache.
+    
+- **Unknown Bounds:** If the compiler does not know the exact number of loop iterations statically, it must generate a "Guard Loop" or "Cleanup Loop" to handle the remaining iterations if the total count is not perfectly divisible by the unroll factor.
+
+<div style="page-break-after: always;"></div>
+
+# 20. Data-Flow Analysis & Liveness Analysis
+
+This section delves into the formal mechanisms of Data-Flow Analysis, a cornerstone of static analysis used in the compiler's middle-end to gather information about how data propagates through a program. This information is strictly required to safely apply optimizations and perform register allocation.
+
+----
+
+## 1. The Data-Flow Framework
+
+Data-flow analysis operates on the Control-Flow Graph (CFG), where each node represents a basic block (or a single statement). The analysis extracts properties by observing how information changes as it passes through these nodes.
+
+### 1.1 IN and OUT Sets
+For every node $n$ in the CFG, we define two mathematical sets to track the flow of information:
+* **$IN[n]$:** The state of information immediately *before* entering node $n$.
+* **$OUT[n]$:** The state of information immediately *after* exiting node $n$.
+
+The difference between $IN$ and $OUT$ represents the **transfer function** (the effect that the specific code inside the node has on the program state).
+
+### 1.2 Dimensions of Analysis
+Data-flow problems are categorized by two main dimensions:
+1. **Direction:**
+   * **Forward:** Information flows along the execution paths (from predecessors to successors).
+   * **Backward:** Information flows against the execution paths (from successors to predecessors).
+2. **Confluence (May vs. Must):**
+   * **May (Possible) Analysis:** We want to know if a property *might* hold along *at least one* path. When control flow merges, we use the **Union ($\cup$)** operator.
+   * **Must (Definite) Analysis:** We want to know if a property holds along *all* possible paths. When control flow merges, we use the **Intersection ($\cap$)** operator.
+
+----
+
+## 2. Liveness Analysis
+
+Liveness Analysis is a quintessential **Backward, May** data-flow problem. 
+
+* **Definition:** A variable is considered "live" at a specific program point if its current value *may* be read (used) later in the execution before it is overwritten (redefined).
+* **Primary Objective:** **Register Allocation**. If two variables are never live at the same time (their live ranges do not intersect), the compiler can safely assign both of them to the same physical CPU register, minimizing memory spills.
+
+### 2.1 Local Sets: Def and Use
+To compute liveness, the compiler first calculates two local properties for each node $n$:
+* **$Use[n]$:** The set of variables that are read inside the node *before* any assignment happens within that same node.
+* **$Def[n]$:** The set of variables that are assigned a new value (written) inside the node.
+
+### 2.2 The Flow Equations
+Because liveness looks into the future to see if a variable will be used, information must flow **backwards** from the end of the program to the beginning.
+
+1. **The OUT Equation:** The variables live upon exiting a node are exactly the variables live upon entering any of its succeeding nodes. Since this is a "May" analysis, we union the inputs of the successors.
+   $$OUT[n] = \bigcup_{s \in succ(n)} IN[s]$$
+
+2. **The IN Equation:** A variable is live upon entering a node if either:
+   a) It is explicitly used inside this node ($Use[n]$).
+   b) It is live upon exiting the node ($OUT[n]$) AND it is not overwritten inside this node ($- Def[n]$).
+   $$IN[n] = Use[n] \cup (OUT[n] \setminus Def[n])$$
+
+----
+
+## 3. Safe Over-Approximation
+
+Static analysis works on the CFG without executing the code. Because the compiler cannot predict the outcome of dynamic branches (like `if (x < 0)`), it must assume that **all edges in the CFG are feasible execution paths**.
+
+* **Unfeasible Paths:** In reality, some paths might be logically impossible (e.g., entering an `if (true)` block and then taking the `false` branch of a subsequent identical condition).
+* **Over-approximation:** Because the analysis unions the liveness from *all* structural paths, it will inevitably claim that a variable is live in places where, at runtime, it actually is not.
+* **Safety:** This over-approximation is structurally **safe**. In compiling, it is acceptable to have a *false positive* (keeping a dead variable in a register, slightly degrading performance). It is disastrous to have a *false negative* (discarding a variable from a register when it will actually be used later, breaking the program's semantics). Liveness analysis guarantees no false negatives.
+
+----
+
+## 4. Fixpoint Theorem and Iterative Computation
+
+Because control-flow graphs often contain cycles (loops), the $IN$ and $OUT$ equations are mutually recursive. Node A depends on Node B, which depends on Node C, which loops back to Node A. 
+
+To solve this, the compiler relies on the **Fixpoint Theorem** over finite domains:
+
+1. **The Domain:** The mathematical domain is the powerset of all variables in the program $\mathcal{P}(vars)$, ordered by set inclusion ($\subseteq$).
+2. **Initialization:** Since we are computing a "May" analysis (Union-based), we start at the bottom of the lattice. All $IN$ and $OUT$ sets are initialized to the empty set $\emptyset$.
+3. **Monotonic Iteration:** The compiler repeatedly applies the IN and OUT equations to all nodes. Because the transfer functions only use Unions and set subtractions against constant local sets, the $IN$ and $OUT$ sets can only grow or remain the same across iterations; they can never shrink (Monotonicity).
+4. **Convergence:** Since the total number of variables is finite, the sets cannot grow forever. Eventually, an iteration will complete where no elements are added to any $IN$ or $OUT$ set. This stable state is the **Least Fixpoint**, representing the tightest safe approximation of liveness for the program.
+
+
+<div style="page-break-after: always;"></div>
+
 # 99. Laboratory
 This document serves as the comprehensive guide for the Compilation Techniques laboratory project. The objective is to build a compiler that includes evaluation, static analysis, optimization, and code generation targeting LLVM IR. 
 
