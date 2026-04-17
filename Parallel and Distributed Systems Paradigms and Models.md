@@ -2700,3 +2700,150 @@ A classic use case is **Sparse Array Compaction**. If you have a massive array m
 
 <div style="page-break-after: always;"></div>
 
+# 22. Lock-Free Programming and C++20 Atomics
+
+This chapter explores the practical implementation of lock-free data structures and synchronization primitives using the C++20 memory model. It highlights the transition from blocking algorithms (mutexes) to non-blocking ones (atomics), addressing performance trade-offs, false sharing, and energy consumption.
+
+## 1. Memory Fences and Non-Atomic Synchronization
+
+While `memory_order_release` and `memory_order_acquire` synchronize specific atomic variables, **Memory Fences** (`std::atomic_thread_fence`) impose ordering constraints across multiple operations.
+
+* **Synchronizing Non-Atomic Data:** Fences can synchronize non-atomic variables, provided they are paired with an atomic operation. 
+    * *Example:* Thread A writes to a non-atomic variable `x`, executes a release fence, and then writes to an atomic variable `y` (even with relaxed ordering). Thread B reads `y`, executes an acquire fence, and then reads `x`.
+    * *C++ Standard Warning:* This synchronization is strictly undefined behavior if `y` is also non-atomic. Fences *must* be anchored by atomic operations to be valid under the C++ memory model.
+
+## 2. Spinlocks vs. Mutexes
+
+A **Spinlock** forces a thread to busy-wait (spin) in a loop while checking if a lock is available, avoiding the OS-level context switch of a blocking mutex.
+
+### 2.1 Implementation with `std::atomic_flag`
+`std::atomic_flag` is the only C++ type guaranteed to be lock-free on all platforms. Modern C++20 added `test()`, `wait()`, and `notify()` methods to it.
+* **Naive Spin:** Continuously calling `test_and_set()` floods the memory bus.
+* **Optimized Spin:** Use a relaxed `test()` in the inner loop to read the flag from the local cache without invalidating other cores' cache lines, only attempting `test_and_set()` when the flag appears free.
+
+### 2.2 Performance Takeaway
+Despite the theoretical advantage, custom spinlocks are highly unstable in performance. Standard C++ `std::mutex` implementations are heavily optimized and employ hybrid spinning/blocking strategies internally. Writing a custom spinlock that consistently beats `std::mutex` is exceedingly difficult and generally discouraged unless you are a hardware specialist.
+
+## 3. Custom Spin Barrier (C++20)
+
+While C++20 provides `std::barrier` (which puts threads to sleep), we can implement a custom, reusable spin-barrier for low-latency scenarios using atomic operations.
+
+* **Mechanism:** Threads arrive at the barrier and decrement an atomic counter. If they are not the last thread, they call `wait()` on an atomic `generation` variable.
+* **C++20 Atomic Wait:** The atomic `wait()` and `notify_all()` methods allow threads to perform passive waiting on an atomic variable without heavy OS mutexes. The last thread to arrive increments the `generation` and calls `notify_all()`, releasing the barrier.
+
+## 4. Lock-Free SPSC Ring Buffer
+
+A Single-Producer Single-Consumer (SPSC) Ring Buffer is a classic lock-free data structure.
+
+### 4.1 Architecture
+* **Pointers:** The Producer exclusively modifies the `tail` pointer. The Consumer exclusively modifies the `head` pointer.
+* **False Sharing Prevention:** To prevent the CPU's cache coherence protocol from causing false sharing (ping-ponging cache lines between cores), `head` and `tail` must be padded to reside on **separate cache lines** (typically 64 bytes apart).
+* **Modulo Optimization:** The buffer capacity is forced to be a power of 2, allowing the expensive modulo operator `%` to be replaced with a fast bitwise AND (`&`) mask.
+
+### 4.2 Local Index Caching
+To minimize expensive atomic reads over the memory bus, threads cache the last known value of the other thread's pointer.
+* The Producer caches `head`. It only performs an expensive `load_acquire` on the real `head` when its local cache indicates the buffer might be full.
+* The Consumer caches `tail`. It only reads the real `tail` when its local cache indicates the buffer is empty.
+
+### 4.3 Hybrid Spinning and Blocking
+For fine-grained computations (< 1ms per item), the lock-free SPSC buffer provides massive throughput gains over a mutex. However, pure spinning consumes 100% of the CPU, wasting energy if the buffer is frequently empty/full.
+* **Solution:** Implement a hybrid fallback using C++20 atomic `wait()`. The lock-free logic handles the fast path, but if a thread fails to push/pop after a certain number of retries, it switches to `wait()`, yielding the CPU until the other thread calls `notify_one()`.
+
+### 4.4 Historical Note: Lamport's Algorithm
+The original lock-free ring buffer algorithm was designed by Leslie Lamport in the 1970s under the assumption of **Sequential Consistency**. On modern multi-core architectures (which use relaxed memory models like TSO), Lamport's original code is broken. It requires the explicit insertion of memory fences or C++ `acquire/release` atomic operations to function correctly today.
+
+<div style="page-break-after: always;"></div>
+
+# 23. Lock-Free Data Structures
+
+This chapter delves deeper into the complexities of lock-free programming, exploring the infamous ABA problem inherent to pointer-based concurrent structures, and examining the architecture of a Multi-Producer Multi-Consumer (MPMC) lock-free queue.
+
+## 1. The ABA Problem
+
+The ABA problem is a fundamental anomaly in lock-free programming that occurs when using Compare-And-Swap (CAS) operations on memory pointers.
+
+### 1.1 The Mechanism of Failure
+Imagine a lock-free Stack (LIFO) implemented using a linked list.
+1. **Thread 1 (T1)** reads the `head` pointer (pointing to node `A`). It reads `A->next` (pointing to `B`). T1 prepares to CAS the `head` from `A` to `B` to pop `A`, but gets suspended by the OS.
+2. **Thread 2 (T2)** wakes up. It pops `A`, pops `B`, and then pushes a entirely new node `C`. 
+3. T2 then pushes `A` back onto the stack (perhaps the memory allocator reused the recently freed memory address of `A`). The stack is now `head -> A -> C`.
+4. **T1 resumes**. Its CAS operation checks if `head == A`. It is! The CAS succeeds, and T1 incorrectly sets `head` to `B` (which was popped and likely deleted by T2). The stack is now corrupted.
+
+T1 observed the state `A`, missed the transition to `B` and back to `A`, and incorrectly assumed the data structure's internal state had not changed.
+
+### 1.2 Solutions to ABA
+
+* **Sequence Tagging (Versioned Pointers):** Every pointer is augmented with a monotonically increasing sequence number (e.g., using a 64-bit struct: 48 bits for the pointer, 16 bits for the counter). The CAS operation is performed on the *entire pair*. Even if the pointer address is reused (ABA), the sequence number will have incremented, causing the CAS to safely fail.
+* **Hazard Pointers (Safe Memory Reclamation):** A technique where threads publish the pointers they are currently reading to a shared, globally visible list. A thread trying to free a node must first check all Hazard Pointer lists; if the node is in use, it defers the deletion until no threads hold a reference to it. This entirely prevents the memory allocator from prematurely recycling addresses.
+
+----
+
+## 2. Multi-Producer Multi-Consumer (MPMC) Lock-Free Queue
+
+Building a queue that supports concurrent pushes from multiple producers and concurrent pops from multiple consumers without mutexes requires a sophisticated array-based design.
+
+### 2.1 Architecture
+Instead of pointers, the MPMC queue uses a pre-allocated circular array of `cells`. Each cell contains:
+1. `sequence_number` (`std::atomic<size_t>`)
+2. `data` (The payload, often a pointer to avoid copying large objects)
+
+The queue maintains two atomic indices: `enqueue_pos` (Tail) and `dequeue_pos` (Head).
+
+### 2.2 The Enqueue (Push) Logic
+1. A Producer reads the current `enqueue_pos`.
+2. It inspects the `sequence_number` of the cell at that position.
+3. **The Check:** If `sequence_number == enqueue_pos`, the cell is free and belongs to the current "lap" of the ring buffer.
+4. **The Reservation:** The Producer attempts a CAS on `enqueue_pos` to `enqueue_pos + 1`. If successful, the Producer has exclusively "booked" this cell.
+5. **The Publish:** The Producer writes its data to the cell, then updates the cell's `sequence_number` to `enqueue_pos + 1`. This signals to Consumers that the data is ready.
+
+### 2.3 Exponential Backoff
+If the CAS in step 4 fails (because another Producer beat it), the thread must retry. However, immediately retrying in a tight loop creates massive memory bus contention. 
+**Exponential Backoff** forces the thread to pause (using `_mm_pause()` or `cpu_relax()`) for a duration that doubles with each failure, drastically reducing contention and allowing the winning thread time to finish its operation.
+
+## 3. Hardware Topology and The OS Scheduler
+
+Modern processors are incredibly complex. A machine might have multiple physical CPU sockets (NUMA nodes), each containing multiple physical cores, each containing multiple logical cores (Hyper-Threading/SMT).
+
+By default, the Linux Completely Fair Scheduler (CFS) freely migrates threads between cores to balance global system load.
+* **The Penalty of Migration:** When a thread is moved from Core 0 to Core 4, its L1 and L2 caches are completely invalidated. The thread suffers a massive performance penalty as it must re-fetch all its working data from the slow Main Memory (DRAM).
+
+## 4. Thread Affinity (Pinning)
+
+Thread Affinity (or Pinning) restricts a thread to run exclusively on a specific core or subset of cores.
+
+### 4.1 Command-Line Tools
+* `numactl --hardware`: Displays the physical topology of the NUMA nodes and core IDs. Note that logical SMT sibling cores often have non-contiguous IDs (e.g., Core 0 and Core 20 might be on the same physical silicon).
+* `taskset -c 0,2,4 ./program`: Forces the entire application to run only on cores 0, 2, and 4.
+
+### 4.2 Programmatic Control (C++/POSIX)
+C++ standard library does not provide affinity controls. We must drop down to POSIX threads (`pthreads`):
+
+```cpp
+#include <pthread.h>
+#include <sched.h>
+
+void pin_thread_to_core(int core_id) {
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(core_id, &cpuset);
+
+    // native_handle() extracts the underlying OS thread ID from std::thread
+    int rc = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (rc != 0) {
+        // handle error
+    }
+}
+````
+
+## 5. Placement Strategies
+
+The optimal placement of threads depends entirely on the workload's memory access patterns:
+
+- **Heavy Communication (Producer-Consumer):** If Thread A constantly sends data to Thread B, pinning them to **SMT sibling cores** (e.g., 0 and 20) allows them to share the ultra-fast L1/L2 caches.
+    
+- **Compute Bound / No Communication:** If threads process independent chunks of data (e.g., a Map operation), putting them on SMT siblings is disastrous. They will fight for the same ALU/FPU resources. They must be pinned to **distinct physical cores**.
+    
+- **NUMA Awareness (First-Touch Policy):** Linux allocates physical memory pages on the NUMA node of the thread that _first writes_ to that memory. If the main thread allocates and initializes a massive matrix, it all lives on Node 0. If worker threads on Node 1 try to read it, they suffer extreme latency over the inter-socket interconnect. To fix this, initialization must be parallelized so each thread "touches" its own partition, distributing the memory physically across the NUMA nodes.
+
+<div style="page-break-after: always;"></div>
+
