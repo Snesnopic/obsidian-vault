@@ -2847,3 +2847,200 @@ The optimal placement of threads depends entirely on the workload's memory acces
 
 <div style="page-break-after: always;"></div>
 
+# 26. Thread Pool Patterns and OpenMP
+
+This chapter concludes the low-level C++ concurrency section by introducing an advanced modification to the Thread Pool pattern: Cooperative Execution. We also transition into the high-level world of OpenMP, exploring its philosophy, directives, and thread lifecycle management.
+
+## 1. Cooperative Thread Pools for Divide and Conquer
+
+In a standard Thread Pool, the main thread pushes tasks into a shared queue and then passively waits (via `std::future::get()`) for the worker threads to complete them. 
+
+While this works well for flat, embarrassingly parallel workloads, it creates severe bottlenecks in recursive **Divide and Conquer** algorithms (like Merge Sort). 
+* **The Problem:** If a worker thread splits a task into two sub-tasks, pushes them to the queue, and then passively waits for their results, that worker thread is blocked. If all workers end up waiting on sub-tasks, the system deadlocks (Thread Pool Exhaustion).
+
+### 1.1 The Cooperative Wait
+To solve this, the `wait()` operation is modified to be **cooperative**. Instead of sleeping while waiting for a future to be resolved, the waiting thread temporarily becomes a worker. 
+
+```cpp
+// Pseudocode for Cooperative Wait
+void wait_cooperatively(std::future<T>& fut) {
+    while (fut.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+        // If the result isn't ready, don't sleep! 
+        // Fetch another task from the pool's queue and execute it.
+        Task t;
+        if (pool.try_pop(t)) {
+            t(); 
+        } else {
+            // Only yield/sleep if the queue is completely empty
+            std::this_thread::yield(); 
+        }
+    }
+}
+````
+
+- **Benefits:** This ensures that no CPU cycles are wasted. Threads actively contribute to emptying the task queue while waiting for their specific dependencies to resolve, naturally avoiding deadlocks in recursive task generation.
+    
+
+----
+
+## 2. Introduction to OpenMP
+
+OpenMP (Open Multi-Processing) is a high-level API and runtime library for shared-memory parallel programming in C, C++, and Fortran. It drastically simplifies concurrent programming by abstracting away the manual management of threads, mutexes, and atomics.
+
+### 1. The OpenMP Philosophy
+
+OpenMP is built around two core philosophies:
+
+1. **Directive-Based Parallelism:** The programmer uses compiler directives (`#pragma omp`) to annotate which parts of the code should be parallelized.
+    
+2. **Sequential Equivalence:** If an OpenMP program is compiled without the OpenMP flag (e.g., `-fopenmp` in GCC), the compiler completely ignores the pragmas. The code will compile and execute correctly as a standard sequential program. This allows developers to incrementally parallelize existing codebases without destroying the original logic.
+    
+
+_Note: OpenMP relies on the programmer to ensure that the annotated regions are actually safe to parallelize (i.e., free of data dependencies). If you annotate a loop that contains race conditions, OpenMP will blindly parallelize it, resulting in incorrect outputs._
+
+### 2. The Fork-Join Execution Model
+
+OpenMP execution follows a strict **Fork-Join** model.
+
+1. The program begins execution as a single thread (the **Master Thread**).
+    
+2. **Fork:** When the Master Thread encounters a parallel region directive (`#pragma omp parallel`), the OpenMP runtime forks a team of worker threads.
+    
+3. The Master and the workers concurrently execute the block of code enclosed in the parallel region.
+    
+4. **Join:** At the end of the parallel block, there is an **implicit synchronization barrier**. All threads must wait here. Once all threads have arrived, the worker threads are suspended (or parked in a thread pool), and the Master Thread continues executing sequentially.
+    
+
+### 3. Basic Directives and Controls
+
+To use OpenMP in C++, you must include the header `<omp.h>` and compile with the `-fopenmp` flag.
+
+#### 3.1 The `parallel` Region
+
+The `#pragma omp parallel` directive tells the compiler to execute the following structured block (or single statement) in parallel.
+
+```cpp
+#include <iostream>
+#include <omp.h>
+
+int main() {
+    // The following block will be executed by multiple threads simultaneously
+    #pragma omp parallel 
+    {
+        // Get the specific ID of the thread executing this block
+        int thread_id = omp_get_thread_num();
+        // Get the total number of threads in the current team
+        int total_threads = omp_get_num_threads();
+        
+        // Note: printf is generally safer than std::cout in parallel regions to avoid interleaved output
+        printf("Hello from thread %d of %d\n", thread_id, total_threads);
+    } // Implicit barrier here. Master thread waits for all workers to finish.
+    
+    return 0;
+}
+```
+
+#### 3.2 Controlling Thread Counts
+
+If not specified, OpenMP defaults to spawning as many threads as there are logical cores on the machine. You can control this via:
+
+1. **Environmental Variable:** Exporting `OMP_NUM_THREADS=8` in the terminal sets the global default for the application.
+    
+2. **Pragma Clause:** Appending `num_threads(N)` to the directive overrides the environmental variable for that specific region.
+    
+    - Example: `#pragma omp parallel num_threads(4)`
+        
+
+#### 3.3 Conditional Parallelism
+
+You can evaluate conditions at runtime to decide whether a region should be executed in parallel or sequentially using the `if` clause. This is highly useful for debugging or ignoring parallelism when the dataset is too small to justify the thread-spawning overhead.
+
+```cpp
+int threshold = 1000;
+int data_size = 500;
+
+// This region will execute sequentially (using 1 thread) because the condition evaluates to false
+#pragma omp parallel if(data_size > threshold)
+{
+    // Do work
+}
+```
+
+<div style="page-break-after: always;"></div>
+
+# 27. Advanced OpenMP Work-Sharing, Scheduling, and Pipeline Emulation
+
+This chapter dives deeper into OpenMP's capabilities, focusing on how to efficiently distribute workloads among threads using loop scheduling policies, how to handle variable scopes, and how to emulate functional (pipeline) parallelism using OpenMP's `sections` directive.
+
+## 1. Variable Scope and Data Sharing
+
+When OpenMP forks a team of threads, the programmer must explicitly declare how variables from the master thread's scope are shared among the workers. A best practice is to always use `default(none)` to force explicit declaration, avoiding insidious race conditions.
+
+* **`shared(x)`:** All threads read and write to the exact same memory location of `x`. If `x` is mutated, explicit synchronization (like `#pragma omp critical` or atomics) is required to prevent data races.
+* **`private(x)`:** Each thread gets its own uninitialized, local copy of `x`. The original value of `x` is invisible, and any modifications are lost when the parallel region ends.
+* **`firstprivate(x)`:** Like `private`, but each thread's local copy is initialized with the value `x` had before entering the parallel region.
+* **`lastprivate(x)`:** Like `private`, but after the parallel loop finishes, the original variable `x` is updated with the value computed by the *logically last* iteration of the loop (not necessarily the thread that finishes last in time).
+
+### 1.1 Reductions
+When multiple threads need to accumulate a single result (e.g., computing a sum, finding a maximum), manually locking a shared variable destroys performance. OpenMP handles this automatically with the `reduction` clause.
+
+```cpp
+int total_sum = 0;
+// Each thread gets a private, zero-initialized copy of total_sum.
+// At the end, all local sums are safely added to the original total_sum.
+#pragma omp parallel for reduction(+:total_sum)
+for (int i = 0; i < N; ++i) {
+    total_sum += array[i];
+}
+````
+
+## 2. Loop Iteration Scheduling (`schedule`)
+
+By default, OpenMP divides the iterations of a `#pragma omp for` loop evenly among threads in contiguous blocks (Static). However, if the workload is irregular, this leads to severe load imbalance. OpenMP provides the `schedule` clause to dynamically adjust how chunks of iterations are assigned.
+
+- **`schedule(static, chunk_size)`:** The iterations are divided into blocks of `chunk_size` and assigned to threads in a round-robin (cyclic) fashion before the loop begins execution. Zero runtime overhead, but handles irregularity poorly.
+    
+- **`schedule(dynamic, chunk_size)`:** Threads request blocks of `chunk_size` iterations from an internal runtime queue. When a thread finishes its block, it requests the next available one. Excellent for highly skewed workloads, but introduces runtime scheduling overhead.
+    
+- **`schedule(guided, chunk_size)`:** A heuristic hybrid. It starts by assigning large blocks to threads (to minimize overhead) and exponentially decreases the block size as the loop nears completion (down to a minimum of `chunk_size`), aiming to perfectly balance the final few iterations.
+    
+- **`schedule(runtime)`:** Defers the scheduling decision until execution. The policy is read from the `OMP_SCHEDULE` environmental variable (e.g., `export OMP_SCHEDULE="dynamic, 16"`). This allows rapid experimentation without recompiling the code.
+    
+
+### 2.1 The `collapse` Clause
+
+If you have nested loops but the outer loop has too few iterations to keep all threads busy, you can use the `collapse(N)` clause. OpenMP will mathematically flatten the `N` nested loops into a single, massive 1D iteration space and schedule it across the threads.
+
+## 3. Functional Parallelism with `sections`
+
+While `#pragma omp for` is designed for Data Parallelism, OpenMP can also handle coarse-grained Task Parallelism using `#pragma omp sections`.
+
+This directive allows you to define distinct blocks of code (`#pragma omp section`) that can be executed concurrently by different threads in the team.
+
+```cpp
+#pragma omp parallel num_threads(2)
+{
+    #pragma omp sections
+    {
+        #pragma omp section
+        {
+            compute_gui(); // Task A
+        }
+        #pragma omp section
+        {
+            compute_physics(); // Task B
+        }
+    } // Implicit barrier here
+}
+```
+
+### 3.1 Emulating a Pipeline
+
+You can attempt to build a Pipeline pattern using `sections`, where each section represents a pipeline stage communicating via thread-safe queues. However, this is generally **discouraged** in OpenMP.
+
+**The Problem:** OpenMP `sections` do not guarantee a 1:1 mapping between threads and sections. If you spawn 4 threads for 4 sections, the OpenMP runtime might arbitrarily assign two sections to Thread 1 and leave Thread 2 idle, instantly deadlocking a pipeline that relies on concurrent execution.
+
+If a strict pipeline topology is required in OpenMP, the preferred modern approach is to use explicit OpenMP **Tasks** (with dependency tracking), which provide much safer and more flexible execution graphs.
+
+<div style="page-break-after: always;"></div>
+
