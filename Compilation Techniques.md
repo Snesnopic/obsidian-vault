@@ -1794,6 +1794,7 @@ The final submission requires two main components:
 2. **Report & Execution Instructions:** A document containing your design ideas and clear execution instructions. If the program cannot be executed or tested by the instructor, it will not be debugged for you. Ensure edge cases (e.g., merging multiple basic blocks) are handled and documented.
 
 ----
+
 ## Fragment 1: Language Semantics
 
 The first milestone requires implementing the operational semantics for both languages. Each language is defined by its syntax (grammar) and semantics (meaning, via deduction systems).
@@ -1808,6 +1809,7 @@ MiniFun requires managing lexical scopes and function evaluations.
 * **Closures:** When a function is evaluated, the semantics must capture the environment at that exact time.
     * Standard function `fun x => t` produces a closure `(x, t, \rho)`.
     * Recursive function `letfun f x = t` produces a closure that also stores its own name: `(f, x, t, \rho)`.
+
 
 ----
 
@@ -1917,6 +1919,7 @@ In the final project report, you must explicitly detail your implementation choi
 * **Pass Control:** How do you control the sequence of optimization passes? 
 * **Strategy:** If you defined a specific optimization strategy (e.g., executing passes in a specific loop or order until a fixpoint is reached), what is it and why did you choose it?
 * Any other relevant implementation details.
+
 ----
 
 ## Fragment 8: LLVM IR Code Generation
