@@ -523,9 +523,9 @@ Available expressions analysis determines which complex expressions (like `a+b`)
 
 ### 5.2 Data-Flow Equations
 Unlike Liveness and Reaching Definitions (which use the Union operator $\cup$), Available Expressions uses the Intersection operator $\cap$ because an expression is available only if it is available along *all* incoming paths.
-* `AEentry(p) = \emptyset` (if $p$ is initial).
-* `AEentry(p) = \cap { AEexit(q) | q \in pre[p] }` (otherwise).
-* `AEexit(p) = (AEentry(p) \ killAE(p)) U genAE(p)`.
+* $AEentry(p) = \emptyset$ (if $p$ is initial).
+* $AEentry(p) = \cap { AEexit(q) | q \in pre[p] }$ (otherwise).
+* $AEexit(p) = (AEentry(p) \ killAE(p)) U genAE(p)$.
 
 <div style="page-break-after: always;"></div>
 
