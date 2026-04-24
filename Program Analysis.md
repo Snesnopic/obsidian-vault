@@ -1469,7 +1469,7 @@ $$\frac{P' \implies P \quad [P] \ c \ [Q] \quad Q \implies Q'}{[P'] \ c \ [Q']}$
 
 This chapter introduces **Control Flow Analysis (CFA)**, a fundamental technique for analyzing programs where the control flow is not explicit and statically determinable from the syntax, as is the case in functional or object-oriented languages.
 
----
+----
 
 ## 1. The Dispatch Problem in Functional Languages
 
@@ -1480,7 +1480,7 @@ When the analyzer encounters a function application `x(y)`, it faces the **dispa
 
 To solve this problem, CFA **over-approximates** the set of all possible functions to which `x` could evaluate during execution.
 
----
+----
 
 ## 2. Syntactic Labeling
 
@@ -1493,7 +1493,7 @@ $$[ [fn\ x \Rightarrow [x]^1]^2 \ [fn\ y \Rightarrow [y]^3]^4 ]^5$$
 
 Each label represents an exact point in the program where a value can be produced or consumed.
 
----
+----
 
 ## 3. The 0-CFA Framework
 
@@ -1503,7 +1503,7 @@ The output of the analysis consists of two mathematical components:
 1. **Abstract Cache ($\hat{C}$):** A function that maps each label $l$ (a program point) to a set of abstract values (the functions/closures that can flow through that point).
 2. **Abstract Environment ($\hat{\rho}$):** A function that maps each program variable (e.g., $x, y$) to a set of abstract values (the functions that can be assigned to it).
 
----
+----
 
 ## 4. Acceptability Relation and Constraints
 
@@ -1519,7 +1519,81 @@ The main rules are:
   2. The result of the function body flows into the application result: $\hat{C}(l_0) \subseteq \hat{C}(l)$
 
 By solving this system of constraints until a fixpoint is reached, we obtain a complete map of where every function can end up in the program, thus solving the dispatch problem.
-```
+
+
+<div style="page-break-after: always;"></div>
+
+# 16. CFA Semantic Correctness and Subject Reduction
+
+This chapter delves into the theoretical foundations of Control Flow Analysis (CFA). Generating a system of constraints is only the first step; we must also mathematically prove that the solution provided by our analysis is a **safe over-approximation** of the program's actual runtime behavior.
+
+To do this, we explore the concept of **Semantic Correctness** and the **Subject Reduction** theorem.
+
+----
+
+## 1. The Problem with Textual Substitution
+
+In standard operational semantics (like those seen in basic lambda calculus or IMP), function application is often evaluated using **textual substitution**. For example, evaluating `(fn x => x) v` results in replacing every instance of `x` in the body with the value `v`.
+
+However, in CFA, textual substitution is unacceptable.
+
+CFA relies on static **labels** ($l$) assigned to the original Abstract Syntax Tree (AST) to track where data flows. If we physically substitute a value from one part of the program into another, we destroy the original structure and lose the labels. Without labels, the static analysis results ($\hat{C}$ and $\hat{\rho}$) have no program points to refer to.
+
+----
+
+## 2. Explicit Environments and Closures
+
+To preserve the syntax tree and its labels during evaluation, we must avoid substitution. Instead, we use **Explicit Environments** and **Closures** in a Small-Step Operational Semantics.
+
+- **Concrete Environment ($\rho$):** A mapping from variables to their actual runtime values. Instead of replacing `x` with `v`, we add a binding `[x -> v]` to the environment.
+    
+- **Closure:** Because functions can be evaluated in different contexts, a function value at runtime cannot just be its code. It must be a **closure**, which pairs the function's syntax with the environment that existed at the time the function was declared: `closure(fn x => e, \rho)`.
+    
+
+When an expression is evaluated, it is always evaluated _in the context_ of a specific concrete environment.
+
+----
+
+## 3. The Agreement Relation
+
+To prove that our static analysis is correct, we must establish a bridge between the concrete runtime state and the abstract static predictions. This bridge is called the **Agreement Relation**.
+
+We say that a concrete runtime environment $\rho$ and an abstract static environment $\hat{\rho}$ **agree** (written as $\rho \sim \hat{\rho}$) if:
+
+> For every variable $x$ in the domain of $\rho$, the runtime closure bound to $x$ is safely abstracted and predicted by the abstract environment $\hat{\rho}(x)$. Furthermore, the internal environment of that closure must also agree with $\hat{\rho}$.
+
+If the environments agree, it means our static analysis has successfully anticipated the actual data stored in memory at runtime.
+
+----
+
+## 4. Semantic Correctness via Subject Reduction
+
+The ultimate goal of the analysis is to ensure that our predictions hold true not just at the start of the program, but throughout its entire execution. This is proven using the **Subject Reduction** theorem, a classic concept borrowed from type theory.
+
+### 4.1 The Theorem Statement
+
+Assume we have an intermediate expression $e$ evaluated in a concrete environment $\rho$.
+
+If:
+
+1. Our CFA solution $(\hat{C}, \hat{\rho})$ is **acceptable** for $e$ (it satisfies all static constraints).
+    
+2. The concrete environment $\rho$ **agrees** with the abstract environment $\hat{\rho}$.
+    
+3. The expression $e$ takes a single computation step to become $e'$ ($e \xrightarrow{\rho} e'$).
+    
+
+**Then:**
+
+The same CFA solution $(\hat{C}, \hat{\rho})$ is still **acceptable** for the new expression $e'$.
+
+### 4.2 Why is this important?
+
+Subject Reduction proves that **CFA predictions are stable under evaluation**.
+
+If you find a valid solution for the initial program, the theorem guarantees by mathematical induction that this solution will remain valid for _every single step_ the program takes until it terminates.
+
+The analysis is a guaranteed over-approximation. If the CFA predicts that a function `f` might be called at label $l$, then at runtime, either `f` is called, or no function is called at all. The runtime execution is a strict subset of the analysis's predictions, eliminating the possibility of false negatives (missed behaviours).
 
 <div style="page-break-after: always;"></div>
 

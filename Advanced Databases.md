@@ -939,7 +939,7 @@ When estimating the distinct values of a grouping attribute `A`, filters applied
 
 # 09. Decision Support Systems (DSS) and Data Warehousing
 
-This chapter introduces the transition from traditional operational databases to analytical systems designed to support business decision-making. It covers the fundamental differences between OLTP and OLAP workloads and the architectural concepts of Data Warehousing.
+This chapter introduces the transition from traditional operational databases to analytical systems designed to support business decision-making. It covers the fundamental differences between OLTP and OLAP workloads, the architectural concepts of Data Warehousing, and the specific physical design strategies required for massive analytical queries.
 
 ----
 
@@ -948,9 +948,9 @@ This chapter introduces the transition from traditional operational databases to
 A fundamental distinction in data management is the difference between systems designed to run the daily operations of an enterprise and systems designed to analyze that enterprise's performance.
 
 ### 1.1 OLTP (Online Transaction Processing)
-* **Purpose:** Supports the day-to-day, structured operational activities of the business (e.g., registering an exam, processing a sale, making a bank transfer).
+* **Purpose:** Supports the day-to-day, structured operational activities of the business (e.g., registering an exam, processing a sale).
 * **Users:** Operatives, clerks, and automated customer-facing systems.
-* **Workload:** High volume of short, simple transactions. Each transaction typically reads or updates only a few specific records (e.g., printing one student's certificate).
+* **Workload:** High volume of short, simple transactions. Each transaction typically reads or updates only a few specific records (e.g., a few tens of items).
 * **Data Scope:** Primarily manages internal, current data.
 * **Technology:** Standard Relational Database Management Systems (DBMS) optimized for high concurrency, fast updates, and point queries (using indexes heavily).
 
@@ -958,93 +958,94 @@ A fundamental distinction in data management is the difference between systems d
 * **Purpose:** Supports business intelligence applications and strategic decision-making by analyzing market trends and organizational performance.
 * **Users:** Managers, analysts, and executives.
 * **Workload:** Lower volume of complex, massive "ad-hoc" queries. Queries typically scan, filter, and aggregate (e.g., `SUM`, `AVG`, `COUNT`) millions or billions of records. Updates are rare and usually happen via massive batch loads.
-* **Data Scope:** Integrates internal data with external sources (e.g., competitor sales, weather data) and heavily relies on **historical data** to analyze trends over time.
+* **Data Scope:** Integrates internal data with external sources and heavily relies on **historical data** to analyze trends over time.
 * **Technology:** Decision Support Systems (DSS) or Data Warehouses, specifically optimized for read-heavy analytical workloads.
 
 ----
 
-## 2. The Data Warehouse
+## 2. The Data Warehouse and ETL
 
 A Data Warehouse is a specialized database system built specifically to support the analytical (OLAP) workload. 
 
 **Key Characteristics:**
-* **Subject-Oriented:** While an operational database has a "flat" schema covering all business entities equally, a Data Warehouse schema is like a "fisheye lens". It focuses heavily on a specific subject (e.g., *Sales* or *Exams*) sitting at the center, and all other entities are merely contextual attributes to that central subject.
-* **Integrated:** It combines data from multiple disparate sources.
-* **Time-Variant (Historical):** It maintains historical snapshots of data to allow for time-series analysis, whereas operational systems often overwrite old data with the current state.
-* **Non-Volatile (Static):** Once data is loaded, it is typically read-only. Users analyzing data are guaranteed a stable snapshot that won't change mid-query.
+* **Subject-Oriented:** While an operational database has a "flat" schema covering all business entities equally, a Data Warehouse schema is like a "fisheye lens". It focuses heavily on a specific subject (e.g., *Sales* or *Hospitalizations*) sitting at the center, and all other entities are merely contextual attributes to that central subject.
+* **Integrated & Historical:** It combines data from multiple disparate sources and maintains historical snapshots of data to allow for time-series analysis.
+* **Non-Volatile (Static):** Once data is loaded, it is typically read-only, ensuring a stable snapshot for analysis.
 
-----
-
-## 3. The ETL Process (Extract, Transform, Load)
-
-Designing the schema of a Data Warehouse is relatively simple compared to an operational database. The vast majority (up to 80-90%) of the effort in building a Data Warehouse lies in data integration and cleaning. This process is known as **ETL**.
-
+### 2.1 The ETL Process
+Designing the schema of a Data Warehouse is relatively simple compared to an operational database. The vast majority (up to 80-90%) of the effort lies in data integration and cleaning. This is the **ETL** process:
 1. **Extract:** Pulling raw data from various internal operational databases and external sources.
-2. **Transform (Data Staging Area):** This is the most complex phase. Data is cleaned, synchronized, and standardized. Examples include:
-   * Reconciling different measurement units or date formats (e.g., "DD/MM/YYYY" vs. "MM/DD/YYYY").
-   * Handling missing fields or errors.
-   * Resolving semantic differences across source systems (e.g., changes in geographical boundaries over time).
+2. **Transform (Data Staging Area):** The most complex phase. Data is cleaned, synchronized, and standardized (e.g., reconciling different measurement units or resolving semantic differences).
 3. **Load:** Moving the cleansed and integrated data into the final Data Warehouse storage.
 
 ----
 
-## 4. Multidimensional Modeling: Measures and Dimensions
+## 3. Multidimensional Modeling: Measures and Dimensions
 
-Instead of the standard Entity-Relationship model used for operational databases, Data Warehouses use a **Multidimensional Model** centered around "Fact Tables". This model is designed to answer analytical questions by distinguishing data into two strict categories:
+Instead of the standard Entity-Relationship model, Data Warehouses use a **Multidimensional Model** centered around "Fact Tables". This model distinguishes data into two strict categories:
 
-### 4.1 Measures (The "What" / The Output)
+### 3.1 Measures (The "What" / The Output)
 Measures are the quantitative values that the business wants to analyze, aggregate, and evaluate. 
-* They are the key performance indicators (KPIs) of the organization.
 * They are typically numeric values that can be meaningfully aggregated (e.g., summed, averaged).
-* **Examples:** Revenue amount, quantity sold, average grade, total cost.
+* **Examples:** Revenue amount, quantity sold, waiting time, billed amount.
+* **Note on Metrics vs. Measures:** Technically, the *measure* is the raw attribute (e.g., `amount`), and the *metric* is the aggregated result (e.g., `SUM(amount)`).
 
-### 4.2 Dimensions (The "Context" / The Input)
+### 3.2 Dimensions (The "Context" / The Input)
 Dimensions are the contextual attributes or perspectives by which the measures are analyzed. They represent the factors that influence the measures.
 * They answer questions like *Who, What, Where, and When*.
-* They are used for filtering, grouping, and labeling the data.
-* **Examples:** Time (Month, Year), Location (Store ID, City), Product Category, Customer Demographics (Gender, Age Group).
-
-**The Analytical Goal:** The core of Data Warehousing is to understand the relationship between these two categories: *How do the input features (Dimensions) influence the results we care about (Measures)?*
+* **Hierarchies:** Attributes within a dimension often form functional dependency hierarchies. For example, in a `Date` dimension: `Day` $\rightarrow$ `Month` $\rightarrow$ `Quarter` $\rightarrow$ `Year`. 
+* *(Note: "Repeating time periods" like "Monday" or "January" are attributes, but they do not form a strict historical hierarchy unless combined with a specific year).*
 
 ----
 
-## 5. Schema Design for Data Marts
+## 4. Schema Design for Data Marts
 
-When designing a Data Mart (a focused subset of a Data Warehouse typically centered around a single business process), the objective is to model the fact and its relationships to the dimensions efficiently.
+When designing a Data Mart (a focused subset of a DW for a single business process), the objective is to model the fact and its relationships to the dimensions.
 
-### 5.1 The Fact Table
-At the core of the design is the **Fact Table**.
-* It records the events or "facts" (e.g., individual hospitalizations or sales transactions).
-* It must be kept as narrow (few columns) as possible because it contains a massive number of rows (often millions or billions). Scanning it is the primary bottleneck in OLAP queries.
-* It contains the *Measures* (e.g., billed amount, duration) and *Foreign Keys* pointing to the Dimension Tables.
+### 4.1 Fact Tables and Dimension Tables
+* **The Fact Table:** Records the specific events (e.g., a single hospital admission or a sale). It contains the *Measures* and *Foreign Keys* pointing to the Dimension Tables. It is usually massive (millions/billions of rows).
+* **Dimension Tables:** Surround the Fact Table. They are typically much smaller in terms of rows but wider in columns, containing descriptive attributes.
 
-### 5.2 Dimension Tables and Hierarchies
-Dimension tables surround the Fact Table. They are typically much smaller in terms of rows but wider in columns, containing descriptive attributes.
-* **Hierarchies:** Attributes within a dimension often form functional dependency hierarchies (e.g., in a `Date` dimension: `Day` $\rightarrow$ `Month` $\rightarrow$ `Quarter` $\rightarrow$ `Year`). Navigating these hierarchies (rolling up to summarize or drilling down for detail) is a core OLAP operation.
+### 4.2 Schema Types
+To physically implement the multidimensional model in a relational database, three main schema structures are used:
+1. **Snowflake Schema (Normalized):** The dimension tables are normalized (e.g., Third Normal Form). A `Market` dimension might be split into `City` and `State` tables to eliminate redundancy.
+2. **Star Schema (Denormalized):** The dimension tables are intentionally denormalized. All attributes of a dimension hierarchy (e.g., city, state, country) are stored in a single table. **Star Schemas dominate OLAP** because updates are rare, so redundancy does not cause anomalies, and the pre-joined dimensions save crucial execution time during massive queries.
+3. **Constellation Schema (Galaxy Schema):** Used when multiple fact tables (e.g., `Sales` and `Returns`) share the same dimension tables (e.g., `Date`, `Product`, `Store`).
 
-### 5.3 Star Schema vs. Snowflake Schema
-To physically implement the multidimensional model in a relational database, two main schema structures are used:
-* **Snowflake Schema (Normalized):** The dimension tables are normalized (e.g., Third Normal Form). A `Market` dimension might be split into `City` and `State` tables to eliminate redundancy.
-* **Star Schema (Denormalized):** The dimension tables are intentionally denormalized. All attributes of a dimension hierarchy (e.g., city, state, country) are stored in a single table, even if it introduces data redundancy.
+----
 
-**Why Star Schemas Dominate OLAP:** In an analytical environment, updates are rare, so the anomalies associated with redundancy are less critical. The Star Schema drastically reduces the number of costly `JOIN` operations required at query time, making the massive table scans significantly faster.
+## 5. Physical Design and Tuning for OLAP
+
+Physical design in an OLAP environment requires a complete paradigm shift from OLTP tuning. **Indexes are largely ineffective** because OLAP queries rarely filter down to a highly selective subset (e.g., 0.1%). Instead, they aggregate huge portions of the database.
+
+### 5.1 The Trap of Extreme Denormalization
+Since Joins are expensive, a DBA might be tempted to use *extreme denormalization*: merging all dimensions directly into the Fact Table so no joins are required at all. 
+* **The Problem:** Fact tables are extremely long (millions of rows). If you add all the descriptive strings from the dimension tables (like store name, city, region) directly into the Fact Table, the record size ($L_{rec}$) grows significantly.
+* **The Consequence:** The number of pages ($N_{pag}$) explodes. Since OLAP queries rely on **Table Scans**, scanning a bloated fact table takes much longer (e.g., 5 million pages) than scanning a narrow fact table (1 million pages) and joining it with small dimension tables in memory. 
+* **Conclusion:** Keep Fact Tables as narrow as possible (Vertical Partitioning). Only denormalize the *Dimension* tables.
+
+### 5.2 Join Selection in OLAP
+When executing analytical queries (e.g., Joining `Sales` with `Shops` to aggregate by Region):
+* **Index Nested Loop is Forbidden:** If there is no highly selective `WHERE` clause, an `IndexNestedLoop` would execute millions of random index lookups, degrading performance exponentially.
+* **Hash Join & Merge Join:** These are the dominant algorithms in OLAP. Because dimension tables are typically small, a `HashJoin` can easily build a hash table of the dimension in main memory, allowing the massive Fact Table to be scanned and joined in a single, highly efficient pass.
 
 ----
 
 ## 6. The Data Cube and OLAP Operations
 
-The **Data Cube** is a conceptual model and a visualization tool that represents data as a multidimensional array (a hypercube), making it highly intuitive for users to analyze measures across different intersecting dimensions (e.g., Sales by Product, by Region, by Date).
+The **Data Cube** is a conceptual model and a visualization tool that represents data as a multidimensional array (a hypercube), making it intuitive for managers to analyze measures across different intersecting dimensions.
 
 ### 6.1 Geometric OLAP Operations
-OLAP tools provide interactive operations to manipulate this conceptual cube:
-* **Slice:** Extracts a two-dimensional "slice" by fixing one dimension to a specific value (e.g., selecting only data where `Year = 2024`). Equivalent to a simple `WHERE` condition.
-* **Dice:** Extracts a smaller sub-cube by specifying range conditions on multiple dimensions (e.g., `Year = 2024` AND `Region = 'Europe'`).
-* **Roll-up:** Aggregates data by "collapsing" a dimension or moving up a hierarchy (e.g., moving from daily sales to monthly sales). Equivalent to applying a `GROUP BY` and a `SUM` in SQL.
-* **Drill-down:** The inverse of Roll-up. It breaks aggregated data into finer detail by adding a dimension or moving down a hierarchy (e.g., from monthly sales to daily sales). This is an interactive operation not easily matched by a single standard SQL command.
-* **Pivot:** Rotates the visual axes of the cube to provide a different perspective on the same data.
+OLAP tools provide interactive visual operations to manipulate this conceptual cube:
+* **Slice:** Extracts a two-dimensional "slice" by fixing one dimension to a specific value (e.g., selecting only data where `Year = 2024`).
+* **Dice:** Extracts a smaller sub-cube by specifying range conditions on multiple dimensions.
+* **Roll-up:** Aggregates data by "collapsing" a dimension or moving up a hierarchy (e.g., moving from daily sales to monthly sales). Equivalent to applying a `GROUP BY` and an aggregation function in SQL. *(Note: Not all functions can be rolled up sequentially. `SUM(SUM)` is valid, `MAX(MAX)` is valid, but `AVG(AVG)` yields incorrect mathematical results).*
+* **Drill-down:** The inverse of Roll-up. It breaks aggregated data into finer detail by moving down a hierarchy (e.g., from monthly to daily).
+* **Pivot:** Rotates the visual axes of the cube to provide a different perspective.
 
-### 6.2 Materialized Views
-To support the near-instantaneous response times expected in interactive OLAP tools, Data Warehouses heavily rely on **Materialized Views**. Instead of calculating massive joins and aggregations on the fly, the system pre-computes and physically stores various "cuboids" (aggregated summaries like total sales by region). When a user requests a specific roll-up, the system quickly retrieves the pre-computed data instead of scanning the raw fact table.
+### 6.2 Materialized Views and Cuboids
+To support near-instantaneous response times, OLAP systems heavily rely on **Materialized Views**. Instead of calculating massive aggregates on the fly, the system pre-computes and physically stores various **cuboids** (aggregated summaries at different hierarchical levels, like total sales by region). When a user requests a specific roll-up, the system quickly retrieves the pre-computed data from the closest available cuboid.
+
 
 <div style="page-break-after: always;"></div>
 
