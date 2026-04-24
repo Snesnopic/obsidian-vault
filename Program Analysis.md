@@ -1465,3 +1465,61 @@ $$\frac{P' \implies P \quad [P] \ c \ [Q] \quad Q \implies Q'}{[P'] \ c \ [Q']}$
 
 <div style="page-break-after: always;"></div>
 
+# 15. Control Flow Analysis
+
+This chapter introduces **Control Flow Analysis (CFA)**, a fundamental technique for analyzing programs where the control flow is not explicit and statically determinable from the syntax, as is the case in functional or object-oriented languages.
+
+---
+
+## 1. The Dispatch Problem in Functional Languages
+
+In traditional imperative languages (like C), building a Control Flow Graph (CFG) is relatively simple: the flow sequentially follows instructions, jumps (`goto`, `if`, `while`), and statically known function calls.
+
+In functional languages (or languages with higher-order functions like JavaScript and Python), functions are **first-class citizens**. They can be passed as arguments, returned as results, and assigned to variables. 
+When the analyzer encounters a function application `x(y)`, it faces the **dispatch problem**: which function will actually be executed at runtime? Since `x` is a variable, its value (and therefore the target of the call) depends on the data flow. Control flow and data flow become inseparable.
+
+To solve this problem, CFA **over-approximates** the set of all possible functions to which `x` could evaluate during execution.
+
+---
+
+## 2. Syntactic Labeling
+
+Since we cannot rely on an explicit CFG, we work directly on the Abstract Syntax Tree (AST). To accurately track where values are generated and where they flow, we assign a **unique label ($l$)** to each sub-expression of the program.
+
+**Example:**
+Consider the application of the identity function to another identity function: `(fn x => x) (fn y => y)`.
+With labels, it becomes:
+$$[ [fn\ x \Rightarrow [x]^1]^2 \ [fn\ y \Rightarrow [y]^3]^4 ]^5$$
+
+Each label represents an exact point in the program where a value can be produced or consumed.
+
+---
+
+## 3. The 0-CFA Framework
+
+The most basic analysis is **0-CFA** (where "0" indicates that the analysis is *context-insensitive*, meaning it does not distinguish between calls to the same function coming from different contexts). 
+The output of the analysis consists of two mathematical components:
+
+1. **Abstract Cache ($\hat{C}$):** A function that maps each label $l$ (a program point) to a set of abstract values (the functions/closures that can flow through that point).
+2. **Abstract Environment ($\hat{\rho}$):** A function that maps each program variable (e.g., $x, y$) to a set of abstract values (the functions that can be assigned to it).
+
+---
+
+## 4. Acceptability Relation and Constraints
+
+The analysis does not "compute" the result directly but generates a system of **constraints** based on the code's structure. A solution ($\hat{C}, \hat{\rho}$) is considered **acceptable** if it satisfies all the generated constraints.
+
+The main rules are:
+* **Function Creation:** If at label $l$ there is a function declaration `fn x => e`, then the abstraction of that function must be contained in the cache of $l$.
+  $$\{fn\ x \Rightarrow e\} \subseteq \hat{C}(l)$$
+* **Variables:** If there is a variable `x` at label $l$, everything that can flow into `x` (according to the abstract environment) must also flow into $l$.
+  $$\hat{\rho}(x) \subseteq \hat{C}(l)$$
+* **Application (The heart of CFA):** For an application $[t_1^{l_1} \ t_2^{l_2}]^l$, for **every** function $(fn\ x \Rightarrow e_0^{l_0})$ that the analysis predicts can flow into $\hat{C}(l_1)$, two constraints must hold:
+  1. Actual parameters flow into formal parameters: $\hat{C}(l_2) \subseteq \hat{\rho}(x)$
+  2. The result of the function body flows into the application result: $\hat{C}(l_0) \subseteq \hat{C}(l)$
+
+By solving this system of constraints until a fixpoint is reached, we obtain a complete map of where every function can end up in the program, thus solving the dispatch problem.
+```
+
+<div style="page-break-after: always;"></div>
+
